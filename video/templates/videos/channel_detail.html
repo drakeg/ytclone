@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="channel-detail">
+        <h2>{{ channel.name }}</h2>
+        {% if channel.profile_image %}
+            <img src="{{ channel.profile_image.url }}" alt="Profile Image">
+        {% endif %}
+        <p>{{ channel.description }}</p>
+        {% if channel.user.social_media_links %}
+            <h3>Social Media Links</h3>
+            <ul>
+                {% for link in channel.user.social_media_links %}
+                    <li>
+                        <a href="{{ link.url }}">{{ link.name }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+    <div class="videos">
+        <h3>Videos</h3>
+        <ul>
+            {% for video in videos %}
+                <li>
+                    <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

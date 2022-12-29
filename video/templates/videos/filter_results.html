@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Filter Results</h2>
+    <form method="get" action="{% url 'filter' %}">
+        <label for="keywords">Keywords:</label>
+        <input type="text" name="keywords" value="{{ request.GET.keywords }}">
+        <br>
+        <label for="category">Category:</label>
+        <select name="category">
+            <option value="">-- All --</option>
+            {% for category in categories %}
+                <option value="{{ category.pk }}" {% if request.GET.category == category.pk %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+            {% endfor %}
+        </select>
+        <br>
+        <button type="submit" class="btn btn-primary">Filter</button>
+    </form>
+    {% if videos %}
+        <h3>Results</h3>
+        <ul>
+            {% for video in videos %}
+                <li>
+                    <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+{% endblock %}

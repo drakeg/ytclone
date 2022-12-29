@@ -1,0 +1,13 @@
+body {
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 14;
+}
+
+.video-list {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.video {
+    width: 25%; /* 4 columns */
+}

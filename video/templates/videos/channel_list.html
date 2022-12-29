@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2>Channels</h2>
+    <ul>
+        {% for channel in channels %}
+            <li>
+                <a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}

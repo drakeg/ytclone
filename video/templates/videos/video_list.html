@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row">
+    {% for video in videos %}
+        <div class="col-3 video">
+            <div class="thumbnail"><a href="{% url 'video_detail' video.pk %}"><img src="{{ video.thumbnail.url }}"></a></div>
+            <div class="video_title">{{ video.title }}</div>
+            <div class="video_author">{{ video.author }}</div>
+            <div class="video_views">{{ video.views }} views</div>
+            <div class="video_upload">{{ video.pub_date|timesince }} ago</div>
+        </div>
+    {% endfor %}
+    </div>
+
+    <!--{% if videos.has_other_pages %}-->
+        <nav aria-label="...">
+            <ul class="pagination justify-content-center">
+                {% if videos.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ videos.previous_page_number }}">Previous</a></li>
+                {% else %}
+                    <li class="page-item disabled"><a class="page-link">Previous</a></li>
+                {% endif %}
+                {% if videos.has_previous %}
+                    <li><a href="?page={{ videos.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                {% for page in videos.paginator.page_range %}
+                    {% if page == videos.number %}
+                        <li class="page-item active"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ page }}">{{ page }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if videos.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ videos.next_page_number }}">Next</a></li>
+                {% else %}
+                    <li class="page-item disabled"><a class="page-link">Next</a></li>
+                {% endif %}
+        </ul>
+    </nav>
+    <!--{% endif %}-->
+{% endblock %}

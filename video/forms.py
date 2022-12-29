@@ -15,4 +15,4 @@ class EditProfileForm(forms.ModelForm):
 class VideoUploadForm(forms.ModelForm):
     class Meta:
         model = Video
-        fields = ['title', 'description', 'thumbnail', 'video_file']
+        fields = ['title', 'description', 'thumbnail', 'video_file', 'category']

@@ -15,4 +15,5 @@ urlpatterns = [
     path('filter/', views.filter_videos, name='filter'),
     path('profile/<str:username>/', views.user_profile, name='user_profile'),
     path('profile/<str:username>/edit/', views.edit_profile, name='edit_profile'),
+    path('upload/', views.upload_video, name='upload'),
 ]

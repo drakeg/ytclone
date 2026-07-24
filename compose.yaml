@@ -1,0 +1,23 @@
+services:
+  web:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,web
+      DJANGO_CSRF_TRUSTED_ORIGINS: http://localhost:8000
+      DJANGO_DEBUG: "true"
+      DJANGO_SECURE_SSL_REDIRECT: "false"
+      DJANGO_SESSION_COOKIE_SECURE: "false"
+      DJANGO_CSRF_COOKIE_SECURE: "false"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - sqlite_data:/app/data
+      - media_data:/app/media
+
+volumes:
+  sqlite_data:
+  media_data:

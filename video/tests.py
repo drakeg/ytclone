@@ -135,3 +135,37 @@ class SecurityAuthorizationTests(TestCase):
         self.assertTrue(
             self.channel.subscribers.filter(pk=self.other_user.pk).exists()
         )
+
+    def test_liking_removes_existing_dislike(self):
+        self.video.dislikes.add(self.other_user)
+        self.client.login(username="other", password="password123")
+
+        response = self.client.post(
+            reverse("like_video", kwargs={"pk": self.video.pk})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(self.video.likes.filter(pk=self.other_user.pk).exists())
+        self.assertFalse(self.video.dislikes.filter(pk=self.other_user.pk).exists())
+
+    def test_disliking_removes_existing_like(self):
+        self.video.likes.add(self.other_user)
+        self.client.login(username="other", password="password123")
+
+        response = self.client.post(
+            reverse("dislike_video", kwargs={"pk": self.video.pk})
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(self.video.likes.filter(pk=self.other_user.pk).exists())
+        self.assertTrue(self.video.dislikes.filter(pk=self.other_user.pk).exists())
+
+    def test_posting_same_reaction_twice_clears_it(self):
+        self.client.login(username="other", password="password123")
+        like_url = reverse("like_video", kwargs={"pk": self.video.pk})
+
+        self.client.post(like_url)
+        self.client.post(like_url)
+
+        self.assertFalse(self.video.likes.filter(pk=self.other_user.pk).exists())
+        self.assertFalse(self.video.dislikes.filter(pk=self.other_user.pk).exists())

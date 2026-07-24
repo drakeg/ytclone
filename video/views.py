@@ -1,12 +1,15 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import F, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm, EditProfileForm, VideoUploadForm
 from .models import Category, Channel, Comment, Video
+
+
+VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
 
 
 def video_list(request):
@@ -21,9 +24,14 @@ def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
     comments = Comment.objects.filter(video=video)
 
-    if request.user.id != video.author.id:
-        video.views += 1
-        video.save(update_fields=["views"])
+    viewed_video_ids = request.session.get(VIEWED_VIDEOS_SESSION_KEY, [])
+    is_owner = request.user.is_authenticated and request.user.pk == video.author_id
+
+    if not is_owner and video.pk not in viewed_video_ids:
+        Video.objects.filter(pk=video.pk).update(views=F("views") + 1)
+        viewed_video_ids.append(video.pk)
+        request.session[VIEWED_VIDEOS_SESSION_KEY] = viewed_video_ids
+        video.refresh_from_db(fields=["views"])
 
     return render(
         request,

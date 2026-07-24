@@ -1,4 +1,4 @@
 Django~=5.2.15
-Gunicorn~=23.0
+Gunicorn~=26.0
 Pillow~=12.3.0
 python-dotenv~=1.2.2

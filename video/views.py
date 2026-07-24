@@ -49,9 +49,10 @@ def add_comment(request, pk):
 @require_POST
 def like_video(request, pk):
     video = get_object_or_404(Video, pk=pk)
-    if request.user in video.likes.all():
+    if video.likes.filter(pk=request.user.pk).exists():
         video.likes.remove(request.user)
     else:
+        video.dislikes.remove(request.user)
         video.likes.add(request.user)
     return redirect("video_detail", pk=video.pk)
 
@@ -60,9 +61,10 @@ def like_video(request, pk):
 @require_POST
 def dislike_video(request, pk):
     video = get_object_or_404(Video, pk=pk)
-    if request.user in video.dislikes.all():
+    if video.dislikes.filter(pk=request.user.pk).exists():
         video.dislikes.remove(request.user)
     else:
+        video.likes.remove(request.user)
         video.dislikes.add(request.user)
     return redirect("video_detail", pk=video.pk)
 

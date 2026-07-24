@@ -2,5 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "description": "Keep Django on the 5.2 LTS release line",
+      "matchManagers": ["pip_requirements"],
+      "matchPackageNames": ["Django"],
+      "allowedVersions": ">=5.2,<5.3"
+    },
+    {
+      "description": "Require manual review for major dependency upgrades",
+      "matchManagers": ["pip_requirements"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false
+    }
   ]
 }

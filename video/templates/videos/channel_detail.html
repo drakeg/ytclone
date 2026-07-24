@@ -3,21 +3,23 @@
 {% block content %}
     <div class="channel-detail">
         <h2>{{ channel.name }}</h2>
-        {% if channel.profile_image %}
-            <img src="{{ channel.profile_image.url }}" alt="Profile Image">
+        {% if channel.thumbnail %}
+            <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail">
         {% endif %}
         <p>{{ channel.description }}</p>
-        {% if channel.user.social_media_links %}
-            <h3>Social Media Links</h3>
-            <ul>
-                {% for link in channel.user.social_media_links %}
-                    <li>
-                        <a href="{{ link.url }}">{{ link.name }}</a>
-                    </li>
-                {% endfor %}
-            </ul>
+
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'subscribe' channel.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-primary">
+                    {% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}
+                </button>
+            </form>
+        {% else %}
+            <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe.</a></p>
         {% endif %}
     </div>
+
     <div class="videos">
         <h3>Videos</h3>
         <ul>
@@ -25,6 +27,8 @@
                 <li>
                     <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
                 </li>
+            {% empty %}
+                <li>No videos yet.</li>
             {% endfor %}
         </ul>
     </div>

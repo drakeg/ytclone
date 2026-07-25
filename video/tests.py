@@ -1,5 +1,5 @@
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from .models import Category, Channel, Comment, Video
@@ -169,3 +169,35 @@ class SecurityAuthorizationTests(TestCase):
 
         self.assertFalse(self.video.likes.filter(pk=self.other_user.pk).exists())
         self.assertFalse(self.video.dislikes.filter(pk=self.other_user.pk).exists())
+
+    def test_first_view_in_session_increments_count(self):
+        self.client.get(reverse("video_detail", kwargs={"pk": self.video.pk}))
+
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.views, 1)
+
+    def test_refresh_in_same_session_does_not_increment_count(self):
+        url = reverse("video_detail", kwargs={"pk": self.video.pk})
+
+        self.client.get(url)
+        self.client.get(url)
+
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.views, 1)
+
+    def test_separate_sessions_each_count_once(self):
+        url = reverse("video_detail", kwargs={"pk": self.video.pk})
+
+        self.client.get(url)
+        Client().get(url)
+
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.views, 2)
+
+    def test_owner_view_does_not_increment_count(self):
+        self.client.login(username="owner", password="password123")
+
+        self.client.get(reverse("video_detail", kwargs={"pk": self.video.pk}))
+
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.views, 0)

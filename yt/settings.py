@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "storages",
     "video",
 ]
 
@@ -111,6 +112,48 @@ MAX_VIDEO_UPLOAD_MB = int(os.getenv("DJANGO_MAX_VIDEO_UPLOAD_MB", "500"))
 MAX_THUMBNAIL_UPLOAD_MB = int(os.getenv("DJANGO_MAX_THUMBNAIL_UPLOAD_MB", "10"))
 MAX_VIDEO_UPLOAD_SIZE = MAX_VIDEO_UPLOAD_MB * 1024 * 1024
 MAX_THUMBNAIL_UPLOAD_SIZE = MAX_THUMBNAIL_UPLOAD_MB * 1024 * 1024
+
+USE_S3_MEDIA = env_bool("DJANGO_USE_S3_MEDIA", False)
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+if USE_S3_MEDIA:
+    s3_bucket_name = os.getenv("AWS_STORAGE_BUCKET_NAME")
+    if not s3_bucket_name:
+        raise RuntimeError(
+            "AWS_STORAGE_BUCKET_NAME is required when DJANGO_USE_S3_MEDIA=true."
+        )
+
+    s3_options = {
+        "bucket_name": s3_bucket_name,
+        "region_name": os.getenv("AWS_S3_REGION_NAME", "us-east-1"),
+        "location": "media",
+        "default_acl": None,
+        "file_overwrite": False,
+        "querystring_auth": True,
+        "querystring_expire": int(os.getenv("AWS_S3_QUERYSTRING_EXPIRE", "3600")),
+    }
+
+    s3_endpoint_url = os.getenv("AWS_S3_ENDPOINT_URL")
+    if s3_endpoint_url:
+        s3_options["endpoint_url"] = s3_endpoint_url
+
+    s3_custom_domain = os.getenv("AWS_S3_CUSTOM_DOMAIN")
+    if s3_custom_domain:
+        s3_options["custom_domain"] = s3_custom_domain
+        s3_options["url_protocol"] = "https:"
+
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": s3_options,
+    }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

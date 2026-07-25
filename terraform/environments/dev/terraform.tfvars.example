@@ -1,0 +1,12 @@
+aws_region = "us-east-1"
+
+project_name     = "ytclone"
+media_bucket_name = "replace-with-a-globally-unique-bucket-name"
+
+# Keep disabled initially to avoid storing multiple paid copies of large videos.
+enable_media_versioning = false
+
+monthly_budget_usd = 15
+budget_notification_emails = [
+  "replace-with-your-email@example.com",
+]

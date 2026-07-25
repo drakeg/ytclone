@@ -55,14 +55,27 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+## Media storage
+
+Uploaded media uses the local filesystem by default. This remains the normal development mode and does not require AWS credentials.
+
+Private S3 media storage can be enabled later with:
+
+```text
+DJANGO_USE_S3_MEDIA=true
+AWS_STORAGE_BUCKET_NAME=your-private-media-bucket
+AWS_S3_REGION_NAME=us-east-1
+```
+
+The application uses the standard AWS SDK credential chain. Production deployments should use an IAM role rather than committed or long-lived access keys. See `docs/aws.md` for the full configuration and security notes.
+
 ## Deployment behavior
 
 When `DJANGO_DEBUG=true`, the container starts Django's development server. When debug mode is disabled, it starts Gunicorn. Production secrets and host values must be supplied through environment variables rather than committed files.
 
 ## Current roadmap
 
-- Stabilize authentication, authorization, and video interactions
-- Add automated tests for core application behavior
-- Add AWS-ready media storage
 - Add minimal-cost Terraform infrastructure
+- Add budget alerts and lifecycle policies
 - Modernize the creator and viewer experience
+- Introduce background media processing only when usage justifies it

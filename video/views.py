@@ -1,12 +1,13 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import F, Q
+from django.db.models import F, Max, Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from .forms import CommentForm, EditProfileForm, VideoUploadForm
-from .models import Category, Channel, Comment, Video
+from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoUploadForm
+from .models import Category, Channel, Comment, Playlist, PlaylistItem, Video
 
 
 VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
@@ -23,6 +24,9 @@ def video_list(request):
 def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
     comments = Comment.objects.filter(video=video)
+    playlists = []
+    if request.user.is_authenticated:
+        playlists = request.user.playlists.all()
 
     viewed_video_ids = request.session.get(VIEWED_VIDEOS_SESSION_KEY, [])
     is_owner = request.user.is_authenticated and request.user.pk == video.author_id
@@ -36,7 +40,12 @@ def video_detail(request, pk):
     return render(
         request,
         "videos/video_detail.html",
-        {"video": video, "form": CommentForm(), "comments": comments},
+        {
+            "video": video,
+            "form": CommentForm(),
+            "comments": comments,
+            "playlists": playlists,
+        },
     )
 
 
@@ -145,10 +154,17 @@ def filter_videos(request):
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
     videos = Video.objects.filter(author=profile_user)
+    public_playlists = profile_user.playlists.filter(
+        visibility=Playlist.Visibility.PUBLIC
+    )
     return render(
         request,
         "videos/user_profile.html",
-        {"user": profile_user, "videos": videos},
+        {
+            "user": profile_user,
+            "videos": videos,
+            "public_playlists": public_playlists,
+        },
     )
 
 
@@ -177,3 +193,87 @@ def upload_video(request):
     else:
         form = VideoUploadForm()
     return render(request, "videos/upload_video.html", {"form": form})
+
+
+@login_required
+def playlist_list(request):
+    playlists = request.user.playlists.prefetch_related("items__video")
+    return render(request, "videos/playlist_list.html", {"playlists": playlists})
+
+
+@login_required
+def playlist_create(request):
+    if request.method == "POST":
+        form = PlaylistForm(request.POST)
+        if form.is_valid():
+            playlist = form.save(commit=False)
+            playlist.owner = request.user
+            playlist.save()
+            return redirect("playlist_detail", pk=playlist.pk)
+    else:
+        form = PlaylistForm()
+    return render(
+        request,
+        "videos/playlist_form.html",
+        {"form": form, "heading": "Create Playlist"},
+    )
+
+
+def playlist_detail(request, pk):
+    playlist = get_object_or_404(
+        Playlist.objects.select_related("owner").prefetch_related("items__video"),
+        pk=pk,
+    )
+    if not playlist.can_view(request.user):
+        raise Http404("Playlist not found")
+    return render(request, "videos/playlist_detail.html", {"playlist": playlist})
+
+
+@login_required
+def playlist_edit(request, pk):
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
+    if request.method == "POST":
+        form = PlaylistForm(request.POST, instance=playlist)
+        if form.is_valid():
+            form.save()
+            return redirect("playlist_detail", pk=playlist.pk)
+    else:
+        form = PlaylistForm(instance=playlist)
+    return render(
+        request,
+        "videos/playlist_form.html",
+        {"form": form, "heading": "Edit Playlist"},
+    )
+
+
+@login_required
+@require_POST
+def playlist_delete(request, pk):
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
+    playlist.delete()
+    return redirect("playlist_list")
+
+
+@login_required
+@require_POST
+def playlist_add_video(request, pk, video_pk):
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
+    video = get_object_or_404(Video, pk=video_pk)
+    next_position = (
+        playlist.items.aggregate(max_position=Max("position"))["max_position"] or 0
+    ) + 1
+    PlaylistItem.objects.get_or_create(
+        playlist=playlist,
+        video=video,
+        defaults={"position": next_position},
+    )
+    return redirect("playlist_detail", pk=playlist.pk)
+
+
+@login_required
+@require_POST
+def playlist_remove_video(request, pk, item_pk):
+    playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
+    item = get_object_or_404(PlaylistItem, pk=item_pk, playlist=playlist)
+    item.delete()
+    return redirect("playlist_detail", pk=playlist.pk)

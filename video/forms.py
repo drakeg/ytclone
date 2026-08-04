@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from .models import Comment, Video
+from .models import Comment, Playlist, Video
 
 
 class CommentForm(forms.ModelForm):
@@ -17,6 +17,12 @@ class EditProfileForm(forms.ModelForm):
     class Meta:
         model = User
         fields = ["first_name", "last_name", "email"]
+
+
+class PlaylistForm(forms.ModelForm):
+    class Meta:
+        model = Playlist
+        fields = ["name", "description", "visibility"]
 
 
 class VideoUploadForm(forms.ModelForm):

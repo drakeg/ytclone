@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>My Playlists</h2>
+<p><a class="btn btn-primary" href="{% url 'playlist_create' %}">Create Playlist</a></p>
+
+{% for playlist in playlists %}
+    <article>
+        <h3><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3>
+        <p>{{ playlist.get_visibility_display }} · {{ playlist.items.count }} video{{ playlist.items.count|pluralize }}</p>
+        {% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
+    </article>
+{% empty %}
+    <p>You have not created any playlists yet.</p>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ playlist.name }}</h2>
+<p>{{ playlist.get_visibility_display }} · by {{ playlist.owner.username }}</p>
+{% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
+
+{% if request.user == playlist.owner %}
+<p>
+    <a class="btn btn-secondary" href="{% url 'playlist_edit' playlist.pk %}">Edit</a>
+</p>
+<form method="post" action="{% url 'playlist_delete' playlist.pk %}">
+    {% csrf_token %}
+    <button class="btn btn-danger" type="submit">Delete Playlist</button>
+</form>
+{% endif %}
+
+<h3>Videos</h3>
+{% for item in playlist.items.all %}
+    <article>
+        <h4><a href="{% url 'video_detail' item.video.pk %}">{{ item.video.title }}</a></h4>
+        <p>{{ item.video.description|truncatewords:25 }}</p>
+        {% if request.user == playlist.owner %}
+        <form method="post" action="{% url 'playlist_remove_video' playlist.pk item.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+        </form>
+        {% endif %}
+    </article>
+{% empty %}
+    <p>This playlist is empty.</p>
+{% endfor %}
+{% endblock %}

@@ -18,4 +18,11 @@ urlpatterns = [
     path("profile/<str:username>/", views.user_profile, name="user_profile"),
     path("profile/<str:username>/edit/", views.edit_profile, name="edit_profile"),
     path("upload/", views.upload_video, name="upload"),
+    path("playlists/", views.playlist_list, name="playlist_list"),
+    path("playlists/create/", views.playlist_create, name="playlist_create"),
+    path("playlists/<int:pk>/", views.playlist_detail, name="playlist_detail"),
+    path("playlists/<int:pk>/edit/", views.playlist_edit, name="playlist_edit"),
+    path("playlists/<int:pk>/delete/", views.playlist_delete, name="playlist_delete"),
+    path("playlists/<int:pk>/videos/<int:video_pk>/add/", views.playlist_add_video, name="playlist_add_video"),
+    path("playlists/<int:pk>/items/<int:item_pk>/remove/", views.playlist_remove_video, name="playlist_remove_video"),
 ]

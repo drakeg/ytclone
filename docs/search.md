@@ -1,15 +1,55 @@
 # Search and Discovery
 
-This document is created at sprint start and will be updated when the sprint closes.
+## Delivered behavior
 
-## Planned behavior
+Search returns grouped results for videos, channels, and playlists.
 
-Search will return grouped results for videos, channels, and playlists. Video results will support relevance, newest, oldest, most-viewed, and most-liked sorting.
+### Video matching
 
-Playlist visibility rules apply to discovery:
+Videos match against:
+
+- Title
+- Description
+- Creator username
+- Category name
+
+Video results can be sorted by:
+
+- Relevance
+- Newest
+- Oldest
+- Most viewed
+- Most liked
+
+Relevance uses lightweight Django ORM annotations. Exact title matches rank highest, followed by title, creator, category, and description matches. View and publication data provide deterministic tie-breaking.
+
+### Channel matching
+
+Channels match against name and description. Results are ordered by subscriber count and name.
+
+### Playlist matching and privacy
+
+Playlists match against name and description. Visibility rules are enforced during the query:
 
 - Public playlists may appear for anyone.
 - Private playlists never appear in search.
-- Unlisted playlists do not appear for other users; an authenticated owner may find their own unlisted playlists.
+- Unlisted playlists are hidden from general search.
+- An authenticated owner may find their own unlisted playlists.
 
-The initial implementation uses Django ORM queries and lightweight database annotations. It intentionally avoids external search infrastructure so the feature remains inexpensive to operate during the bootstrap stage.
+### Empty and invalid input
+
+Blank queries return empty grouped results rather than all content. Unsupported sort values safely fall back to relevance.
+
+## Architecture
+
+Search logic lives in `video/services/search.py`. The Django view is responsible only for reading request parameters and rendering the grouped result page. This creates a reusable boundary for a future API or a more advanced search backend.
+
+The current implementation intentionally uses the existing relational database and avoids Elasticsearch, OpenSearch, Redis, or embedding services. This keeps operating cost and deployment complexity low during the bootstrap stage.
+
+## Deferred work
+
+- Search suggestions and autocomplete
+- Private search history
+- PostgreSQL full-text search
+- Duration, resolution, creator, and upload-date filters
+- Semantic and embedding-based search

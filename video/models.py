@@ -110,3 +110,24 @@ class PlaylistItem(models.Model):
 
     def __str__(self):
         return f"{self.playlist}: {self.video}"
+
+
+class WatchHistory(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="watch_history"
+    )
+    video = models.ForeignKey(
+        Video, on_delete=models.CASCADE, related_name="history_entries"
+    )
+    watched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-watched_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "video"], name="unique_video_per_user_history"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user}: {self.video}"

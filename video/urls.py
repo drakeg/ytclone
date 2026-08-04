@@ -25,4 +25,7 @@ urlpatterns = [
     path("playlists/<int:pk>/delete/", views.playlist_delete, name="playlist_delete"),
     path("playlists/<int:pk>/videos/<int:video_pk>/add/", views.playlist_add_video, name="playlist_add_video"),
     path("playlists/<int:pk>/items/<int:item_pk>/remove/", views.playlist_remove_video, name="playlist_remove_video"),
+    path("history/", views.watch_history, name="watch_history"),
+    path("history/clear/", views.watch_history_clear, name="watch_history_clear"),
+    path("history/<int:pk>/remove/", views.watch_history_remove, name="watch_history_remove"),
 ]

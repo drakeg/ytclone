@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import F, Max, Q
+from django.db.models import F, Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -17,6 +17,7 @@ from .models import (
     Video,
     WatchHistory,
 )
+from .services.search import VIDEO_SORT_OPTIONS, search_content
 
 
 VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
@@ -142,17 +143,22 @@ def category_detail(request, pk):
 
 
 def search(request):
-    query = request.GET.get("query")
-    if query:
-        videos = Video.objects.filter(
-            Q(title__icontains=query) | Q(description__icontains=query)
-        )
-    else:
-        videos = []
+    results = search_content(
+        request.GET.get("query", ""),
+        request.GET.get("sort", "relevance"),
+        request.user,
+    )
     return render(
         request,
         "videos/search_results.html",
-        {"videos": videos, "query": query},
+        {
+            "query": results.query,
+            "selected_sort": results.sort,
+            "sort_options": VIDEO_SORT_OPTIONS,
+            "videos": results.videos,
+            "channels": results.channels,
+            "playlists": results.playlists,
+        },
     )
 
 

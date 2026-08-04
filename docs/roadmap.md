@@ -18,22 +18,24 @@ Every sprint begins with a documentation review and roadmap update before implem
 - Terraform modules for private media storage and AWS budget alerts
 - Playlists with public, unlisted, and private visibility
 - Private watch history with removal and clear-all controls
+- Grouped Search and Discovery across videos, channels, and visible playlists
 
-## Current sprint: Search and Discovery
+## Completed sprint: Search and Discovery
 
-### Goals
+Delivered:
 
-- Search videos by title, description, category, and creator username
-- Search channels by name and description
-- Search visible playlists by name and description
-- Group results by videos, channels, and playlists
-- Support video sorting by relevance, newest, oldest, most viewed, and most liked
-- Keep private playlists out of all search results
-- Allow owners to find their own unlisted playlists while keeping other users' unlisted playlists out of general search
-- Introduce a small search service layer so query and ranking logic does not accumulate in views
-- Add regression tests for matching, visibility, sorting, and empty queries
+- Video matching by title, description, category, and creator username
+- Channel matching by name and description
+- Playlist matching by name and description
+- Grouped result sections for videos, channels, and playlists
+- Video sorting by relevance, newest, oldest, most viewed, and most liked
+- Private playlists excluded from search
+- Public playlists searchable by anyone
+- Owners able to find their own unlisted playlists without exposing them to other users
+- Search business logic isolated in `video/services/search.py`
+- Regression tests for matching, visibility, sorting, invalid sort values, and blank queries
 
-### Out of scope
+Deferred:
 
 - Search suggestions and autocomplete
 - Search history
@@ -42,9 +44,18 @@ Every sprint begins with a documentation review and roadmap update before implem
 - Semantic or embedding search
 - Duration, resolution, and upload-date filters
 
-## Next candidates
+## Next sprint candidate
 
-- Homepage discovery sections
+Homepage discovery sections using the search and history foundations:
+
+- Newest videos
+- Most viewed videos
+- Most liked videos
+- Recently watched for authenticated users
+- Public playlists
+
+## Later candidates
+
 - Continue Watching and playback-position tracking
 - Creator analytics
 - Notifications

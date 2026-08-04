@@ -2,7 +2,32 @@
 
 ## Delivery process
 
-Every sprint begins with a documentation review and roadmap update before implementation starts. The sprint closes with documentation updated to match the delivered behavior, configuration, tests, and remaining follow-up work.
+Every sprint follows this checklist:
+
+### Before implementation
+
+- Review the README, architecture, roadmap, AWS, Terraform, and affected feature documentation.
+- Update the roadmap with the sprint goal, scope, acceptance criteria, test plan, and out-of-scope work.
+- Document the local commands contributors will use to verify the sprint, including both Docker and non-Docker paths.
+- Record architecture decisions before code is written.
+
+### During implementation
+
+- Keep the sprint and pull request focused on one concern.
+- Add or update tests alongside the implementation.
+- Prefer business logic in service modules rather than views.
+- Update local test instructions whenever dependencies, configuration, migrations, or validation commands change.
+
+### Before sprint closure
+
+- Update all affected documentation to match delivered behavior and configuration.
+- Record new environment variables, migrations, infrastructure, and operational notes.
+- Confirm the README contains current Docker and non-Docker instructions for Django system checks, migration-drift checks, and the full unit test suite.
+- When Terraform or its workflow is affected, document and run formatting and validation commands.
+- Run the documented local checks, record the results in the pull request, and resolve any mismatch between the documentation and the actual commands.
+- Update the roadmap with delivered work, deferred work, and next sprint candidates.
+
+A sprint is not closed until its local test instructions are complete and reproducible.
 
 ## Completed foundation
 

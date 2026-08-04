@@ -4,10 +4,19 @@ from django.core.paginator import Paginator
 from django.db.models import F, Max, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoUploadForm
-from .models import Category, Channel, Comment, Playlist, PlaylistItem, Video
+from .models import (
+    Category,
+    Channel,
+    Comment,
+    Playlist,
+    PlaylistItem,
+    Video,
+    WatchHistory,
+)
 
 
 VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
@@ -27,6 +36,11 @@ def video_detail(request, pk):
     playlists = []
     if request.user.is_authenticated:
         playlists = request.user.playlists.all()
+        WatchHistory.objects.update_or_create(
+            user=request.user,
+            video=video,
+            defaults={"watched_at": timezone.now()},
+        )
 
     viewed_video_ids = request.session.get(VIEWED_VIDEOS_SESSION_KEY, [])
     is_owner = request.user.is_authenticated and request.user.pk == video.author_id
@@ -277,3 +291,24 @@ def playlist_remove_video(request, pk, item_pk):
     item = get_object_or_404(PlaylistItem, pk=item_pk, playlist=playlist)
     item.delete()
     return redirect("playlist_detail", pk=playlist.pk)
+
+
+@login_required
+def watch_history(request):
+    entries = request.user.watch_history.select_related("video", "video__author")
+    return render(request, "videos/watch_history.html", {"entries": entries})
+
+
+@login_required
+@require_POST
+def watch_history_remove(request, pk):
+    entry = get_object_or_404(WatchHistory, pk=pk, user=request.user)
+    entry.delete()
+    return redirect("watch_history")
+
+
+@login_required
+@require_POST
+def watch_history_clear(request):
+    request.user.watch_history.all().delete()
+    return redirect("watch_history")

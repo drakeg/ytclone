@@ -68,6 +68,50 @@ python manage.py migrate
 python manage.py runserver
 ```
 
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead.
+
+## Run the full test suite locally
+
+The Django checks below use the development settings from `.env`. Complete the setup steps for the environment you choose before running them.
+
+### With Docker
+
+Build the image if needed, then run the same configuration, migration-drift, and unit-test checks used by CI:
+
+```bash
+docker compose build web
+docker compose run --rm web python manage.py check
+docker compose run --rm web python manage.py makemigrations --check --dry-run
+docker compose run --rm web python manage.py test
+```
+
+These one-off containers do not require the development server to be running. If it is already running, the equivalent `docker compose exec web ...` commands may be used.
+
+### Without Docker
+
+Activate the virtual environment and install dependencies as described above, then run:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+A successful migration-drift check prints `No changes detected`. If it reports model changes, create and review the required migration before closing the sprint.
+
+### Terraform checks
+
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.13.5 matches CI.
+
+```bash
+cd terraform/environments/dev
+terraform fmt -check -recursive ../..
+terraform init -backend=false
+terraform validate
+```
+
+These commands validate formatting and configuration without creating AWS resources. `terraform init` downloads the required providers; AWS credentials are not needed for formatting or validation.
+
 ## Media storage
 
 Uploaded media uses the local filesystem by default and requires no AWS credentials.
@@ -88,7 +132,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Documentation
 
-- `docs/roadmap.md` — completed work, current sprint status, and next candidates
+- `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
 - `docs/search.md` — Search and Discovery behavior and architecture
 - `docs/security.md` — security guarantees and practices
 - `docs/aws.md` — AWS media configuration

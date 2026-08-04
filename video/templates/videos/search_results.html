@@ -1,16 +1,89 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2>Search Results</h2>
-    {% if videos %}
-        <ul>
-            {% for video in videos %}
-                <li>
-                    <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
-                </li>
-            {% endfor %}
-        </ul>
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Search</h1>
+            {% if query %}<p class="text-muted mb-0">Results for “{{ query }}”</p>{% endif %}
+        </div>
+        {% if query %}
+        <form method="get" action="{% url 'search' %}" class="d-flex align-items-end gap-2">
+            <input type="hidden" name="query" value="{{ query }}">
+            <div>
+                <label for="search-sort" class="form-label mb-1">Sort videos</label>
+                <select id="search-sort" name="sort" class="form-select" onchange="this.form.submit()">
+                    {% for value, label in sort_options.items %}
+                    <option value="{{ value }}" {% if selected_sort == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if not query %}
+        <div class="alert alert-secondary">Enter a title, creator, channel, category, or playlist name.</div>
     {% else %}
-        <p>No results found for "{{ query }}".</p>
+        <section class="mb-5">
+            <h2 class="h4">Channels</h2>
+            <div class="row g-3">
+                {% for channel in channels %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h5"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h3>
+                            <p class="mb-2">{{ channel.description|truncatewords:24 }}</p>
+                            <small class="text-muted">{{ channel.subscriber_count }} subscriber{{ channel.subscriber_count|pluralize }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No matching channels.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="mb-5">
+            <h2 class="h4">Playlists</h2>
+            <div class="row g-3">
+                {% for playlist in playlists %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h3 class="h5"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3>
+                            <p class="mb-2">{{ playlist.description|truncatewords:24 }}</p>
+                            <small class="text-muted">By {{ playlist.owner.username }} · {{ playlist.video_count }} video{{ playlist.video_count|pluralize }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No matching playlists.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section>
+            <h2 class="h4">Videos</h2>
+            <div class="row g-3">
+                {% for video in videos %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100">
+                        {% if video.thumbnail %}
+                        <a href="{% url 'video_detail' video.pk %}"><img src="{{ video.thumbnail.url }}" class="card-img-top" alt="Thumbnail for {{ video.title }}"></a>
+                        {% endif %}
+                        <div class="card-body">
+                            <h3 class="h5"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3>
+                            <p class="mb-2">{{ video.description|truncatewords:24 }}</p>
+                            <small class="text-muted">{{ video.author.username }} · {{ video.category.name }} · {{ video.views }} view{{ video.views|pluralize }} · {{ video.like_count }} like{{ video.like_count|pluralize }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted">No matching videos.</p>
+                {% endfor %}
+            </div>
+        </section>
     {% endif %}
+</div>
 {% endblock %}

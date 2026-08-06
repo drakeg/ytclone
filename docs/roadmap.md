@@ -44,6 +44,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Playlists with public, unlisted, and private visibility
 - Private watch history with removal and clear-all controls
 - Grouped Search and Discovery across videos, channels, and visible playlists
+- Homepage Discovery with newest, most viewed, most liked, recently watched, and public playlist sections
 
 ## Completed sprint: Search and Discovery
 
@@ -69,7 +70,7 @@ Deferred:
 - Semantic or embedding search
 - Duration, resolution, and upload-date filters
 
-## Current sprint: Homepage Discovery
+## Completed sprint: Homepage Discovery
 
 Goal: replace the homepage's chronological list with bounded discovery sections built from the search, reaction, playlist, and history foundations.
 
@@ -79,11 +80,31 @@ Goal: replace the homepage's chronological list with bounded discovery sections 
 - Recently watched videos for authenticated users
 - Recently updated public playlists
 
-Acceptance criteria, architecture, test coverage, and exclusions are documented in `docs/discovery.md` before implementation begins.
+Delivered:
+
+- Bounded sections for newest, most viewed, and most liked videos
+- Private, per-user recently watched videos for authenticated users
+- Recently updated public playlists with video counts
+- Privacy enforcement that excludes private and unlisted playlists
+- Clear empty states and an anonymous homepage without history content
+- Discovery query logic isolated in `video/services/discovery.py`
+- Regression tests for ordering, limits, privacy, history isolation, anonymous behavior, and empty data
+
+Deferred:
+
+- Personalized recommendations beyond watch history
+- Playback-position tracking and Continue Watching
+- Trending time windows and ranking decay
+- Featured-channel curation
+- Infinite scrolling and homepage pagination
+- Background workers, caches, or machine-learning recommendations
+
+## Next sprint candidate
+
+Continue Watching and playback-position tracking, including resumable progress on the homepage and video detail page.
 
 ## Later candidates
 
-- Continue Watching and playback-position tracking
 - Creator analytics
 - Notifications
 - Low-cost AWS application hosting and deployment

@@ -69,15 +69,17 @@ Deferred:
 - Semantic or embedding search
 - Duration, resolution, and upload-date filters
 
-## Next sprint candidate
+## Current sprint: Homepage Discovery
 
-Homepage discovery sections using the search and history foundations:
+Goal: replace the homepage's chronological list with bounded discovery sections built from the search, reaction, playlist, and history foundations.
 
 - Newest videos
 - Most viewed videos
 - Most liked videos
-- Recently watched for authenticated users
-- Public playlists
+- Recently watched videos for authenticated users
+- Recently updated public playlists
+
+Acceptance criteria, architecture, test coverage, and exclusions are documented in `docs/discovery.md` before implementation begins.
 
 ## Later candidates
 

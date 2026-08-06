@@ -1,6 +1,6 @@
 body {
     font-family: Roboto, Arial, sans-serif;
-    font-size: 14;
+    font-size: 14px;
 }
 
 .video-list {
@@ -9,5 +9,26 @@ body {
 }
 
 .video {
-    width: 25%; /* 4 columns */
+    min-width: 0;
+}
+
+.thumbnail img {
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    width: 100%;
+}
+
+.video_title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.discovery-section {
+    margin-bottom: 2.5rem;
+}
+
+.discovery-section h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
 }

@@ -1,6 +1,5 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator
 from django.db.models import F, Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -17,6 +16,7 @@ from .models import (
     Video,
     WatchHistory,
 )
+from .services.discovery import get_discovery_sections
 from .services.search import VIDEO_SORT_OPTIONS, search_content
 
 
@@ -24,11 +24,8 @@ VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
 
 
 def video_list(request):
-    videos_list = Video.objects.all()
-    paginator = Paginator(videos_list, 10)
-    page = request.GET.get("page")
-    videos = paginator.get_page(page)
-    return render(request, "videos/video_list.html", {"videos": videos})
+    sections = get_discovery_sections(request.user)
+    return render(request, "videos/video_list.html", {"sections": sections})
 
 
 def video_detail(request, pk):

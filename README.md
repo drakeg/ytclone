@@ -138,6 +138,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/creator-analytics.md` — creator metrics, privacy, architecture, and tests
 - `docs/continue-watching.md` — playback progress, resume behavior, privacy, and tests
 - `docs/discovery.md` — Homepage Discovery goals, behavior, architecture, and tests
 - `docs/search.md` — Search and Discovery behavior and architecture

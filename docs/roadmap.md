@@ -123,12 +123,13 @@ Deferred:
 - Recommendation ranking based on completion
 - Background workers, caches, and external event pipelines
 
-## Next sprint candidate
+## Current sprint: Creator Analytics
 
-Creator analytics using existing upload, view, reaction, and subscriber data, with privacy restricted to the channel owner.
+Add a private creator dashboard for lifetime upload, view, reaction, and unique subscriber metrics using existing application data.
+
+Acceptance criteria, architecture, privacy boundaries, local Docker and non-Docker commands, test coverage, and exclusions are documented in `docs/creator-analytics.md` before implementation begins.
 
 ## Later candidates
 
-- Creator analytics
 - Notifications
 - Low-cost AWS application hosting and deployment

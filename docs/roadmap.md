@@ -99,9 +99,11 @@ Deferred:
 - Infinite scrolling and homepage pagination
 - Background workers, caches, or machine-learning recommendations
 
-## Next sprint candidate
+## Current sprint: Continue Watching
 
-Continue Watching and playback-position tracking, including resumable progress on the homepage and video detail page.
+Add private playback-position tracking, resumable video playback, and an unfinished-video homepage section. Also add a one-command Docker Compose test runner for the complete Django verification suite.
+
+Acceptance criteria, architecture, local Docker and non-Docker commands, test coverage, and exclusions are documented in `docs/continue-watching.md` before implementation begins.
 
 ## Later candidates
 

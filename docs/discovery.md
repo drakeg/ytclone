@@ -8,13 +8,14 @@ The homepage replaces the previous chronological video list with useful, privacy
 
 The homepage will show bounded sections for:
 
+- Continue Watching for authenticated users with unfinished playback
 - Newest videos
 - Most viewed videos
 - Most liked videos
 - Recently watched videos for authenticated users
 - Recently updated public playlists
 
-Anonymous visitors will not receive a recently watched section. Empty sections will render a clear message rather than broken or misleading content.
+Anonymous visitors will not receive Continue Watching or recently watched sections. Empty sections will render a clear message rather than broken or misleading content.
 
 ## Behavior and privacy
 
@@ -22,6 +23,7 @@ Anonymous visitors will not receive a recently watched section. Empty sections w
 - Most viewed videos are ordered by view count.
 - Most liked videos are ordered by an annotated like count.
 - Recently watched videos are unique, ordered by the current user's most recent watch time, and never expose another user's history.
+- Continue Watching uses the current user's private progress, is ordered by most recent activity, and excludes completed or near-complete videos.
 - Only public playlists appear, regardless of authentication.
 - Each section is limited to four results so the homepage remains bounded.
 - Query construction lives in a discovery service rather than the view.

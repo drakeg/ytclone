@@ -4,7 +4,15 @@
 <div class="video-detail">
     <h2>{{ video.title }}</h2>
     <p>{{ video.description }}</p>
-    <video src="{{ video.video_file.url }}" controls></video>
+    <video
+        id="video-player"
+        src="{{ video.video_file.url }}"
+        controls
+        {% if user.is_authenticated %}
+            data-progress-url="{% url 'playback_progress' video.pk %}"
+            data-resume-position="{{ history_entry.playback_position_seconds }}"
+        {% endif %}
+    ></video>
     <p>Views: {{ video.views }}</p>
     <p>Author: {{ video.author }}</p>
     <p>Category: {{ video.category }}</p>
@@ -58,5 +66,60 @@
 </div>
 {% else %}
 <p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to comment, react, or save videos.</a></p>
+{% endif %}
+
+{% if user.is_authenticated %}
+<script>
+    (() => {
+        const player = document.getElementById("video-player");
+        const progressUrl = player.dataset.progressUrl;
+        const resumePosition = Number(player.dataset.resumePosition || 0);
+        let lastSavedSecond = -1;
+
+        const csrfToken = document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("csrftoken="))
+            ?.split("=")[1];
+
+        player.addEventListener("loadedmetadata", () => {
+            if (resumePosition > 0 && resumePosition < player.duration - 5) {
+                player.currentTime = resumePosition;
+            }
+        }, { once: true });
+
+        const saveProgress = () => {
+            if (!Number.isFinite(player.duration) || player.duration <= 0) {
+                return;
+            }
+            const currentSecond = Math.round(player.currentTime);
+            if (currentSecond === lastSavedSecond) {
+                return;
+            }
+            lastSavedSecond = currentSecond;
+            fetch(progressUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+                body: JSON.stringify({
+                    position_seconds: player.currentTime,
+                    duration_seconds: player.duration,
+                }),
+                credentials: "same-origin",
+                keepalive: true,
+            });
+        };
+
+        player.addEventListener("timeupdate", () => {
+            if (Math.round(player.currentTime) % 10 === 0) {
+                saveProgress();
+            }
+        });
+        player.addEventListener("pause", saveProgress);
+        player.addEventListener("ended", saveProgress);
+        window.addEventListener("pagehide", saveProgress);
+    })();
+</script>
 {% endif %}
 {% endblock %}

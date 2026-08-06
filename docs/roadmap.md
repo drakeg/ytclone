@@ -45,6 +45,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Private watch history with removal and clear-all controls
 - Grouped Search and Discovery across videos, channels, and visible playlists
 - Homepage Discovery with newest, most viewed, most liked, recently watched, and public playlist sections
+- Continue Watching with private playback progress, automatic resume, and containerized test execution
 
 ## Completed sprint: Search and Discovery
 
@@ -99,9 +100,32 @@ Deferred:
 - Infinite scrolling and homepage pagination
 - Background workers, caches, or machine-learning recommendations
 
+## Completed sprint: Continue Watching
+
+Add private playback-position tracking, resumable video playback, and an unfinished-video homepage section. Also add a one-command Docker Compose test runner for the complete Django verification suite.
+
+Delivered:
+
+- Authenticated playback progress saved to the existing private watch-history record
+- Automatic resume on the video detail page
+- Continue Watching homepage section ordered by recent activity
+- Completed and near-complete videos excluded from Continue Watching
+- Safe endpoint validation, clamping, CSRF protection, and per-user isolation
+- Migration `0005_watchhistory_playback_progress` with backward-compatible defaults
+- One-command containerized verification through `docker compose run --rm test`
+- Regression tests for authorization, validation, isolation, resume behavior, filtering, ordering, and homepage visibility
+
+Deferred:
+
+- Real-time synchronization between simultaneous players
+- Chapters and bookmarks
+- Playback analytics and creator reporting
+- Recommendation ranking based on completion
+- Background workers, caches, and external event pipelines
+
 ## Next sprint candidate
 
-Continue Watching and playback-position tracking, including resumable progress on the homepage and video detail page.
+Creator analytics using existing upload, view, reaction, and subscriber data, with privacy restricted to the channel owner.
 
 ## Later candidates
 

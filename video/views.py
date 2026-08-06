@@ -1,7 +1,10 @@
+import json
+import math
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import F, Max
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -32,9 +35,10 @@ def video_detail(request, pk):
     video = get_object_or_404(Video, pk=pk)
     comments = Comment.objects.filter(video=video)
     playlists = []
+    history_entry = None
     if request.user.is_authenticated:
         playlists = request.user.playlists.all()
-        WatchHistory.objects.update_or_create(
+        history_entry, unused = WatchHistory.objects.update_or_create(
             user=request.user,
             video=video,
             defaults={"watched_at": timezone.now()},
@@ -57,7 +61,40 @@ def video_detail(request, pk):
             "form": CommentForm(),
             "comments": comments,
             "playlists": playlists,
+            "history_entry": history_entry,
         },
+    )
+
+
+@login_required
+@require_POST
+def playback_progress(request, pk):
+    video = get_object_or_404(Video, pk=pk)
+    try:
+        payload = json.loads(request.body)
+        position = float(payload["position_seconds"])
+        duration = float(payload["duration_seconds"])
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return JsonResponse({"error": "Invalid playback progress."}, status=400)
+
+    if not math.isfinite(position) or not math.isfinite(duration) or duration <= 0:
+        return JsonResponse({"error": "Invalid playback progress."}, status=400)
+
+    duration_seconds = max(1, round(duration))
+    position_seconds = min(max(0, round(position)), duration_seconds)
+    entry, unused = WatchHistory.objects.update_or_create(
+        user=request.user,
+        video=video,
+        defaults={
+            "playback_position_seconds": position_seconds,
+            "duration_seconds": duration_seconds,
+        },
+    )
+    return JsonResponse(
+        {
+            "position_seconds": entry.playback_position_seconds,
+            "duration_seconds": entry.duration_seconds,
+        }
     )
 
 

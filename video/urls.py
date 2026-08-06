@@ -5,6 +5,7 @@ from . import views
 urlpatterns = [
     path("", views.video_list, name="video_list"),
     path("videos/<int:pk>/", views.video_detail, name="video_detail"),
+    path("videos/<int:pk>/progress/", views.playback_progress, name="playback_progress"),
     path("videos/<int:pk>/comments/", views.add_comment, name="add_comment"),
     path("videos/<int:pk>/like/", views.like_video, name="like_video"),
     path("videos/<int:pk>/dislike/", views.dislike_video, name="dislike_video"),

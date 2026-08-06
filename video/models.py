@@ -120,6 +120,8 @@ class WatchHistory(models.Model):
         Video, on_delete=models.CASCADE, related_name="history_entries"
     )
     watched_at = models.DateTimeField(auto_now=True)
+    playback_position_seconds = models.PositiveIntegerField(default=0)
+    duration_seconds = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-watched_at"]

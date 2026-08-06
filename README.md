@@ -13,6 +13,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Grouped search across videos, channels, and visible playlists
 - Video search sorting by relevance, date, views, and likes
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
+- Private playback progress with Continue Watching and automatic resume
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -77,16 +78,19 @@ The Django checks below use the development settings from `.env`. Complete the s
 
 ### With Docker
 
-Build the image if needed, then run the same configuration, migration-drift, and unit-test checks used by CI:
+After creating `.env`, run the same configuration, migration-drift, and unit-test checks used by CI with one command:
 
 ```bash
-docker compose build web
-docker compose run --rm web python manage.py check
-docker compose run --rm web python manage.py makemigrations --check --dry-run
-docker compose run --rm web python manage.py test
+docker compose run --rm test
 ```
 
-These one-off containers do not require the development server to be running. If it is already running, the equivalent `docker compose exec web ...` commands may be used.
+Compose builds the image automatically when needed. The one-off test container does not start the development server, expose a port, use the persistent development database, or require AWS credentials. Add `--build` after `run` to force an image rebuild after changing dependencies or the Dockerfile:
+
+```bash
+docker compose run --build --rm test
+```
+
+The test service runs `docker/test.sh`; keep that script aligned with the Django CI workflow whenever verification steps change.
 
 ### Without Docker
 
@@ -134,6 +138,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/continue-watching.md` — playback progress, resume behavior, privacy, and tests
 - `docs/discovery.md` — Homepage Discovery goals, behavior, architecture, and tests
 - `docs/search.md` — Search and Discovery behavior and architecture
 - `docs/security.md` — security guarantees and practices
@@ -142,4 +147,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is Continue Watching with playback-position tracking, building on the private watch history and Homepage Discovery foundations. Background processing and higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is creator analytics built from existing view, reaction, subscription, and upload data. Background processing and higher-cost AWS services will be introduced only when usage justifies them.

@@ -12,6 +12,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private watch history with remove and clear controls
 - Grouped search across videos, channels, and visible playlists
 - Video search sorting by relevance, date, views, and likes
+- Homepage discovery for new, viewed, liked, recently watched, and public playlist content
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -133,6 +134,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/discovery.md` — Homepage Discovery goals, behavior, architecture, and tests
 - `docs/search.md` — Search and Discovery behavior and architecture
 - `docs/security.md` — security guarantees and practices
 - `docs/aws.md` — AWS media configuration
@@ -140,4 +142,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is a homepage discovery experience built from newest, popular, liked, recently watched, and public playlist sections. Background processing and higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is Continue Watching with playback-position tracking, building on the private watch history and Homepage Discovery foundations. Background processing and higher-cost AWS services will be introduced only when usage justifies them.

@@ -14,6 +14,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Video search sorting by relevance, date, views, and likes
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
 - Private playback progress with Continue Watching and automatic resume
+- Private creator analytics for uploads, views, reactions, and unique subscribers
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -148,4 +149,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is creator analytics built from existing view, reaction, subscription, and upload data. Background processing and higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is in-app notifications for creator and viewer activity, designed to start with the existing database before introducing background delivery infrastructure. Higher-cost AWS services will be introduced only when usage justifies them.

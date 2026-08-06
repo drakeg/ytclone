@@ -46,6 +46,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Grouped Search and Discovery across videos, channels, and visible playlists
 - Homepage Discovery with newest, most viewed, most liked, recently watched, and public playlist sections
 - Continue Watching with private playback progress, automatic resume, and containerized test execution
+- Private Creator Analytics for lifetime uploads, views, reactions, and unique subscribers
 
 ## Completed sprint: Search and Discovery
 
@@ -123,12 +124,33 @@ Deferred:
 - Recommendation ranking based on completion
 - Background workers, caches, and external event pipelines
 
+## Completed sprint: Creator Analytics
+
+Add a private creator dashboard for lifetime upload, view, reaction, and unique subscriber metrics using existing application data.
+
+Delivered:
+
+- Login-protected creator dashboard with no user-selectable analytics target
+- Lifetime upload, view, like, dislike, and unique subscriber totals
+- Subscriber deduplication across every channel owned by the creator
+- Deterministically ranked video performance table
+- Useful zero metrics and empty state for new creators
+- Analytics aggregation isolated in `video/services/analytics.py`
+- Regression tests for authentication, isolation, totals, deduplication, ordering, rendering, and navigation
+
+Deferred:
+
+- Historical trends, date comparisons, and charts
+- Watch time, retention, traffic sources, and geography
+- Per-channel video analytics until videos explicitly belong to channels
+- CSV export and scheduled reports
+- Background aggregation and third-party analytics services
+
 ## Next sprint candidate
 
-Creator analytics using existing upload, view, reaction, and subscriber data, with privacy restricted to the channel owner.
+In-app notifications for viewer and creator activity, beginning with database-backed unread state and privacy-safe delivery.
 
 ## Later candidates
 
-- Creator analytics
-- Notifications
+- Explicit channel ownership for videos and per-channel analytics
 - Low-cost AWS application hosting and deployment

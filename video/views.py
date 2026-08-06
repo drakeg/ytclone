@@ -19,6 +19,7 @@ from .models import (
     Video,
     WatchHistory,
 )
+from .services.analytics import get_creator_analytics
 from .services.discovery import get_discovery_sections
 from .services.search import VIDEO_SORT_OPTIONS, search_content
 
@@ -29,6 +30,16 @@ VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
 def video_list(request):
     sections = get_discovery_sections(request.user)
     return render(request, "videos/video_list.html", {"sections": sections})
+
+
+@login_required
+def creator_analytics(request):
+    analytics = get_creator_analytics(request.user)
+    return render(
+        request,
+        "videos/creator_analytics.html",
+        {"analytics": analytics},
+    )
 
 
 def video_detail(request, pk):

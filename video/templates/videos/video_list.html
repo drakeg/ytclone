@@ -6,6 +6,30 @@
         <p class="text-body-secondary">Explore new and popular videos from the community.</p>
     </header>
 
+    {% if user.is_authenticated %}
+        <section class="discovery-section" aria-labelledby="continue-heading">
+            <h2 id="continue-heading">Continue watching</h2>
+            <div class="row g-3">
+                {% for video in sections.continue_watching_videos %}
+                    <div class="col-12 col-sm-6 col-lg-3 video">
+                        <div class="thumbnail">
+                            <a href="{% url 'video_detail' video.pk %}">
+                                <img class="img-fluid" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}">
+                            </a>
+                        </div>
+                        <div class="progress mt-2" role="progressbar" aria-label="Playback progress for {{ video.title }}" aria-valuenow="{{ video.resume_position_seconds }}" aria-valuemin="0" aria-valuemax="{{ video.playback_duration_seconds }}">
+                            <div class="progress-bar" style="width: {% widthratio video.resume_position_seconds video.playback_duration_seconds 100 %}%"></div>
+                        </div>
+                        <div class="video_title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></div>
+                        <div class="video_author">{{ video.author }}</div>
+                    </div>
+                {% empty %}
+                    <p class="text-body-secondary">No unfinished videos. Start watching something new.</p>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
     <section class="discovery-section" aria-labelledby="newest-heading">
         <h2 id="newest-heading">Newest videos</h2>
         {% include 'videos/_video_cards.html' with videos=sections.newest_videos %}

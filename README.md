@@ -16,6 +16,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private playback progress with Continue Watching and automatic resume
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private in-app notifications for comments, reactions, and subscriptions
+- Explicit video-to-channel publishing with subscriber upload notifications
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -152,4 +153,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is explicit channel ownership for videos, enabling per-channel publishing, analytics, and new-upload notifications. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is per-channel analytics using the new explicit video ownership relationship. Higher-cost AWS services will be introduced only when usage justifies them.

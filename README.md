@@ -15,6 +15,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
 - Private playback progress with Continue Watching and automatic resume
 - Private creator analytics for uploads, views, reactions, and unique subscribers
+- Private in-app notifications for comments, reactions, and subscriptions
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -139,6 +140,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/notifications.md` — notification events, privacy, unread state, and tests
 - `docs/creator-analytics.md` — creator metrics, privacy, architecture, and tests
 - `docs/continue-watching.md` — playback progress, resume behavior, privacy, and tests
 - `docs/discovery.md` — Homepage Discovery goals, behavior, architecture, and tests
@@ -149,4 +151,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is in-app notifications for creator and viewer activity, designed to start with the existing database before introducing background delivery infrastructure. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is explicit channel ownership for videos, enabling per-channel publishing, analytics, and new-upload notifications. Higher-cost AWS services will be introduced only when usage justifies them.

@@ -47,6 +47,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Homepage Discovery with newest, most viewed, most liked, recently watched, and public playlist sections
 - Continue Watching with private playback progress, automatic resume, and containerized test execution
 - Private Creator Analytics for lifetime uploads, views, reactions, and unique subscribers
+- Private in-app notifications for comments, reactions, subscriptions, and unread state
 
 ## Completed sprint: Search and Discovery
 
@@ -146,11 +147,32 @@ Deferred:
 - CSV export and scheduled reports
 - Background aggregation and third-party analytics services
 
+## Completed sprint: In-App Notifications
+
+Add private, database-backed notifications for comments, reactions, and subscriptions, with an unread inbox and no external delivery infrastructure.
+
+Delivered:
+
+- Database-backed notifications for new comments, likes, dislikes, and subscriptions
+- Self-actions, removed reactions, and unsubscribes kept silent
+- Private newest-first inbox with empty state and direct target links
+- Per-notification and mark-all read actions restricted to POST
+- Cross-user read protection and recipient-scoped unread navigation badge
+- Notification creation isolated in `video/services/notifications.py`
+- Migration `0006_notification` and regression tests for events, privacy, unread state, and mutations
+
+Deferred:
+
+- Email, browser push, SMS, and mobile push
+- Real-time sockets and polling
+- New-upload notifications until videos explicitly belong to channels
+- Notification preferences and digest schedules
+- Background workers and external message brokers
+
 ## Next sprint candidate
 
-In-app notifications for viewer and creator activity, beginning with database-backed unread state and privacy-safe delivery.
+Explicit channel ownership for videos, enabling channel-specific publishing, analytics, and subscriber notifications for new uploads.
 
 ## Later candidates
 
-- Explicit channel ownership for videos and per-channel analytics
 - Low-cost AWS application hosting and deployment

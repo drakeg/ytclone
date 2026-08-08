@@ -1,10 +1,10 @@
 # In-App Notifications
 
-## Sprint goal
+## Delivered behavior
 
-Add private, database-backed notifications so creators can see new comments, reactions, and subscriptions without external delivery infrastructure.
+Creators now receive private, database-backed notifications for new comments, reactions, and subscriptions without external delivery infrastructure.
 
-## Planned behavior
+## Events and unread state
 
 - Creators receive notifications when another user comments on or reacts to their video.
 - Channel owners receive notifications when another user subscribes.
@@ -13,7 +13,7 @@ Add private, database-backed notifications so creators can see new comments, rea
 - Users can mark one notification or all notifications as read.
 - The navigation displays the current user's unread count.
 
-## Acceptance criteria
+## Delivered safeguards
 
 - Every query and mutation is scoped to `request.user`.
 - Anonymous users are redirected to login.
@@ -24,11 +24,13 @@ Add private, database-backed notifications so creators can see new comments, rea
 
 ## Architecture
 
-`Notification` will store recipient, optional actor, event kind, optional video or channel target, creation time, and read time. `video/services/notifications.py` will create event records and keep self-notification rules out of views. A context processor will provide only the authenticated user's unread count to navigation.
+`Notification` stores recipient, optional actor, event kind, optional video or channel target, creation time, and read time. `video/services/notifications.py` creates event records and keeps self-notification rules out of views. A context processor provides only the authenticated user's unread count to navigation.
 
 ## Test plan
 
-Focused tests will cover event creation, self-event suppression, unsubscribe/removal behavior, inbox privacy and ordering, unread counts, POST-only mutations, cross-user protection, and empty states.
+`video/test_notifications.py` covers event creation, self-event suppression, unsubscribe/removal behavior, inbox privacy, unread counts, POST-only mutations, cross-user protection, mark-all behavior, and empty states.
+
+The sprint-close non-Docker run completed successfully with 80 tests. Django system checks passed, the migration-drift check reported no changes, the Docker test script passed syntax validation, and Python modules passed bytecode compilation. Docker execution remained unavailable because Docker is not installed on the delivery host.
 
 Without Docker:
 
@@ -45,6 +47,10 @@ docker compose run --rm test
 ```
 
 Terraform checks are not applicable unless Terraform files or workflows change.
+
+## Migration and configuration
+
+Migration `0006_notification` creates the notification table and its user, video, and channel relationships. No dependencies, environment variables, AWS resources, background workers, or external services are added.
 
 ## Out of scope
 

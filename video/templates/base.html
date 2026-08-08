@@ -33,6 +33,11 @@
                         <a class="nav-link" href="{% url 'creator_analytics' %}">Creator Analytics</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link" href="{% url 'notification_list' %}">
+                            Notifications{% if unread_notification_count %} <span class="badge text-bg-danger">{{ unread_notification_count }}</span>{% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="/accounts/logout">Logout</a>
                     </li>
                   {% else %}

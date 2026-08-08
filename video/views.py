@@ -14,6 +14,7 @@ from .models import (
     Category,
     Channel,
     Comment,
+    Notification,
     Playlist,
     PlaylistItem,
     Video,
@@ -21,6 +22,7 @@ from .models import (
 )
 from .services.analytics import get_creator_analytics
 from .services.discovery import get_discovery_sections
+from .services.notifications import notify_comment, notify_reaction, notify_subscription
 from .services.search import VIDEO_SORT_OPTIONS, search_content
 
 
@@ -40,6 +42,37 @@ def creator_analytics(request):
         "videos/creator_analytics.html",
         {"analytics": analytics},
     )
+
+
+@login_required
+def notification_list(request):
+    notifications = request.user.notifications.select_related(
+        "actor", "video", "channel"
+    )
+    return render(
+        request,
+        "videos/notification_list.html",
+        {"notifications": notifications},
+    )
+
+
+@login_required
+@require_POST
+def notification_mark_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    if notification.read_at is None:
+        notification.read_at = timezone.now()
+        notification.save(update_fields=["read_at"])
+    return redirect("notification_list")
+
+
+@login_required
+@require_POST
+def notification_mark_all_read(request):
+    request.user.notifications.filter(read_at__isnull=True).update(
+        read_at=timezone.now()
+    )
+    return redirect("notification_list")
 
 
 def video_detail(request, pk):
@@ -119,6 +152,7 @@ def add_comment(request, pk):
         comment.video = video
         comment.author = request.user
         comment.save()
+        notify_comment(comment)
     return redirect("video_detail", pk=video.pk)
 
 
@@ -131,6 +165,11 @@ def like_video(request, pk):
     else:
         video.dislikes.remove(request.user)
         video.likes.add(request.user)
+        notify_reaction(
+            video=video,
+            actor=request.user,
+            kind=Notification.Kind.LIKE,
+        )
     return redirect("video_detail", pk=video.pk)
 
 
@@ -143,6 +182,11 @@ def dislike_video(request, pk):
     else:
         video.likes.remove(request.user)
         video.dislikes.add(request.user)
+        notify_reaction(
+            video=video,
+            actor=request.user,
+            kind=Notification.Kind.DISLIKE,
+        )
     return redirect("video_detail", pk=video.pk)
 
 
@@ -169,6 +213,7 @@ def subscribe(request, pk):
         channel.subscribers.remove(request.user)
     else:
         channel.subscribers.add(request.user)
+        notify_subscription(channel=channel, actor=request.user)
     return redirect("channel_detail", pk=channel.pk)
 
 

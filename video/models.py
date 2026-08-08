@@ -133,3 +133,34 @@ class WatchHistory(models.Model):
 
     def __str__(self):
         return f"{self.user}: {self.video}"
+
+
+class Notification(models.Model):
+    class Kind(models.TextChoices):
+        COMMENT = "comment", "Comment"
+        LIKE = "like", "Like"
+        DISLIKE = "dislike", "Dislike"
+        SUBSCRIPTION = "subscription", "Subscription"
+
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notifications"
+    )
+    actor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="sent_notifications"
+    )
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    video = models.ForeignKey(
+        Video, on_delete=models.CASCADE, null=True, blank=True
+    )
+    channel = models.ForeignKey(
+        Channel, on_delete=models.CASCADE, null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+
+    @property
+    def is_read(self):
+        return self.read_at is not None

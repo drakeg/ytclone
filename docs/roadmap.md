@@ -146,9 +146,11 @@ Deferred:
 - CSV export and scheduled reports
 - Background aggregation and third-party analytics services
 
-## Next sprint candidate
+## Current sprint: In-App Notifications
 
-In-app notifications for viewer and creator activity, beginning with database-backed unread state and privacy-safe delivery.
+Add private, database-backed notifications for comments, reactions, and subscriptions, with an unread inbox and no external delivery infrastructure.
+
+Acceptance criteria, architecture, privacy rules, test commands, and exclusions are documented in `docs/notifications.md` before implementation begins.
 
 ## Later candidates
 

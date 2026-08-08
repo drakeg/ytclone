@@ -38,3 +38,20 @@ def notify_subscription(*, channel, actor):
         kind=Notification.Kind.SUBSCRIPTION,
         channel=channel,
     )
+
+
+def notify_new_upload(video):
+    if video.channel_id is None:
+        return 0
+    notifications = [
+        Notification(
+            recipient=subscriber,
+            actor=video.author,
+            kind=Notification.Kind.UPLOAD,
+            video=video,
+            channel=video.channel,
+        )
+        for subscriber in video.channel.subscribers.exclude(pk=video.author_id)
+    ]
+    Notification.objects.bulk_create(notifications)
+    return len(notifications)

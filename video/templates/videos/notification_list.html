@@ -24,7 +24,8 @@
                             {% if notification.kind == "comment" %}commented on
                             {% elif notification.kind == "like" %}liked
                             {% elif notification.kind == "dislike" %}disliked
-                            {% else %}subscribed to{% endif %}
+                            {% elif notification.kind == "subscription" %}subscribed to
+                            {% else %}uploaded a new video to{% endif %}
                             {% if notification.video %}<a href="{% url 'video_detail' notification.video.pk %}">{{ notification.video.title }}</a>{% endif %}
                             {% if notification.channel %}<a href="{% url 'channel_detail' notification.channel.pk %}">{{ notification.channel.name }}</a>{% endif %}
                         </p>

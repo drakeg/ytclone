@@ -48,6 +48,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Continue Watching with private playback progress, automatic resume, and containerized test execution
 - Private Creator Analytics for lifetime uploads, views, reactions, and unique subscribers
 - Private in-app notifications for comments, reactions, subscriptions, and unread state
+- Explicit video-to-channel publishing and subscriber new-upload notifications
 
 ## Completed sprint: Search and Discovery
 
@@ -169,9 +170,29 @@ Deferred:
 - Notification preferences and digest schedules
 - Background workers and external message brokers
 
+## Completed sprint: Video Channel Ownership
+
+Delivered:
+
+- Nullable explicit channel relationship for backward compatibility
+- Safe data migration to each author's oldest existing channel
+- Upload form restricted to authenticated creator-owned channels
+- Forged cross-owner channel submissions rejected
+- Channel pages isolated to explicitly assigned videos
+- Private new-upload notifications for channel subscribers
+- Regression coverage for ownership, migration compatibility, isolation, and notifications
+
+Deferred:
+
+- Moving videos between channels after upload
+- Multiple channels per video
+- Channel roles and team management
+- Historical per-channel charts
+- External notification delivery
+
 ## Next sprint candidate
 
-Explicit channel ownership for videos, enabling channel-specific publishing, analytics, and subscriber notifications for new uploads.
+Per-channel creator analytics using explicit channel ownership, with owner-only access and channel-specific totals.
 
 ## Later candidates
 

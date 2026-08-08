@@ -22,7 +22,7 @@ from .models import (
 )
 from .services.analytics import get_creator_analytics
 from .services.discovery import get_discovery_sections
-from .services.notifications import notify_comment, notify_reaction, notify_subscription
+from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_subscription
 from .services.search import VIDEO_SORT_OPTIONS, search_content
 
 
@@ -197,7 +197,7 @@ def channel_list(request):
 
 def channel_detail(request, pk):
     channel = get_object_or_404(Channel, pk=pk)
-    videos = Video.objects.filter(author=channel.owner)
+    videos = channel.videos.select_related("author", "category")
     return render(
         request,
         "videos/channel_detail.html",
@@ -294,14 +294,15 @@ def edit_profile(request, username):
 @login_required
 def upload_video(request):
     if request.method == "POST":
-        form = VideoUploadForm(request.POST, request.FILES)
+        form = VideoUploadForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             video = form.save(commit=False)
             video.author = request.user
             video.save()
+            notify_new_upload(video)
             return redirect("video_detail", pk=video.pk)
     else:
-        form = VideoUploadForm()
+        form = VideoUploadForm(user=request.user)
     return render(request, "videos/upload_video.html", {"form": form})
 
 

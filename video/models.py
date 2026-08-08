@@ -21,6 +21,9 @@ class Video(models.Model):
     video_file = models.FileField(upload_to="videos/files")
     views = models.PositiveIntegerField(default=0)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
+    channel = models.ForeignKey(
+        "Channel", on_delete=models.SET_NULL, null=True, blank=True, related_name="videos"
+    )
     likes = models.ManyToManyField(User, related_name="likes", blank=True)
     dislikes = models.ManyToManyField(User, related_name="dislikes", blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -141,6 +144,7 @@ class Notification(models.Model):
         LIKE = "like", "Like"
         DISLIKE = "dislike", "Dislike"
         SUBSCRIPTION = "subscription", "Subscription"
+        UPLOAD = "upload", "New upload"
 
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notifications"

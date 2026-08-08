@@ -15,6 +15,7 @@
     ></video>
     <p>Views: {{ video.views }}</p>
     <p>Author: {{ video.author }}</p>
+    {% if video.channel %}<p>Channel: <a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></p>{% endif %}
     <p>Category: {{ video.category }}</p>
     <p>Publish Date: {{ video.pub_date }}</p>
 

@@ -6,7 +6,7 @@ from django.test import TestCase, override_settings
 from PIL import Image
 
 from .forms import VideoUploadForm
-from .models import Category
+from .models import Category, Channel
 
 
 class VideoUploadValidationTests(TestCase):
@@ -16,6 +16,12 @@ class VideoUploadValidationTests(TestCase):
             name="General",
             description="General videos",
             thumbnail="categories/thumbnails/general.jpg",
+        )
+        self.channel = Channel.objects.create(
+            name="Uploader channel",
+            description="Uploads",
+            thumbnail="channels/uploader.jpg",
+            owner=self.user,
         )
 
     def make_thumbnail(self, name="thumbnail.jpg", content_type="image/jpeg"):
@@ -31,10 +37,12 @@ class VideoUploadValidationTests(TestCase):
             "title": "Upload test",
             "description": "Testing upload validation",
             "category": self.category.pk,
+            "channel": self.channel.pk,
         }
 
     def test_supported_uploads_are_accepted(self):
         form = VideoUploadForm(
+            user=self.user,
             data=self.form_data(),
             files={
                 "thumbnail": self.make_thumbnail(),
@@ -46,6 +54,7 @@ class VideoUploadValidationTests(TestCase):
 
     def test_unsupported_video_extension_is_rejected(self):
         form = VideoUploadForm(
+            user=self.user,
             data=self.form_data(),
             files={
                 "thumbnail": self.make_thumbnail(),
@@ -58,6 +67,7 @@ class VideoUploadValidationTests(TestCase):
 
     def test_mismatched_video_content_type_is_rejected(self):
         form = VideoUploadForm(
+            user=self.user,
             data=self.form_data(),
             files={
                 "thumbnail": self.make_thumbnail(),
@@ -71,6 +81,7 @@ class VideoUploadValidationTests(TestCase):
     @override_settings(MAX_VIDEO_UPLOAD_SIZE=4, MAX_VIDEO_UPLOAD_MB=0)
     def test_oversized_video_is_rejected(self):
         form = VideoUploadForm(
+            user=self.user,
             data=self.form_data(),
             files={
                 "thumbnail": self.make_thumbnail(),
@@ -83,6 +94,7 @@ class VideoUploadValidationTests(TestCase):
 
     def test_unsupported_thumbnail_extension_is_rejected(self):
         form = VideoUploadForm(
+            user=self.user,
             data=self.form_data(),
             files={
                 "thumbnail": self.make_thumbnail(name="thumbnail.bmp", content_type="image/bmp"),

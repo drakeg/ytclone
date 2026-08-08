@@ -4,7 +4,7 @@ from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
 
-from .models import Comment, Playlist, Video
+from .models import Channel, Comment, Playlist, Video
 
 
 class CommentForm(forms.ModelForm):
@@ -41,7 +41,7 @@ class VideoUploadForm(forms.ModelForm):
 
     class Meta:
         model = Video
-        fields = ["title", "description", "thumbnail", "video_file", "category"]
+        fields = ["title", "description", "thumbnail", "video_file", "category", "channel"]
         widgets = {
             "thumbnail": forms.ClearableFileInput(
                 attrs={"accept": "image/jpeg,image/png,image/webp"}
@@ -50,6 +50,15 @@ class VideoUploadForm(forms.ModelForm):
                 attrs={"accept": "video/mp4,video/webm,video/quicktime"}
             ),
         }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["channel"].queryset = (
+            Channel.objects.filter(owner=user) if user else Channel.objects.none()
+        )
+        self.fields["channel"].required = True
+        if user and not self.fields["channel"].queryset.exists():
+            self.fields["channel"].help_text = "Create a channel before uploading a video."
 
     def clean_thumbnail(self):
         thumbnail = self.cleaned_data.get("thumbnail")

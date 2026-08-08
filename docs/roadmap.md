@@ -169,9 +169,9 @@ Deferred:
 - Notification preferences and digest schedules
 - Background workers and external message brokers
 
-## Next sprint candidate
+## Current sprint: Video Channel Ownership
 
-Explicit channel ownership for videos, enabling channel-specific publishing, analytics, and subscriber notifications for new uploads.
+Connect videos to creator-owned channels, backfill existing data safely, isolate channel pages, and notify subscribers about new uploads. The migration strategy, privacy rules, test commands, and exclusions are documented in `docs/video-channels.md` before implementation.
 
 ## Later candidates
 

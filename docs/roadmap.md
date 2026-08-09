@@ -190,9 +190,9 @@ Deferred:
 - Historical per-channel charts
 - External notification delivery
 
-## Next sprint candidate
+## Current sprint: Per-Channel Analytics
 
-Per-channel creator analytics using explicit channel ownership, with owner-only access and channel-specific totals.
+Add owner-only analytics scoped to one channel's explicitly assigned videos. Privacy, metrics, architecture, test commands, and exclusions are documented in `docs/channel-analytics.md` before implementation.
 
 ## Later candidates
 

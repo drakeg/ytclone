@@ -20,7 +20,7 @@ from .models import (
     Video,
     WatchHistory,
 )
-from .services.analytics import get_creator_analytics
+from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.discovery import get_discovery_sections
 from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_subscription
 from .services.search import VIDEO_SORT_OPTIONS, search_content
@@ -41,6 +41,17 @@ def creator_analytics(request):
         request,
         "videos/creator_analytics.html",
         {"analytics": analytics},
+    )
+
+
+@login_required
+def channel_analytics(request, pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    analytics = get_channel_analytics(channel)
+    return render(
+        request,
+        "videos/channel_analytics.html",
+        {"analytics": analytics, "channel": channel},
     )
 
 

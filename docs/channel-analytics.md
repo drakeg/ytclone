@@ -1,10 +1,10 @@
 # Per-Channel Analytics
 
-## Sprint goal
+## Delivered behavior
 
-Give channel owners a private analytics view scoped to one explicitly owned channel.
+Channel owners now have a private analytics view scoped to one explicitly owned channel.
 
-## Acceptance criteria
+## Delivered safeguards
 
 - Only the channel owner can access its analytics; other authenticated users receive 404 and anonymous users are redirected.
 - Totals include only videos assigned to that channel.
@@ -15,9 +15,11 @@ Give channel owners a private analytics view scoped to one explicitly owned chan
 
 ## Architecture and testing
 
-The existing analytics service will add a channel-scoped snapshot. The view resolves the channel using both its ID and `request.user`, preventing user-selectable cross-owner access. Focused tests cover authentication, authorization, isolation, totals, ordering, empty states, and owner links.
+The existing analytics service provides a channel-scoped snapshot. The view resolves the channel using both its ID and `request.user`, preventing user-selectable cross-owner access. Focused tests cover authentication, authorization, isolation, totals, ordering, empty states, and owner links.
 
-Run `python manage.py check`, `python manage.py makemigrations --check --dry-run`, and `python manage.py test`, or run `docker compose run --rm test`.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 92 tests successfully. Docker is not installed on the delivery host; run `docker compose run --rm test` on a Docker-enabled machine.
+
+No migrations, dependencies, environment variables, AWS resources, or external services are added.
 
 ## Out of scope
 

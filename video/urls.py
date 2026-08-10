@@ -15,6 +15,7 @@ urlpatterns = [
     path("videos/<int:pk>/dislike/", views.dislike_video, name="dislike_video"),
     path("channels/", views.channel_list, name="channel_list"),
     path("channels/<int:pk>/", views.channel_detail, name="channel_detail"),
+    path("channels/<int:pk>/analytics/", views.channel_analytics, name="channel_analytics"),
     path("channels/<int:pk>/subscribe/", views.subscribe, name="subscribe"),
     path("categories/", views.category_list, name="category_list"),
     path("categories/<int:pk>/", views.category_detail, name="category_detail"),

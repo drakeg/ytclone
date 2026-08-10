@@ -49,6 +49,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Private Creator Analytics for lifetime uploads, views, reactions, and unique subscribers
 - Private in-app notifications for comments, reactions, subscriptions, and unread state
 - Explicit video-to-channel publishing and subscriber new-upload notifications
+- Owner-only per-channel analytics with isolated lifetime metrics
 
 ## Completed sprint: Search and Discovery
 
@@ -190,9 +191,29 @@ Deferred:
 - Historical per-channel charts
 - External notification delivery
 
+## Completed sprint: Per-Channel Analytics
+
+Delivered:
+
+- Owner-only channel analytics route with anonymous login redirect
+- Cross-owner requests hidden with 404
+- Channel-scoped upload, view, reaction, and subscriber totals
+- Deterministic channel video performance table
+- Legacy null-channel and other-channel videos excluded
+- Owner-only analytics link and useful empty state
+- Aggregation isolated in the existing analytics service
+
+Deferred:
+
+- Historical trends and date ranges
+- Watch time and retention
+- CSV exports
+- Channel teams and delegated access
+- Background aggregation and third-party analytics
+
 ## Next sprint candidate
 
-Per-channel creator analytics using explicit channel ownership, with owner-only access and channel-specific totals.
+Creator video management for editing metadata, moving videos between owned channels, and safe deletion.
 
 ## Later candidates
 

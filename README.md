@@ -17,6 +17,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private in-app notifications for comments, reactions, and subscriptions
 - Explicit video-to-channel publishing with subscriber upload notifications
+- Owner-only per-channel analytics with isolated lifetime metrics
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -141,6 +142,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
 - `docs/video-channels.md` — video channel ownership, migration, notifications, and tests
 - `docs/notifications.md` — notification events, privacy, unread state, and tests
 - `docs/creator-analytics.md` — creator metrics, privacy, architecture, and tests
@@ -153,4 +155,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is per-channel analytics using the new explicit video ownership relationship. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is creator video management for editing metadata, moving videos between owned channels, and safe deletion. Higher-cost AWS services will be introduced only when usage justifies them.

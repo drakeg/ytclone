@@ -8,6 +8,10 @@
         {% endif %}
         <p>{{ channel.description }}</p>
 
+        {% if user == channel.owner %}
+            <p><a class="btn btn-outline-primary" href="{% url 'channel_analytics' channel.pk %}">View channel analytics</a></p>
+        {% endif %}
+
         {% if user.is_authenticated %}
             <form method="post" action="{% url 'subscribe' channel.pk %}">
                 {% csrf_token %}

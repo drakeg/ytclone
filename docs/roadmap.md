@@ -211,9 +211,9 @@ Deferred:
 - Channel teams and delegated access
 - Background aggregation and third-party analytics
 
-## Next sprint candidate
+## Current sprint: Creator Video Management
 
-Creator video management for editing metadata, moving videos between owned channels, and safe deletion.
+Add owner-only metadata editing, moves between owned channels, and confirmed deletion. Scope, authorization, test commands, and exclusions are documented in `docs/video-management.md` before implementation.
 
 ## Later candidates
 

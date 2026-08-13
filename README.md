@@ -142,6 +142,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
 - `docs/video-channels.md` — video channel ownership, migration, notifications, and tests
 - `docs/notifications.md` — notification events, privacy, unread state, and tests

@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Delete {{ video.title }}?</h1>
+    <p>This removes the video and its comments, reactions, history, playlist entries, and notifications from the application. This action cannot be undone.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Delete video</button>
+        <a class="btn btn-outline-secondary" href="{% url 'video_detail' video.pk %}">Cancel</a>
+    </form>
+{% endblock %}

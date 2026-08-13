@@ -64,6 +64,8 @@ class VideoUploadForm(forms.ModelForm):
         thumbnail = self.cleaned_data.get("thumbnail")
         if not thumbnail:
             return thumbnail
+        if not hasattr(thumbnail, "content_type"):
+            return thumbnail
 
         extension = Path(thumbnail.name).suffix.lower()
         content_type = getattr(thumbnail, "content_type", "").lower()
@@ -83,6 +85,8 @@ class VideoUploadForm(forms.ModelForm):
         video_file = self.cleaned_data.get("video_file")
         if not video_file:
             return video_file
+        if not hasattr(video_file, "content_type"):
+            return video_file
 
         extension = Path(video_file.name).suffix.lower()
         content_type = getattr(video_file, "content_type", "").lower()
@@ -97,3 +101,13 @@ class VideoUploadForm(forms.ModelForm):
             )
 
         return video_file
+
+
+class VideoEditForm(VideoUploadForm):
+    class Meta(VideoUploadForm.Meta):
+        fields = ["title", "description", "thumbnail", "video_file", "category", "channel"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["thumbnail"].required = False
+        self.fields["video_file"].required = False

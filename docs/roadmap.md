@@ -50,6 +50,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Private in-app notifications for comments, reactions, subscriptions, and unread state
 - Explicit video-to-channel publishing and subscriber new-upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics
+- Owner-only video metadata editing, channel moves, and confirmed deletion
 
 ## Completed sprint: Search and Discovery
 
@@ -211,9 +212,29 @@ Deferred:
 - Channel teams and delegated access
 - Background aggregation and third-party analytics
 
-## Current sprint: Creator Video Management
+## Completed sprint: Creator Video Management
 
-Add owner-only metadata editing, moves between owned channels, and confirmed deletion. Scope, authorization, test commands, and exclusions are documented in `docs/video-management.md` before implementation.
+Delivered:
+
+- Owner-only edit and delete routes with cross-user 404 protection
+- Metadata editing and moves between creator-owned channels
+- Forged foreign-channel submissions rejected
+- Existing thumbnail and video files preserved when replacements are omitted
+- Owner-only management actions on public video pages
+- Explicit deletion confirmation followed by POST mutation
+- Related comments, history, playlist entries, and notifications removed through model relationships
+
+Deferred:
+
+- Bulk management
+- Drafts and scheduled publishing
+- Soft deletion and restore
+- Media-object deletion from S3 or local storage
+- Channel team roles
+
+## Next sprint candidate
+
+Draft and scheduled publishing with creator-controlled visibility and publication timing.
 
 ## Later candidates
 

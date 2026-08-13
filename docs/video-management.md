@@ -1,10 +1,10 @@
 # Creator Video Management
 
-## Sprint goal
+## Delivered behavior
 
-Let creators safely edit and delete their own videos, including moving a video between channels they own.
+Creators can safely edit and delete their own videos, including moving a video between channels they own.
 
-## Acceptance criteria
+## Delivered safeguards
 
 - Only the video author can access edit or delete actions; other users receive 404.
 - Editable metadata includes title, description, category, thumbnail, and channel.
@@ -15,9 +15,11 @@ Let creators safely edit and delete their own videos, including moving a video b
 
 ## Architecture and testing
 
-A dedicated `VideoEditForm` will reuse upload validation while making media replacement optional. Views will resolve videos by both primary key and `request.user`, preserving the existing ownership boundary. Tests cover authentication, authorization, channel scoping, metadata edits, optional media, deletion confirmation, POST-only deletion, and relationship cleanup.
+A dedicated `VideoEditForm` reuses upload validation while making media replacement optional. Views resolve videos by both primary key and `request.user`, preserving the existing ownership boundary. Deletion uses Django's existing cascades for related database records; stored media-object deletion remains deliberately out of scope.
 
-Run the full suite with `python manage.py check`, `python manage.py makemigrations --check --dry-run`, and `python manage.py test`, or `docker compose run --rm test`.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 98 tests successfully. Docker is unavailable on the delivery host; run `docker compose run --rm test` on a Docker-enabled machine.
+
+No migrations, dependencies, environment variables, AWS resources, or external services are added.
 
 ## Out of scope
 

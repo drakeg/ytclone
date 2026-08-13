@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoUploadForm
+from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoEditForm, VideoUploadForm
 from .models import (
     Category,
     Channel,
@@ -315,6 +315,30 @@ def upload_video(request):
     else:
         form = VideoUploadForm(user=request.user)
     return render(request, "videos/upload_video.html", {"form": form})
+
+
+@login_required
+def video_edit(request, pk):
+    video = get_object_or_404(Video, pk=pk, author=request.user)
+    if request.method == "POST":
+        form = VideoEditForm(
+            request.POST, request.FILES, instance=video, user=request.user
+        )
+        if form.is_valid():
+            form.save()
+            return redirect("video_detail", pk=video.pk)
+    else:
+        form = VideoEditForm(instance=video, user=request.user)
+    return render(request, "videos/video_edit.html", {"form": form, "video": video})
+
+
+@login_required
+def video_delete(request, pk):
+    video = get_object_or_404(Video, pk=pk, author=request.user)
+    if request.method == "POST":
+        video.delete()
+        return redirect("video_list")
+    return render(request, "videos/video_confirm_delete.html", {"video": video})
 
 
 @login_required

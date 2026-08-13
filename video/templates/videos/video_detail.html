@@ -19,6 +19,13 @@
     <p>Category: {{ video.category }}</p>
     <p>Publish Date: {{ video.pub_date }}</p>
 
+    {% if user == video.author %}
+        <p>
+            <a class="btn btn-outline-primary" href="{% url 'video_edit' video.pk %}">Edit video</a>
+            <a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>
+        </p>
+    {% endif %}
+
     {% if user.is_authenticated %}
     <form method="post" action="{% url 'like_video' video.pk %}" class="d-inline">
         {% csrf_token %}

@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import Q
@@ -30,6 +32,7 @@ class VideoQuerySet(models.QuerySet):
 class Video(models.Model):
     class PublicationStatus(models.TextChoices):
         DRAFT = "draft", "Draft"
+        UNLISTED = "unlisted", "Unlisted"
         SCHEDULED = "scheduled", "Scheduled"
         PUBLISHED = "published", "Published"
 
@@ -52,6 +55,7 @@ class Video(models.Model):
         default=PublicationStatus.PUBLISHED,
     )
     publish_at = models.DateTimeField(null=True, blank=True)
+    share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
 
     objects = VideoQuerySet.as_manager()
 

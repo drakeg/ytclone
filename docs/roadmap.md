@@ -52,6 +52,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion
 - Draft, immediate, and scheduled publication with centralized visibility
+- Unlisted videos with hard-to-guess, revocable direct links
 
 ## Completed sprint: Search and Discovery
 
@@ -252,9 +253,29 @@ Deferred:
 - Per-user time-zone selection
 - Approval workflows and channel teams
 
+## Completed sprint: Unlisted Video Sharing
+
+Delivered:
+
+- Unlisted publication state with unique UUID share tokens
+- Anonymous direct viewing through valid share links
+- Owner-only access through ordinary video URLs
+- POST-only owner token rotation with immediate revocation
+- Draft and scheduled videos rejected by share routes
+- Unlisted videos excluded from every public discovery surface
+- Owner-only share controls and regression coverage
+
+Deferred:
+
+- Password-protected links
+- Link expiration dates and access limits
+- Viewer identity and access auditing
+- Share-link notifications
+- Signed CDN URLs beyond existing media behavior
+
 ## Next sprint candidate
 
-Unlisted video sharing with revocable, privacy-safe links.
+Creator publication-state management with status filtering and safe bulk visibility actions.
 
 ## Later candidates
 

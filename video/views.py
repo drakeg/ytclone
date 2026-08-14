@@ -1,5 +1,6 @@
 import json
 import math
+import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
@@ -88,6 +89,19 @@ def notification_mark_all_read(request):
 
 def video_detail(request, pk):
     video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
+    return _render_video_detail(request, video)
+
+
+def shared_video_detail(request, token):
+    video = get_object_or_404(
+        Video.objects.select_related("author", "channel", "category"),
+        share_token=token,
+        publication_status=Video.PublicationStatus.UNLISTED,
+    )
+    return _render_video_detail(request, video)
+
+
+def _render_video_detail(request, video):
     comments = Comment.objects.filter(video=video)
     playlists = []
     history_entry = None
@@ -119,6 +133,15 @@ def video_detail(request, pk):
             "history_entry": history_entry,
         },
     )
+
+
+@login_required
+@require_POST
+def video_rotate_share_token(request, pk):
+    video = get_object_or_404(Video, pk=pk, author=request.user)
+    video.share_token = uuid.uuid4()
+    video.save(update_fields=["share_token"])
+    return redirect("video_detail", pk=video.pk)
 
 
 @login_required

@@ -20,6 +20,17 @@
     <p>Publish Date: {{ video.pub_date }}</p>
     {% if user == video.author %}<p>Status: {{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</p>{% endif %}
 
+    {% if user == video.author and video.publication_status == "unlisted" %}
+        <section class="my-3" aria-labelledby="share-heading">
+            <h3 id="share-heading">Unlisted share link</h3>
+            <p><a href="{% url 'shared_video_detail' video.share_token %}">{% url 'shared_video_detail' video.share_token %}</a></p>
+            <form method="post" action="{% url 'video_rotate_share_token' video.pk %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-warning" type="submit">Revoke and create a new link</button>
+            </form>
+        </section>
+    {% endif %}
+
     {% if user == video.author %}
         <p>
             <a class="btn btn-outline-primary" href="{% url 'video_edit' video.pk %}">Edit video</a>

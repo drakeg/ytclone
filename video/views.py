@@ -87,7 +87,7 @@ def notification_mark_all_read(request):
 
 
 def video_detail(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     comments = Comment.objects.filter(video=video)
     playlists = []
     history_entry = None
@@ -208,7 +208,7 @@ def channel_list(request):
 
 def channel_detail(request, pk):
     channel = get_object_or_404(Channel, pk=pk)
-    videos = channel.videos.select_related("author", "category")
+    videos = channel.videos.visible_to(request.user).select_related("author", "category")
     return render(
         request,
         "videos/channel_detail.html",
@@ -235,7 +235,7 @@ def category_list(request):
 
 def category_detail(request, pk):
     category = get_object_or_404(Category, pk=pk)
-    videos = Video.objects.filter(category=category)
+    videos = Video.objects.visible_to(request.user).filter(category=category)
     return render(
         request,
         "videos/category_detail.html",
@@ -266,15 +266,15 @@ def search(request):
 def filter_videos(request):
     category = request.GET.get("category")
     if category:
-        videos = Video.objects.filter(category__name=category)
+        videos = Video.objects.visible_to(request.user).filter(category__name=category)
     else:
-        videos = Video.objects.all()
+        videos = Video.objects.visible_to(request.user)
     return render(request, "videos/filter_results.html", {"videos": videos})
 
 
 def user_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    videos = Video.objects.filter(author=profile_user)
+    videos = Video.objects.visible_to(request.user).filter(author=profile_user)
     public_playlists = profile_user.playlists.filter(
         visibility=Playlist.Visibility.PUBLIC
     )
@@ -310,7 +310,8 @@ def upload_video(request):
             video = form.save(commit=False)
             video.author = request.user
             video.save()
-            notify_new_upload(video)
+            if video.publication_status == Video.PublicationStatus.PUBLISHED:
+                notify_new_upload(video)
             return redirect("video_detail", pk=video.pk)
     else:
         form = VideoUploadForm(user=request.user)
@@ -372,7 +373,10 @@ def playlist_detail(request, pk):
     )
     if not playlist.can_view(request.user):
         raise Http404("Playlist not found")
-    return render(request, "videos/playlist_detail.html", {"playlist": playlist})
+    visible_items = playlist.items.filter(
+        video__in=Video.objects.visible_to(request.user)
+    ).select_related("video")
+    return render(request, "videos/playlist_detail.html", {"playlist": playlist, "visible_items": visible_items})
 
 
 @login_required
@@ -427,7 +431,9 @@ def playlist_remove_video(request, pk, item_pk):
 
 @login_required
 def watch_history(request):
-    entries = request.user.watch_history.select_related("video", "video__author")
+    entries = request.user.watch_history.filter(
+        video__in=Video.objects.visible_to(request.user)
+    ).select_related("video", "video__author")
     return render(request, "videos/watch_history.html", {"entries": entries})
 
 

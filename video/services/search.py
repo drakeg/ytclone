@@ -24,9 +24,9 @@ class SearchResults:
     playlists: QuerySet
 
 
-def _video_results(query: str, sort: str) -> QuerySet:
+def _video_results(query: str, sort: str, user) -> QuerySet:
     videos = (
-        Video.objects.select_related("author", "category")
+        Video.objects.visible_to(user).select_related("author", "category")
         .annotate(
             like_count=Count("likes", distinct=True),
             relevance=Case(
@@ -99,7 +99,7 @@ def search_content(query: str, sort: str, user=AnonymousUser()) -> SearchResults
     return SearchResults(
         query=normalized_query,
         sort=normalized_sort,
-        videos=_video_results(normalized_query, normalized_sort),
+        videos=_video_results(normalized_query, normalized_sort, user),
         channels=_channel_results(normalized_query),
         playlists=_playlist_results(normalized_query, user),
     )

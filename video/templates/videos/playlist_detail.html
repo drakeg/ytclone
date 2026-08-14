@@ -16,7 +16,7 @@
 {% endif %}
 
 <h3>Videos</h3>
-{% for item in playlist.items.all %}
+{% for item in visible_items %}
     <article>
         <h4><a href="{% url 'video_detail' item.video.pk %}">{{ item.video.title }}</a></h4>
         <p>{{ item.video.description|truncatewords:25 }}</p>

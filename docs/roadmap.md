@@ -51,6 +51,7 @@ A sprint is not closed until its local test instructions are complete and reprod
 - Explicit video-to-channel publishing and subscriber new-upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion
+- Draft, immediate, and scheduled publication with centralized visibility
 
 ## Completed sprint: Search and Discovery
 
@@ -232,9 +233,28 @@ Deferred:
 - Media-object deletion from S3 or local storage
 - Channel team roles
 
+## Completed sprint: Draft and Scheduled Publishing
+
+Delivered:
+
+- Draft, scheduled, and published states with backward-compatible defaults
+- Dynamic scheduled visibility without background workers
+- Centralized `visible_to` policy for owners and public viewers
+- Privacy enforcement across detail, discovery, search, channel, category, profile, playlist, and history surfaces
+- Future-time validation and irrelevant timestamp cleanup
+- Immediate-public upload notifications retained
+- Regression coverage for defaults, validation, privacy, due schedules, and owner access
+
+Deferred:
+
+- Background publication jobs and scheduled notification delivery
+- Unlisted videos and share tokens
+- Per-user time-zone selection
+- Approval workflows and channel teams
+
 ## Next sprint candidate
 
-Draft and scheduled publishing with creator-controlled visibility and publication timing.
+Unlisted video sharing with revocable, privacy-safe links.
 
 ## Later candidates
 

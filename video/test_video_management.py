@@ -26,7 +26,7 @@ class VideoManagementTests(TestCase):
         old_thumbnail = self.video.thumbnail.name
         old_file = self.video.video_file.name
         self.client.login(username="owner", password="password123")
-        response = self.client.post(reverse("video_edit", kwargs={"pk": self.video.pk}), {"title": "Updated", "description": "Updated description", "category": self.other_category.pk, "channel": self.second_channel.pk})
+        response = self.client.post(reverse("video_edit", kwargs={"pk": self.video.pk}), {"title": "Updated", "description": "Updated description", "category": self.other_category.pk, "channel": self.second_channel.pk, "publication_status": "published"})
         self.assertRedirects(response, reverse("video_detail", kwargs={"pk": self.video.pk}))
         self.video.refresh_from_db()
         self.assertEqual(self.video.title, "Updated")
@@ -37,7 +37,7 @@ class VideoManagementTests(TestCase):
 
     def test_forged_foreign_channel_edit_is_rejected(self):
         self.client.login(username="owner", password="password123")
-        response = self.client.post(reverse("video_edit", kwargs={"pk": self.video.pk}), {"title": "Forged", "description": "Forged", "category": self.category.pk, "channel": self.foreign_channel.pk})
+        response = self.client.post(reverse("video_edit", kwargs={"pk": self.video.pk}), {"title": "Forged", "description": "Forged", "category": self.category.pk, "channel": self.foreign_channel.pk, "publication_status": "published"})
         self.assertEqual(response.status_code, 200)
         self.assertIn("channel", response.context["form"].errors)
         self.video.refresh_from_db()

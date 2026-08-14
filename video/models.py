@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 
 class Category(models.Model):
@@ -14,7 +16,23 @@ class Category(models.Model):
         return self.name
 
 
+class VideoQuerySet(models.QuerySet):
+    def visible_to(self, user):
+        visibility = Q(publication_status=Video.PublicationStatus.PUBLISHED) | Q(
+            publication_status=Video.PublicationStatus.SCHEDULED,
+            publish_at__lte=timezone.now(),
+        )
+        if getattr(user, "is_authenticated", False):
+            visibility |= Q(author=user)
+        return self.filter(visibility)
+
+
 class Video(models.Model):
+    class PublicationStatus(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        SCHEDULED = "scheduled", "Scheduled"
+        PUBLISHED = "published", "Published"
+
     title = models.CharField(max_length=255)
     description = models.TextField()
     thumbnail = models.ImageField(upload_to="videos/thumbnails")
@@ -28,6 +46,24 @@ class Video(models.Model):
     dislikes = models.ManyToManyField(User, related_name="dislikes", blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     pub_date = models.DateTimeField(auto_now_add=True)
+    publication_status = models.CharField(
+        max_length=12,
+        choices=PublicationStatus.choices,
+        default=PublicationStatus.PUBLISHED,
+    )
+    publish_at = models.DateTimeField(null=True, blank=True)
+
+    objects = VideoQuerySet.as_manager()
+
+    def is_visible_to(self, user):
+        return self.author_id == getattr(user, "pk", None) or (
+            self.publication_status == self.PublicationStatus.PUBLISHED
+            or (
+                self.publication_status == self.PublicationStatus.SCHEDULED
+                and self.publish_at is not None
+                and self.publish_at <= timezone.now()
+            )
+        )
 
     def __str__(self):
         return self.title

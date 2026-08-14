@@ -18,6 +18,7 @@
     {% if video.channel %}<p>Channel: <a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></p>{% endif %}
     <p>Category: {{ video.category }}</p>
     <p>Publish Date: {{ video.pub_date }}</p>
+    {% if user == video.author %}<p>Status: {{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</p>{% endif %}
 
     {% if user == video.author %}
         <p>

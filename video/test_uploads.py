@@ -38,6 +38,7 @@ class VideoUploadValidationTests(TestCase):
             "description": "Testing upload validation",
             "category": self.category.pk,
             "channel": self.channel.pk,
+            "publication_status": "published",
         }
 
     def test_supported_uploads_are_accepted(self):

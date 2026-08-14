@@ -3,6 +3,7 @@ from pathlib import Path
 from django import forms
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from .models import Channel, Comment, Playlist, Video
 
@@ -41,7 +42,7 @@ class VideoUploadForm(forms.ModelForm):
 
     class Meta:
         model = Video
-        fields = ["title", "description", "thumbnail", "video_file", "category", "channel"]
+        fields = ["title", "description", "thumbnail", "video_file", "category", "channel", "publication_status", "publish_at"]
         widgets = {
             "thumbnail": forms.ClearableFileInput(
                 attrs={"accept": "image/jpeg,image/png,image/webp"}
@@ -49,6 +50,7 @@ class VideoUploadForm(forms.ModelForm):
             "video_file": forms.ClearableFileInput(
                 attrs={"accept": "video/mp4,video/webm,video/quicktime"}
             ),
+            "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -59,6 +61,19 @@ class VideoUploadForm(forms.ModelForm):
         self.fields["channel"].required = True
         if user and not self.fields["channel"].queryset.exists():
             self.fields["channel"].help_text = "Create a channel before uploading a video."
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("publication_status")
+        publish_at = cleaned_data.get("publish_at")
+        if status == Video.PublicationStatus.SCHEDULED:
+            if publish_at is None:
+                self.add_error("publish_at", "Choose a publication time.")
+            elif publish_at <= timezone.now():
+                self.add_error("publish_at", "Choose a future publication time.")
+        else:
+            cleaned_data["publish_at"] = None
+        return cleaned_data
 
     def clean_thumbnail(self):
         thumbnail = self.cleaned_data.get("thumbnail")
@@ -105,7 +120,7 @@ class VideoUploadForm(forms.ModelForm):
 
 class VideoEditForm(VideoUploadForm):
     class Meta(VideoUploadForm.Meta):
-        fields = ["title", "description", "thumbnail", "video_file", "category", "channel"]
+        fields = ["title", "description", "thumbnail", "video_file", "category", "channel", "publication_status", "publish_at"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

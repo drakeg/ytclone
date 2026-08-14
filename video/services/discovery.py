@@ -19,7 +19,7 @@ class DiscoverySections:
 
 
 def get_discovery_sections(user, limit=DISCOVERY_SECTION_LIMIT):
-    videos = Video.objects.select_related("author", "category")
+    videos = Video.objects.visible_to(user).select_related("author", "category")
     recently_watched = Video.objects.none()
     continue_watching = Video.objects.none()
 

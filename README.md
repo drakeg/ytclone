@@ -20,6 +20,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion
 - Draft, immediate, and scheduled publishing with centralized visibility
+- Unlisted videos with hard-to-guess, revocable share links
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -160,4 +161,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is unlisted video sharing with revocable links, building on centralized publication visibility. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is publication-state management for creators, with filtering and bulk visibility actions. Higher-cost AWS services will be introduced only when usage justifies them.

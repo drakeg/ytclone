@@ -1,10 +1,10 @@
 # Unlisted Video Sharing
 
-## Sprint goal
+## Delivered behavior
 
-Let creators share an unpublished video through a hard-to-guess, revocable link without exposing it through public discovery surfaces.
+Creators can share an unpublished video through a hard-to-guess, revocable link without exposing it through public discovery surfaces.
 
-## Acceptance criteria
+## Delivered safeguards
 
 - Unlisted videos remain absent from search, discovery, channels, categories, profiles, public playlists, and other users' history.
 - A valid share token grants direct viewing without authentication.
@@ -15,9 +15,11 @@ Let creators share an unpublished video through a hard-to-guess, revocable link 
 
 ## Architecture and testing
 
-`Video` gains a unique UUID share token and an unlisted publication state. A dedicated share route resolves only unlisted videos by token. Token rotation uses a POST-only owner route. Focused tests cover surface privacy, valid and invalid links, owner controls, token rotation, and draft/scheduled isolation.
+`Video` has a unique UUID share token and an unlisted publication state. A dedicated share route resolves only unlisted videos by token. Token rotation uses a POST-only owner route and invalidates the previous URL immediately.
 
-Run the full suite locally or with `docker compose run --rm test` as documented in the README.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 112 tests. Docker is unavailable on the delivery host; run `docker compose run --rm test` on a Docker-enabled machine.
+
+Migration `0009_video_unlisted_share_token` gives every video a unique token and adds the unlisted status. No dependencies, environment variables, AWS resources, workers, or external services are added.
 
 ## Out of scope
 

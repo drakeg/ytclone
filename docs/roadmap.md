@@ -252,9 +252,9 @@ Deferred:
 - Per-user time-zone selection
 - Approval workflows and channel teams
 
-## Next sprint candidate
+## Current sprint: Unlisted Video Sharing
 
-Unlisted video sharing with revocable, privacy-safe links.
+Add unlisted visibility with hard-to-guess, revocable direct links while retaining centralized privacy enforcement. Scope, tests, and exclusions are documented in `docs/unlisted-sharing.md` before implementation.
 
 ## Later candidates
 

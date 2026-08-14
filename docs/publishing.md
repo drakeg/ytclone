@@ -1,10 +1,10 @@
 # Draft and Scheduled Publishing
 
-## Sprint goal
+## Delivered behavior
 
-Let creators save drafts, publish immediately, or schedule visibility while preventing unpublished content from leaking through public pages.
+Creators can save drafts, publish immediately, or schedule visibility while unpublished content remains private across public surfaces.
 
-## Acceptance criteria
+## Delivered safeguards
 
 - Existing videos remain published after migration.
 - Drafts and future scheduled videos are visible only to their author.
@@ -15,9 +15,11 @@ Let creators save drafts, publish immediately, or schedule visibility while prev
 
 ## Architecture and testing
 
-A `VideoQuerySet.visible_to(user)` policy will centralize visibility. `Video` gains publication status and an optional publication time. Dynamic time evaluation avoids background infrastructure. Tests cover migration defaults, form validation, owner access, anonymous privacy, due scheduling, and public surface filtering.
+A `VideoQuerySet.visible_to(user)` policy centralizes visibility. `Video` has publication status and an optional publication time. Dynamic time evaluation avoids background infrastructure. Immediate uploads notify subscribers; scheduled-delivery notifications remain deferred.
 
-Run the full suite locally or with `docker compose run --rm test` as documented in the README.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 105 tests. Docker is unavailable on the delivery host; run `docker compose run --rm test` on a Docker-enabled machine.
+
+Migration `0008_video_publication` preserves every existing video as published. No dependencies, environment variables, AWS resources, workers, or external services are added.
 
 ## Out of scope
 

@@ -232,9 +232,9 @@ Deferred:
 - Media-object deletion from S3 or local storage
 - Channel team roles
 
-## Next sprint candidate
+## Current sprint: Draft and Scheduled Publishing
 
-Draft and scheduled publishing with creator-controlled visibility and publication timing.
+Add draft, immediate, and scheduled publication states with centralized privacy enforcement. Scope, architecture, tests, and exclusions are documented in `docs/publishing.md` before implementation.
 
 ## Later candidates
 

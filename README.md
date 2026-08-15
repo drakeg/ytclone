@@ -22,6 +22,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Draft, immediate, and scheduled publishing with centralized visibility
 - Unlisted videos with hard-to-guess, revocable share links
 - Private creator video library with publication-state filters and safe bulk visibility changes
+- Recoverable creator video trash with 30-day retention and restore-to-draft safeguards
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -148,6 +149,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
 - `docs/unlisted-sharing.md` — revocable direct links and privacy boundaries
 - `docs/publication-management.md` — creator filters, bulk visibility safeguards, and tests
+- `docs/video-trash.md` — recovery, retention, permanent deletion, and media-cleanup boundaries
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -163,4 +165,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is a creator trash-and-restore workflow with explicit retention and media-cleanup safeguards. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is creator comment moderation with owner-only review and safe bulk actions. Higher-cost AWS services will be introduced only when usage justifies them.

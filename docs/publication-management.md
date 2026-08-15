@@ -1,10 +1,10 @@
 # Creator Publication Management
 
-## Sprint goal
+## Delivered behavior
 
 Give creators one private place to review their videos by publication state and safely change the visibility of multiple owned videos.
 
-## Scope and acceptance criteria
+## Delivered safeguards
 
 - Provide a login-protected creator video library containing only the current user's videos.
 - Filter the library by all, draft, unlisted, scheduled, or published status.
@@ -18,7 +18,7 @@ Give creators one private place to review their videos by publication state and 
 
 Bulk publication changes will not send subscriber notifications. Notification delivery remains tied to a new upload that is published immediately; adding transition notifications requires explicit deduplication rules and is outside this sprint.
 
-## Architecture decision
+## Architecture and operations
 
 The management query and allowed bulk transitions remain explicit and owner-scoped. The view will never load submitted video IDs from the unrestricted video collection. Bulk updates use one owner-filtered queryset so a forged foreign ID cannot be changed.
 
@@ -46,7 +46,9 @@ Focused regression tests:
 python manage.py test video.test_publication_management
 ```
 
-Coverage will include authentication, owner isolation, every status filter, invalid filters and actions, POST-only mutation, selected-video updates, foreign-ID protection, timestamp cleanup, and empty-state rendering.
+Coverage includes authentication, owner isolation, every status filter, invalid filters and actions, POST-only mutation, selected-video updates, foreign-ID protection, timestamp cleanup, and empty-state rendering.
+
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 123 tests. The 11 focused publication-management tests also pass. Docker Compose configuration and `docker/test.sh` syntax validate, but the Docker daemon was unavailable on the delivery host; run `docker compose run --rm test` on a Docker-enabled machine.
 
 Terraform is unaffected, so formatting and validation are not required for this sprint. The repository-wide Terraform commands remain documented in the README.
 

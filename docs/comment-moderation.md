@@ -38,7 +38,7 @@ docker compose ps
 docker compose logs --follow web
 ```
 
-Open `http://localhost:8000/videos/`. Create an administrator in another terminal with:
+Open `http://localhost:8000/`; it redirects to the application homepage. Create an administrator in another terminal with:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
@@ -72,7 +72,7 @@ python manage.py test video.test_comment_moderation
 
 Coverage includes authentication, ownership isolation, active-video scoping, filters, ordering, reversible bulk actions, foreign-ID protection, invalid input, public rendering, empty states, migration drift, and Compose configuration.
 
-The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 147 tests. The 13 focused moderation tests also pass. Compose validation confirms normal startup includes only `web`, while the `test` profile exposes both services. Docker scripts and Python compilation validate, but the Docker daemon was unavailable on the delivery host; use the documented commands on a Docker-enabled machine.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 150 tests. The 13 focused moderation tests and three migration/root-route regressions also pass. A clean-database test applied every migration from `0001` through `0011` and queried the resulting video table successfully. Compose validation confirms normal startup includes only `web`, while the `test` profile exposes both services. Docker scripts and Python compilation validate, but the Docker daemon was unavailable on the delivery host; use the documented commands on a Docker-enabled machine.
 
 Terraform is unaffected, so formatting and validation are not required for this sprint. The repository-wide Terraform commands remain documented in the README.
 

@@ -53,7 +53,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
    docker compose ps
    ```
 
-5. Open `http://localhost:8000/videos/`.
+5. Open `http://localhost:8000/`. The root route redirects to the application homepage at `/videos/`.
 
 Follow application logs with:
 
@@ -65,7 +65,7 @@ Press `Ctrl+C` to stop following logs; the background container continues runnin
 
 The container automatically applies database migrations and collects static files. SQLite data and uploaded media are stored in named Docker volumes so they survive container replacement.
 
-Migration initialization is enforced by the image entrypoint, including when a custom web command is supplied. If an older container is already running and reports a missing database table, rebuild it with:
+Migration initialization is enforced by the image entrypoint, including when a custom web command is supplied. The complete migration package is version-controlled and verified by regression tests. If an older container is already running and reports a missing database table, rebuild it with:
 
 ```bash
 docker compose down

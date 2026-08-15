@@ -23,6 +23,8 @@ Give creators a private review queue with reversible bulk comment moderation, an
 
 The Compose test service will use a profile so normal application startup runs only the long-lived web service. Explicit `docker compose run --rm test` remains the complete containerized Django check suite.
 
+The image uses a true entrypoint for migrations and static collection, so overriding the web command cannot bypass database initialization. Startup performs a second migration check before launching the requested command or the default development/production server.
+
 Migration `0011_comment_is_hidden` adds a backward-compatible boolean and leaves existing comments visible. No dependency, AWS resource, paid service, worker, or external moderation system is required.
 
 ## Local test plan
@@ -36,7 +38,7 @@ docker compose ps
 docker compose logs --follow web
 ```
 
-Open `http://localhost:8000/videos/`. Create an administrator in another terminal with:
+Open `http://localhost:8000/`; it redirects to the application homepage. Create an administrator in another terminal with:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
@@ -70,7 +72,7 @@ python manage.py test video.test_comment_moderation
 
 Coverage includes authentication, ownership isolation, active-video scoping, filters, ordering, reversible bulk actions, foreign-ID protection, invalid input, public rendering, empty states, migration drift, and Compose configuration.
 
-The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 147 tests. The 13 focused moderation tests also pass. Compose validation confirms normal startup includes only `web`, while the `test` profile exposes both services. Docker scripts and Python compilation validate, but the Docker daemon was unavailable on the delivery host; use the documented commands on a Docker-enabled machine.
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 150 tests. The 13 focused moderation tests and three migration/root-route regressions also pass. A clean-database test applied every migration from `0001` through `0011` and queried the resulting video table successfully. Compose validation confirms normal startup includes only `web`, while the `test` profile exposes both services. Docker scripts and Python compilation validate, but the Docker daemon was unavailable on the delivery host; use the documented commands on a Docker-enabled machine.
 
 Terraform is unaffected, so formatting and validation are not required for this sprint. The repository-wide Terraform commands remain documented in the README.
 

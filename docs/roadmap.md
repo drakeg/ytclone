@@ -357,7 +357,8 @@ Verification:
 
 - Django system checks passed
 - Migration-drift checks reported no changes
-- All 147 tests passed, including 13 focused comment-moderation tests
+- All 150 tests passed, including 13 focused comment-moderation tests and three migration/root-route regressions
+- A fresh SQLite database successfully applied the complete `video` migration chain and exposed the video table
 - Default Compose configuration exposes only the long-lived web service
 - The test profile, health check, shell scripts, and Python compilation validated
 - Full startup and containerized tests remain documented; the Docker daemon was unavailable on the delivery host

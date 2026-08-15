@@ -302,11 +302,11 @@ Verification:
 - Docker Compose configuration and the container test script validated
 - Docker execution remains available through `docker compose run --rm test`; the daemon was unavailable on the delivery host
 
-## Current sprint: Creator Video Trash and Restore
+## Completed sprint: Creator Video Trash and Restore
 
 Goal: replace immediate destructive deletion with private recovery, enforced retention, and safe permanent-deletion boundaries.
 
-Planned:
+Delivered:
 
 - Owner-only soft deletion and private trash
 - Exclusion from every viewer and creator surface
@@ -323,6 +323,18 @@ Out of scope:
 - Local or S3 media deletion
 - Bulk trash operations
 - Administrative retention overrides
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 134 tests passed, including 11 focused trash tests
+- Docker Compose configuration, the container test script, and Python compilation validated
+- Docker execution remains available through `docker compose run --rm test`; the daemon was unavailable on the delivery host
+
+## Next sprint candidate
+
+Creator comment moderation with owner-only review and safe bulk actions.
 
 ## Later candidates
 

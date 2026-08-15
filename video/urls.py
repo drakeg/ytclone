@@ -5,6 +5,8 @@ from . import views
 urlpatterns = [
     path("", views.video_list, name="video_list"),
     path("creator/analytics/", views.creator_analytics, name="creator_analytics"),
+    path("creator/comments/", views.creator_comment_list, name="creator_comment_list"),
+    path("creator/comments/moderate/", views.creator_comment_bulk_moderation, name="creator_comment_bulk_moderation"),
     path("creator/videos/", views.creator_video_list, name="creator_video_list"),
     path("creator/videos/publication/", views.creator_video_bulk_publication, name="creator_video_bulk_publication"),
     path("creator/videos/trash/", views.creator_video_trash, name="creator_video_trash"),

@@ -332,9 +332,26 @@ Verification:
 - Docker Compose configuration, the container test script, and Python compilation validated
 - Docker execution remains available through `docker compose run --rm test`; the daemon was unavailable on the delivery host
 
-## Next sprint candidate
+## Current sprint: Creator Comment Moderation
 
-Creator comment moderation with owner-only review and safe bulk actions.
+Goal: add reversible owner-only comment review and a fully documented Docker Compose application workflow.
+
+Planned:
+
+- Private creator comment queue
+- All, visible, and hidden filters
+- POST-only bulk hide and restore
+- Strict active-video ownership scoping
+- Public exclusion without destructive deletion
+- Default Compose startup isolated from the test runner
+- Container health, status, logs, tests, and shutdown instructions
+- Docker and non-Docker regression coverage
+
+Out of scope:
+
+- Permanent bulk deletion
+- Automated classification and keyword filters
+- Moderator roles, appeals, and external services
 
 ## Later candidates
 

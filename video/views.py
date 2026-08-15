@@ -5,7 +5,7 @@ import uuid
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import F, Max
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -24,6 +24,12 @@ from .models import (
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.discovery import get_discovery_sections
 from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_subscription
+from .services.publication import (
+    BULK_PUBLICATION_STATUSES,
+    PUBLICATION_FILTERS,
+    bulk_update_publication,
+    get_creator_videos,
+)
 from .services.search import VIDEO_SORT_OPTIONS, search_content
 
 
@@ -43,6 +49,38 @@ def creator_analytics(request):
         "videos/creator_analytics.html",
         {"analytics": analytics},
     )
+
+
+@login_required
+def creator_video_list(request):
+    videos, selected_status = get_creator_videos(
+        request.user, request.GET.get("status", "all")
+    )
+    return render(
+        request,
+        "videos/creator_video_list.html",
+        {
+            "videos": videos,
+            "status_filters": PUBLICATION_FILTERS,
+            "selected_status": selected_status,
+            "bulk_statuses": Video.PublicationStatus.choices,
+            "allowed_bulk_statuses": BULK_PUBLICATION_STATUSES,
+        },
+    )
+
+
+@login_required
+@require_POST
+def creator_video_bulk_publication(request):
+    try:
+        bulk_update_publication(
+            request.user,
+            request.POST.getlist("video_ids"),
+            request.POST.get("publication_status"),
+        )
+    except ValueError as error:
+        return HttpResponseBadRequest(str(error))
+    return redirect("creator_video_list")
 
 
 @login_required

@@ -273,9 +273,38 @@ Deferred:
 - Share-link notifications
 - Signed CDN URLs beyond existing media behavior
 
+## Completed sprint: Creator Publication Management
+
+Goal: give creators a private, filterable video library with safe bulk visibility actions.
+
+Delivered:
+
+- Owner-only creator video library
+- Filters for all publication states
+- POST-only bulk transitions to draft, unlisted, or published
+- Strict ownership scoping for submitted video IDs
+- Timestamp cleanup for states that do not use scheduling
+- Empty-state, invalid-input, and privacy regression coverage
+- Docker and non-Docker verification instructions
+
+Out of scope:
+
+- Bulk scheduling, which requires a per-video future timestamp
+- Bulk metadata or channel changes
+- Publication-transition notifications
+- Background jobs, approval workflows, and channel teams
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 123 tests passed, including 11 focused publication-management tests
+- Docker Compose configuration and the container test script validated
+- Docker execution remains available through `docker compose run --rm test`; the daemon was unavailable on the delivery host
+
 ## Next sprint candidate
 
-Creator publication-state management with status filtering and safe bulk visibility actions.
+Creator trash and restore with explicit retention and media-cleanup safeguards.
 
 ## Later candidates
 

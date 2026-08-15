@@ -363,10 +363,28 @@ Verification:
 - The test profile, health check, shell scripts, and Python compilation validated
 - Full startup and containerized tests remain documented; the Docker daemon was unavailable on the delivery host
 
-## Next sprint candidate
+## Current sprint: Viewer Comment Ownership
 
-Viewer-owned comment editing and deletion with moderation-safe behavior.
+Goal: let viewers edit and delete their own comments while preserving creator moderation and video visibility rules.
+
+Planned:
+
+- Author-only comment editing
+- Hidden-state preservation during edits
+- Confirmed, POST-only author deletion
+- Centralized active-video visibility enforcement
+- Empty-input and forged-access safeguards
+- Owner-only controls on visible comments
+- Docker and non-Docker regression instructions
+
+Out of scope:
+
+- Comment version history and undo
+- Soft deletion for viewer comments
+- Replies, threads, mentions, and rich text
+- Creator editing of viewer-authored comments
 
 ## Later candidates
 
+- Responsive UI and design-system refresh covering navigation, typography, spacing, forms, tables, video cards, creator dashboards, empty states, accessibility, and mobile behavior
 - Low-cost AWS application hosting and deployment

@@ -24,6 +24,11 @@ from .models import (
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.discovery import get_discovery_sections
 from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_subscription
+from .services.moderation import (
+    COMMENT_FILTERS,
+    bulk_moderate_comments,
+    get_creator_comments,
+)
 from .services.publication import (
     BULK_PUBLICATION_STATUSES,
     PUBLICATION_FILTERS,
@@ -92,6 +97,36 @@ def creator_video_bulk_publication(request):
 
 
 @login_required
+def creator_comment_list(request):
+    comments, selected_filter = get_creator_comments(
+        request.user, request.GET.get("status", "all")
+    )
+    return render(
+        request,
+        "videos/creator_comment_list.html",
+        {
+            "comments": comments,
+            "comment_filters": COMMENT_FILTERS,
+            "selected_filter": selected_filter,
+        },
+    )
+
+
+@login_required
+@require_POST
+def creator_comment_bulk_moderation(request):
+    try:
+        bulk_moderate_comments(
+            request.user,
+            request.POST.getlist("comment_ids"),
+            request.POST.get("action"),
+        )
+    except ValueError as error:
+        return HttpResponseBadRequest(str(error))
+    return redirect("creator_comment_list")
+
+
+@login_required
 def channel_analytics(request, pk):
     channel = get_object_or_404(Channel, pk=pk, owner=request.user)
     analytics = get_channel_analytics(channel)
@@ -149,7 +184,7 @@ def shared_video_detail(request, token):
 
 
 def _render_video_detail(request, video):
-    comments = Comment.objects.filter(video=video)
+    comments = Comment.objects.filter(video=video, is_hidden=False)
     playlists = []
     history_entry = None
     if request.user.is_authenticated:

@@ -23,6 +23,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Unlisted videos with hard-to-guess, revocable share links
 - Private creator video library with publication-state filters and safe bulk visibility changes
 - Recoverable creator video trash with 30-day retention and restore-to-draft safeguards
+- Reversible creator comment moderation with owner-scoped bulk hide and restore
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -40,15 +41,35 @@ A Django-based video-sharing application being modernized into a secure, low-cos
    python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
    ```
 
-3. Build and start the application:
+3. Build and start the application in the background:
 
    ```bash
-   docker compose up --build
+   docker compose up --build --detach
    ```
 
-4. Open `http://localhost:8000`.
+4. Confirm the web container is running and healthy:
+
+   ```bash
+   docker compose ps
+   ```
+
+5. Open `http://localhost:8000/videos/`.
+
+Follow application logs with:
+
+```bash
+docker compose logs --follow web
+```
+
+Press `Ctrl+C` to stop following logs; the background container continues running.
 
 The container automatically applies database migrations and collects static files. SQLite data and uploaded media are stored in named Docker volumes so they survive container replacement.
+
+The one-off `test` service is profile-isolated, so normal `docker compose up` starts only the application. Source files are bind-mounted for Django development reloads. Rebuild after changing Python dependencies or the Dockerfile:
+
+```bash
+docker compose up --build --detach
+```
 
 Create an administrator account with:
 
@@ -67,6 +88,8 @@ To also delete the local database and media volumes:
 ```bash
 docker compose down --volumes
 ```
+
+Volume deletion is irreversible. Use ordinary `docker compose down` when you want local data and uploaded media to remain available for the next startup.
 
 ## Local development without Docker
 
@@ -150,6 +173,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/unlisted-sharing.md` — revocable direct links and privacy boundaries
 - `docs/publication-management.md` — creator filters, bulk visibility safeguards, and tests
 - `docs/video-trash.md` — recovery, retention, permanent deletion, and media-cleanup boundaries
+- `docs/comment-moderation.md` — reversible creator moderation, privacy, Compose workflow, and tests
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -165,4 +189,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is creator comment moderation with owner-only review and safe bulk actions. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is viewer-owned comment editing and deletion with moderation-safe behavior. Higher-cost AWS services will be introduced only when usage justifies them.

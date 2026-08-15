@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="mb-1">Comment Moderation</h1>
+        <p class="text-muted mb-0">Review comments on your active videos. Hidden comments can be restored.</p>
+    </div>
+
+    <nav class="nav nav-pills gap-2 mb-4" aria-label="Comment status filters">
+        {% for value, label in comment_filters %}
+            <a class="nav-link{% if selected_filter == value %} active{% endif %}" href="{% url 'creator_comment_list' %}?status={{ value }}">{{ label }}</a>
+        {% endfor %}
+    </nav>
+
+    {% if comments %}
+        <form method="post" action="{% url 'creator_comment_bulk_moderation' %}">
+            {% csrf_token %}
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                <label for="moderation-action" class="fw-semibold">Set selected to</label>
+                <select id="moderation-action" name="action" class="form-select w-auto" required>
+                    <option value="">Choose an action</option>
+                    <option value="hide">Hidden</option>
+                    <option value="restore">Visible</option>
+                </select>
+                <button class="btn btn-outline-primary" type="submit">Apply</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col"><span class="visually-hidden">Select</span></th>
+                            <th scope="col">Comment</th>
+                            <th scope="col">Author</th>
+                            <th scope="col">Video</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Posted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in comments %}
+                            <tr>
+                                <td><input class="form-check-input" type="checkbox" name="comment_ids" value="{{ comment.pk }}" aria-label="Select comment by {{ comment.author.username }}"></td>
+                                <td>{{ comment.comment }}</td>
+                                <td>{{ comment.author.username }}</td>
+                                <td><a href="{% url 'video_detail' comment.video.pk %}">{{ comment.video.title }}</a></td>
+                                <td>{% if comment.is_hidden %}Hidden{% else %}Visible{% endif %}</td>
+                                <td>{{ comment.pub_date }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    {% else %}
+        <div class="alert alert-light border" role="status">No comments match this moderation status.</div>
+    {% endif %}
+</div>
+{% endblock %}

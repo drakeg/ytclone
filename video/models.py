@@ -82,6 +82,7 @@ class Comment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
+    is_hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return "{0}: {1} - {2}".format(self.author, self.pub_date, self.video)

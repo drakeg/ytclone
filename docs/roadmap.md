@@ -273,9 +273,26 @@ Deferred:
 - Share-link notifications
 - Signed CDN URLs beyond existing media behavior
 
-## Next sprint candidate
+## Current sprint: Creator Publication Management
 
-Creator publication-state management with status filtering and safe bulk visibility actions.
+Goal: give creators a private, filterable video library with safe bulk visibility actions.
+
+Planned:
+
+- Owner-only creator video library
+- Filters for all publication states
+- POST-only bulk transitions to draft, unlisted, or published
+- Strict ownership scoping for submitted video IDs
+- Timestamp cleanup for states that do not use scheduling
+- Empty-state, invalid-input, and privacy regression coverage
+- Docker and non-Docker verification instructions
+
+Out of scope:
+
+- Bulk scheduling, which requires a per-video future timestamp
+- Bulk metadata or channel changes
+- Publication-transition notifications
+- Background jobs, approval workflows, and channel teams
 
 ## Later candidates
 

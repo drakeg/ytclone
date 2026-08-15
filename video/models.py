@@ -26,7 +26,7 @@ class VideoQuerySet(models.QuerySet):
         )
         if getattr(user, "is_authenticated", False):
             visibility |= Q(author=user)
-        return self.filter(visibility)
+        return self.filter(visibility, deleted_at__isnull=True)
 
 
 class Video(models.Model):
@@ -56,16 +56,20 @@ class Video(models.Model):
     )
     publish_at = models.DateTimeField(null=True, blank=True)
     share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
 
     objects = VideoQuerySet.as_manager()
 
     def is_visible_to(self, user):
-        return self.author_id == getattr(user, "pk", None) or (
-            self.publication_status == self.PublicationStatus.PUBLISHED
+        return self.deleted_at is None and (
+            self.author_id == getattr(user, "pk", None)
             or (
-                self.publication_status == self.PublicationStatus.SCHEDULED
-                and self.publish_at is not None
-                and self.publish_at <= timezone.now()
+                self.publication_status == self.PublicationStatus.PUBLISHED
+                or (
+                    self.publication_status == self.PublicationStatus.SCHEDULED
+                    and self.publish_at is not None
+                    and self.publish_at <= timezone.now()
+                )
             )
         )
 

@@ -5,7 +5,7 @@ import uuid
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.db.models import F, Max
-from django.http import Http404, HttpResponseBadRequest, JsonResponse
+from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -31,6 +31,14 @@ from .services.publication import (
     get_creator_videos,
 )
 from .services.search import VIDEO_SORT_OPTIONS, search_content
+from .services.trash import (
+    can_permanently_delete,
+    get_creator_trash,
+    permanent_deletion_available_at,
+    permanently_delete_video,
+    restore_video,
+    trash_video,
+)
 
 
 VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
@@ -135,6 +143,7 @@ def shared_video_detail(request, token):
         Video.objects.select_related("author", "channel", "category"),
         share_token=token,
         publication_status=Video.PublicationStatus.UNLISTED,
+        deleted_at__isnull=True,
     )
     return _render_video_detail(request, video)
 
@@ -176,7 +185,9 @@ def _render_video_detail(request, video):
 @login_required
 @require_POST
 def video_rotate_share_token(request, pk):
-    video = get_object_or_404(Video, pk=pk, author=request.user)
+    video = get_object_or_404(
+        Video, pk=pk, author=request.user, deleted_at__isnull=True
+    )
     video.share_token = uuid.uuid4()
     video.save(update_fields=["share_token"])
     return redirect("video_detail", pk=video.pk)
@@ -185,7 +196,7 @@ def video_rotate_share_token(request, pk):
 @login_required
 @require_POST
 def playback_progress(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     try:
         payload = json.loads(request.body)
         position = float(payload["position_seconds"])
@@ -217,7 +228,7 @@ def playback_progress(request, pk):
 @login_required
 @require_POST
 def add_comment(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     form = CommentForm(request.POST)
     if form.is_valid():
         comment = form.save(commit=False)
@@ -231,7 +242,7 @@ def add_comment(request, pk):
 @login_required
 @require_POST
 def like_video(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     if video.likes.filter(pk=request.user.pk).exists():
         video.likes.remove(request.user)
     else:
@@ -248,7 +259,7 @@ def like_video(request, pk):
 @login_required
 @require_POST
 def dislike_video(request, pk):
-    video = get_object_or_404(Video, pk=pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     if video.dislikes.filter(pk=request.user.pk).exists():
         video.dislikes.remove(request.user)
     else:
@@ -381,7 +392,9 @@ def upload_video(request):
 
 @login_required
 def video_edit(request, pk):
-    video = get_object_or_404(Video, pk=pk, author=request.user)
+    video = get_object_or_404(
+        Video, pk=pk, author=request.user, deleted_at__isnull=True
+    )
     if request.method == "POST":
         form = VideoEditForm(
             request.POST, request.FILES, instance=video, user=request.user
@@ -396,11 +409,54 @@ def video_edit(request, pk):
 
 @login_required
 def video_delete(request, pk):
-    video = get_object_or_404(Video, pk=pk, author=request.user)
+    video = get_object_or_404(
+        Video, pk=pk, author=request.user, deleted_at__isnull=True
+    )
     if request.method == "POST":
-        video.delete()
-        return redirect("video_list")
+        trash_video(video)
+        return redirect("creator_video_list")
     return render(request, "videos/video_confirm_delete.html", {"video": video})
+
+
+@login_required
+def creator_video_trash(request):
+    return render(
+        request,
+        "videos/creator_video_trash.html",
+        {"videos": get_creator_trash(request.user)},
+    )
+
+
+@login_required
+@require_POST
+def video_restore(request, pk):
+    video = get_object_or_404(
+        Video, pk=pk, author=request.user, deleted_at__isnull=False
+    )
+    restore_video(video)
+    return redirect("creator_video_list")
+
+
+@login_required
+def video_permanent_delete(request, pk):
+    video = get_object_or_404(
+        Video, pk=pk, author=request.user, deleted_at__isnull=False
+    )
+    can_delete = can_permanently_delete(video)
+    if request.method == "POST":
+        if not can_delete:
+            return HttpResponseForbidden("This video is still within its retention period.")
+        permanently_delete_video(video)
+        return redirect("creator_video_trash")
+    return render(
+        request,
+        "videos/video_confirm_permanent_delete.html",
+        {
+            "video": video,
+            "can_delete": can_delete,
+            "available_at": permanent_deletion_available_at(video),
+        },
+    )
 
 
 @login_required
@@ -469,7 +525,7 @@ def playlist_delete(request, pk):
 @require_POST
 def playlist_add_video(request, pk, video_pk):
     playlist = get_object_or_404(Playlist, pk=pk, owner=request.user)
-    video = get_object_or_404(Video, pk=video_pk)
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=video_pk)
     next_position = (
         playlist.items.aggregate(max_position=Max("position"))["max_position"] or 0
     ) + 1

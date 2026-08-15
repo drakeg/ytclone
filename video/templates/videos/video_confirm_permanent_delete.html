@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>Permanently delete {{ video.title }}?</h1>
+    {% if can_delete %}
+        <p>This permanently removes the video and its related application records. This action cannot be undone.</p>
+        <p>Uploaded media is retained for a future audited storage-cleanup workflow.</p>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-danger" type="submit">Permanently delete</button>
+            <a class="btn btn-outline-secondary" href="{% url 'creator_video_trash' %}">Cancel</a>
+        </form>
+    {% else %}
+        <p>This video remains protected until {{ available_at }}.</p>
+        <a class="btn btn-outline-secondary" href="{% url 'creator_video_trash' %}">Back to trash</a>
+    {% endif %}
+</div>
+{% endblock %}

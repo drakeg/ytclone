@@ -28,7 +28,7 @@ class ChannelAnalytics:
 
 
 def get_creator_analytics(user):
-    creator_videos = Video.objects.filter(author=user)
+    creator_videos = Video.objects.filter(author=user, deleted_at__isnull=True)
     video_totals = creator_videos.aggregate(
         video_count=Count("id"),
         total_views=Coalesce(Sum("views"), 0),
@@ -53,10 +53,10 @@ def get_creator_analytics(user):
         video_count=video_totals["video_count"],
         total_views=video_totals["total_views"],
         total_likes=Video.likes.through.objects.filter(
-            video__author=user
+            video__author=user, video__deleted_at__isnull=True
         ).count(),
         total_dislikes=Video.dislikes.through.objects.filter(
-            video__author=user
+            video__author=user, video__deleted_at__isnull=True
         ).count(),
         subscriber_count=subscriber_count,
         videos=videos,
@@ -64,7 +64,7 @@ def get_creator_analytics(user):
 
 
 def get_channel_analytics(channel):
-    channel_videos = Video.objects.filter(channel=channel)
+    channel_videos = Video.objects.filter(channel=channel, deleted_at__isnull=True)
     totals = channel_videos.aggregate(
         video_count=Count("id"),
         total_views=Coalesce(Sum("views"), 0),
@@ -81,8 +81,12 @@ def get_channel_analytics(channel):
         channel=channel,
         video_count=totals["video_count"],
         total_views=totals["total_views"],
-        total_likes=Video.likes.through.objects.filter(video__channel=channel).count(),
-        total_dislikes=Video.dislikes.through.objects.filter(video__channel=channel).count(),
+        total_likes=Video.likes.through.objects.filter(
+            video__channel=channel, video__deleted_at__isnull=True
+        ).count(),
+        total_dislikes=Video.dislikes.through.objects.filter(
+            video__channel=channel, video__deleted_at__isnull=True
+        ).count(),
         subscriber_count=channel.subscribers.count(),
         videos=videos,
     )

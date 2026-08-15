@@ -302,9 +302,27 @@ Verification:
 - Docker Compose configuration and the container test script validated
 - Docker execution remains available through `docker compose run --rm test`; the daemon was unavailable on the delivery host
 
-## Next sprint candidate
+## Current sprint: Creator Video Trash and Restore
 
-Creator trash and restore with explicit retention and media-cleanup safeguards.
+Goal: replace immediate destructive deletion with private recovery, enforced retention, and safe permanent-deletion boundaries.
+
+Planned:
+
+- Owner-only soft deletion and private trash
+- Exclusion from every viewer and creator surface
+- Thirty-day minimum retention
+- POST-only restore to draft
+- Confirmed permanent database deletion after retention
+- Relationship retention until permanent deletion
+- Explicit media preservation and deferred cleanup
+- Docker and non-Docker regression instructions
+
+Out of scope:
+
+- Automatic purge workers
+- Local or S3 media deletion
+- Bulk trash operations
+- Administrative retention overrides
 
 ## Later candidates
 

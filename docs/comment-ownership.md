@@ -1,10 +1,10 @@
 # Viewer Comment Ownership
 
-## Sprint goal
+## Delivered behavior
 
 Let authenticated viewers correct or remove their own comments without weakening creator moderation, video visibility, or ownership boundaries.
 
-## Scope and acceptance criteria
+## Delivered safeguards
 
 - Comment authors can edit only their own comments on active videos they can currently view.
 - Editing changes only comment text and never changes creator moderation state.
@@ -48,7 +48,9 @@ Focused regression tests:
 python manage.py test video.test_comment_ownership
 ```
 
-Coverage will include authentication, author isolation, creator/non-author rejection, form validation, hidden-state preservation, confirmation and POST requirements, inaccessible-video rejection, rendering controls, deletion, and existing moderation compatibility.
+Coverage includes authentication, author isolation, creator/non-author rejection, form validation, hidden-state preservation, confirmation and POST requirements, inaccessible-video rejection, rendering controls, deletion, and existing moderation compatibility.
+
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 161 tests. The 11 focused comment-ownership tests also pass. Compose configuration, both Docker shell scripts, and Python compilation validate. Local Compose application startup was confirmed after the merged migration-baseline hotfix; the complete containerized suite remains `docker compose run --rm test`.
 
 Terraform is unaffected, so formatting and validation are not required for this sprint. The repository-wide Terraform commands remain documented in the README.
 

@@ -363,11 +363,11 @@ Verification:
 - The test profile, health check, shell scripts, and Python compilation validated
 - Full startup and containerized tests remain documented; the Docker daemon was unavailable on the delivery host
 
-## Current sprint: Viewer Comment Ownership
+## Completed sprint: Viewer Comment Ownership
 
 Goal: let viewers edit and delete their own comments while preserving creator moderation and video visibility rules.
 
-Planned:
+Delivered:
 
 - Author-only comment editing
 - Hidden-state preservation during edits
@@ -383,6 +383,18 @@ Out of scope:
 - Soft deletion for viewer comments
 - Replies, threads, mentions, and rich text
 - Creator editing of viewer-authored comments
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 161 tests passed, including 11 focused comment-ownership tests
+- Compose configuration, Docker shell scripts, and Python compilation validated
+- Local Compose application startup was confirmed after the migration-baseline hotfix
+
+## Next sprint candidate
+
+Threaded comment replies with parent-scoped moderation and notifications.
 
 ## Later candidates
 

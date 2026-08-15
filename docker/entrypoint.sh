@@ -2,7 +2,12 @@
 set -eu
 
 python manage.py migrate --noinput
+python manage.py migrate --check
 python manage.py collectstatic --noinput
+
+if [ "$#" -gt 0 ]; then
+    exec "$@"
+fi
 
 if [ "${DJANGO_DEBUG:-false}" = "true" ]; then
     exec python manage.py runserver 0.0.0.0:8000

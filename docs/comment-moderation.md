@@ -23,6 +23,8 @@ Give creators a private review queue with reversible bulk comment moderation, an
 
 The Compose test service will use a profile so normal application startup runs only the long-lived web service. Explicit `docker compose run --rm test` remains the complete containerized Django check suite.
 
+The image uses a true entrypoint for migrations and static collection, so overriding the web command cannot bypass database initialization. Startup performs a second migration check before launching the requested command or the default development/production server.
+
 Migration `0011_comment_is_hidden` adds a backward-compatible boolean and leaves existing comments visible. No dependency, AWS resource, paid service, worker, or external moderation system is required.
 
 ## Local test plan

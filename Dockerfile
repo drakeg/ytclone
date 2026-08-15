@@ -20,4 +20,4 @@ USER app
 
 EXPOSE 8000
 
-CMD ["sh", "/app/docker/entrypoint.sh"]
+ENTRYPOINT ["sh", "/app/docker/entrypoint.sh"]

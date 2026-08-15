@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>Edit comment</h1>
+    <p class="text-muted">On {{ comment.video.title }}</p>
+    {% if comment.is_hidden %}
+        <div class="alert alert-warning">This comment is hidden by the creator. Editing it will not make it visible.</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-primary" type="submit">Save comment</button>
+        <a class="btn btn-outline-secondary" href="{% url 'video_detail' comment.video.pk %}">Cancel</a>
+    </form>
+</div>
+{% endblock %}

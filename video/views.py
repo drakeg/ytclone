@@ -274,6 +274,46 @@ def add_comment(request, pk):
     return redirect("video_detail", pk=video.pk)
 
 
+def _get_owned_visible_comment(user, pk):
+    return get_object_or_404(
+        Comment,
+        pk=pk,
+        author=user,
+        video__in=Video.objects.visible_to(user),
+    )
+
+
+@login_required
+def comment_edit(request, pk):
+    comment = _get_owned_visible_comment(request.user, pk)
+    if request.method == "POST":
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect("video_detail", pk=comment.video_id)
+    else:
+        form = CommentForm(instance=comment)
+    return render(
+        request,
+        "videos/comment_edit.html",
+        {"comment": comment, "form": form},
+    )
+
+
+@login_required
+def comment_delete(request, pk):
+    comment = _get_owned_visible_comment(request.user, pk)
+    video_pk = comment.video_id
+    if request.method == "POST":
+        comment.delete()
+        return redirect("video_detail", pk=video_pk)
+    return render(
+        request,
+        "videos/comment_confirm_delete.html",
+        {"comment": comment},
+    )
+
+
 @login_required
 @require_POST
 def like_video(request, pk):

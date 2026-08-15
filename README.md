@@ -24,6 +24,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private creator video library with publication-state filters and safe bulk visibility changes
 - Recoverable creator video trash with 30-day retention and restore-to-draft safeguards
 - Reversible creator comment moderation with owner-scoped bulk hide and restore
+- Viewer-owned comment editing and confirmed deletion with moderation-safe behavior
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -187,6 +188,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/publication-management.md` — creator filters, bulk visibility safeguards, and tests
 - `docs/video-trash.md` — recovery, retention, permanent deletion, and media-cleanup boundaries
 - `docs/comment-moderation.md` — reversible creator moderation, privacy, Compose workflow, and tests
+- `docs/comment-ownership.md` — author editing, deletion, visibility boundaries, and tests
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -202,4 +204,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint is viewer-owned comment editing and deletion with moderation-safe behavior. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint is threaded comment replies with parent-scoped moderation and notifications. A responsive UI/design-system refresh remains documented in the roadmap backlog. Higher-cost AWS services will be introduced only when usage justifies them.

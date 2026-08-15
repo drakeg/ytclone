@@ -69,6 +69,12 @@
         <p>{{ comment.comment }}</p>
         <p>Author: {{ comment.author }}</p>
         <p>Publish Date: {{ comment.pub_date }}</p>
+        {% if user == comment.author %}
+        <p>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'comment_edit' comment.pk %}">Edit</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a>
+        </p>
+        {% endif %}
     </div>
     {% empty %}
     <p>No comments yet.</p>

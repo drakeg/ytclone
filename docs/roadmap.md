@@ -392,9 +392,24 @@ Verification:
 - Compose configuration, Docker shell scripts, and Python compilation validated
 - Local Compose application startup was confirmed after the migration-baseline hotfix
 
-## Next sprint candidate
+## Current sprint: Threaded Comment Replies
 
-Threaded comment replies with parent-scoped moderation and notifications.
+Goal: add one-level conversations with parent-scoped moderation, author ownership, and deduplicated notifications.
+
+Planned:
+
+- One-level replies to visible top-level comments
+- Same-video and visibility enforcement
+- Parent-thread and individual-reply moderation behavior
+- Existing author edit/delete compatibility
+- Parent-author reply notifications without creator duplicates
+- Cascade deletion with explicit confirmation
+- Docker and non-Docker regression instructions
+
+Out of scope:
+
+- Arbitrarily deep nesting
+- Reply pagination, mentions, real-time updates, and rich text
 
 ## Later candidates
 

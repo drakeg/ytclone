@@ -1,10 +1,10 @@
 # Threaded Comment Replies
 
-## Sprint goal
+## Delivered behavior
 
 Add one-level comment conversations with privacy-safe rendering, creator moderation, author ownership, and deduplicated notifications.
 
-## Scope and acceptance criteria
+## Delivered safeguards
 
 - Authenticated viewers can reply to a visible top-level comment on a video they can view.
 - Replies remain one level deep; reply routes reject reply-to-reply targets.
@@ -50,7 +50,9 @@ Focused regression tests:
 python manage.py test video.test_comment_replies
 ```
 
-Coverage will include login and visibility, one-level enforcement, same-video integrity, deterministic rendering, parent/reply moderation, ownership reuse, cascade deletion, notification recipients and deduplication, invalid input, and migration drift.
+Coverage includes login and visibility, one-level enforcement, same-video integrity, deterministic rendering, parent/reply moderation, ownership reuse, cascade deletion, notification recipients and deduplication, invalid input, and migration drift.
+
+The sprint-close non-Docker run passed Django checks, reported no migration drift, and completed all 174 tests. The 13 focused reply tests and adjacent comment suites pass. Compose configuration, both Docker shell scripts, and Python compilation validate. The complete containerized suite remains `docker compose run --rm test`.
 
 Terraform is unaffected, so formatting and validation are not required. The repository-wide Terraform commands remain documented in the README.
 

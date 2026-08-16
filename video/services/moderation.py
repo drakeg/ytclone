@@ -20,7 +20,7 @@ def get_creator_comments(user, requested_filter):
     comments = Comment.objects.filter(
         video__author=user,
         video__deleted_at__isnull=True,
-    ).select_related("author", "video", "video__channel")
+    ).select_related("author", "parent", "video", "video__channel")
     if selected_filter == "visible":
         comments = comments.filter(is_hidden=False)
     elif selected_filter == "hidden":

@@ -10,7 +10,10 @@ class MigrationConfigurationTests(TestCase):
     def test_video_app_is_migrated_through_latest_schema(self):
         loader = MigrationLoader(connection)
         self.assertIn("video", loader.migrated_apps)
-        self.assertIn(("video", "0011_comment_is_hidden"), loader.graph.leaf_nodes("video"))
+        self.assertIn(
+            ("video", "0012_comment_parent_notification_reply"),
+            loader.graph.leaf_nodes("video"),
+        )
 
     def test_migrated_video_table_is_available(self):
         self.assertEqual(Video.objects.count(), 0)

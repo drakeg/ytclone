@@ -4,7 +4,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import F, Max
+from django.db.models import F, Max, Prefetch
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -23,7 +23,7 @@ from .models import (
 )
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.discovery import get_discovery_sections
-from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_subscription
+from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription
 from .services.moderation import (
     COMMENT_FILTERS,
     bulk_moderate_comments,
@@ -184,7 +184,15 @@ def shared_video_detail(request, token):
 
 
 def _render_video_detail(request, video):
-    comments = Comment.objects.filter(video=video, is_hidden=False)
+    visible_replies = Comment.objects.filter(is_hidden=False).select_related("author").order_by("pub_date", "pk")
+    comments = (
+        Comment.objects.filter(video=video, parent__isnull=True, is_hidden=False)
+        .select_related("author")
+        .prefetch_related(
+            Prefetch("replies", queryset=visible_replies, to_attr="visible_replies")
+        )
+        .order_by("pub_date", "pk")
+    )
     playlists = []
     history_entry = None
     if request.user.is_authenticated:
@@ -272,6 +280,28 @@ def add_comment(request, pk):
         comment.save()
         notify_comment(comment)
     return redirect("video_detail", pk=video.pk)
+
+
+@login_required
+@require_POST
+def add_comment_reply(request, pk):
+    parent = get_object_or_404(
+        Comment,
+        pk=pk,
+        parent__isnull=True,
+        is_hidden=False,
+        video__in=Video.objects.visible_to(request.user),
+    )
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.video = parent.video
+        reply.author = request.user
+        reply.parent = parent
+        reply.save()
+        notify_comment(reply)
+        notify_reply(reply)
+    return redirect("video_detail", pk=parent.video_id)
 
 
 def _get_owned_visible_comment(user, pk):

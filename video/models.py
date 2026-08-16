@@ -83,6 +83,13 @@ class Comment(models.Model):
     comment = models.TextField()
     pub_date = models.DateTimeField(auto_now_add=True)
     is_hidden = models.BooleanField(default=False)
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="replies",
+    )
 
     def __str__(self):
         return "{0}: {1} - {2}".format(self.author, self.pub_date, self.video)
@@ -186,6 +193,7 @@ class WatchHistory(models.Model):
 class Notification(models.Model):
     class Kind(models.TextChoices):
         COMMENT = "comment", "Comment"
+        REPLY = "reply", "Reply"
         LIKE = "like", "Like"
         DISLIKE = "dislike", "Dislike"
         SUBSCRIPTION = "subscription", "Subscription"

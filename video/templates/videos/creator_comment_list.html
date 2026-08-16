@@ -42,7 +42,7 @@
                         {% for comment in comments %}
                             <tr>
                                 <td><input class="form-check-input" type="checkbox" name="comment_ids" value="{{ comment.pk }}" aria-label="Select comment by {{ comment.author.username }}"></td>
-                                <td>{{ comment.comment }}</td>
+                                <td>{% if comment.parent_id %}<span class="text-muted">Reply:</span> {% endif %}{{ comment.comment }}</td>
                                 <td>{{ comment.author.username }}</td>
                                 <td><a href="{% url 'video_detail' comment.video.pk %}">{{ comment.video.title }}</a></td>
                                 <td>{% if comment.is_hidden %}Hidden{% else %}Visible{% endif %}</td>

@@ -24,6 +24,7 @@ urlpatterns = [
     path("videos/<int:pk>/comments/", views.add_comment, name="add_comment"),
     path("comments/<int:pk>/edit/", views.comment_edit, name="comment_edit"),
     path("comments/<int:pk>/delete/", views.comment_delete, name="comment_delete"),
+    path("comments/<int:pk>/reply/", views.add_comment_reply, name="add_comment_reply"),
     path("videos/<int:pk>/like/", views.like_video, name="like_video"),
     path("videos/<int:pk>/dislike/", views.dislike_video, name="dislike_video"),
     path("channels/", views.channel_list, name="channel_list"),

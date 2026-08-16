@@ -22,6 +22,18 @@ def notify_comment(comment):
     )
 
 
+def notify_reply(reply):
+    parent = reply.parent
+    if parent is None or parent.author_id == reply.video.author_id:
+        return None
+    return create_notification(
+        recipient=parent.author,
+        actor=reply.author,
+        kind=Notification.Kind.REPLY,
+        video=reply.video,
+    )
+
+
 def notify_reaction(*, video, actor, kind):
     return create_notification(
         recipient=video.author,

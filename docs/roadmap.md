@@ -392,9 +392,36 @@ Verification:
 - Compose configuration, Docker shell scripts, and Python compilation validated
 - Local Compose application startup was confirmed after the migration-baseline hotfix
 
+## Completed sprint: Threaded Comment Replies
+
+Goal: add one-level conversations with parent-scoped moderation, author ownership, and deduplicated notifications.
+
+Delivered:
+
+- One-level replies to visible top-level comments
+- Same-video and visibility enforcement
+- Parent-thread and individual-reply moderation behavior
+- Existing author edit/delete compatibility
+- Parent-author reply notifications without creator duplicates
+- Cascade deletion with explicit confirmation
+- Docker and non-Docker regression instructions
+
+Out of scope:
+
+- Arbitrarily deep nesting
+- Reply pagination, mentions, real-time updates, and rich text
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 174 tests passed, including 13 focused reply tests
+- Migration-leaf regression updated through `0012`
+- Compose configuration, Docker shell scripts, and Python compilation validated
+
 ## Next sprint candidate
 
-Threaded comment replies with parent-scoped moderation and notifications.
+Channel team roles with explicit owner/editor permissions.
 
 ## Later candidates
 

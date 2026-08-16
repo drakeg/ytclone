@@ -75,6 +75,27 @@
             <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a>
         </p>
         {% endif %}
+        {% for reply in comment.visible_replies %}
+        <div class="comment ms-4 border-start ps-3">
+            <p>{{ reply.comment }}</p>
+            <p>Author: {{ reply.author }}</p>
+            <p>Publish Date: {{ reply.pub_date }}</p>
+            {% if user == reply.author %}
+            <p>
+                <a class="btn btn-sm btn-outline-primary" href="{% url 'comment_edit' reply.pk %}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>
+            </p>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% if user.is_authenticated %}
+        <form class="ms-4 mb-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
+            {% csrf_token %}
+            <label class="form-label" for="reply-{{ comment.pk }}">Reply</label>
+            <textarea class="form-control mb-2" id="reply-{{ comment.pk }}" name="comment" rows="2" required></textarea>
+            <button class="btn btn-sm btn-outline-primary" type="submit">Post reply</button>
+        </form>
+        {% endif %}
     </div>
     {% empty %}
     <p>No comments yet.</p>

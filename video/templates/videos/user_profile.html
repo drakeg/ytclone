@@ -1,33 +1,7 @@
 {% extends 'base.html' %}
-
+{% block title %}{{ user.username }} · VideoShare{% endblock %}
 {% block content %}
-<div class="user-profile">
-    <h2>{{ user.username }}</h2>
-    {% if user.profile.profile_image %}
-        <img src="{{ user.profile.profile_image.url }}" alt="Profile Image">
-    {% endif %}
-    <p>{{ user.profile.description }}</p>
-</div>
-
-<div class="videos">
-    <h3>Videos</h3>
-    <ul>
-        {% for video in videos %}
-        <li><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></li>
-        {% empty %}
-        <li>No videos yet.</li>
-        {% endfor %}
-    </ul>
-</div>
-
-<div class="playlists">
-    <h3>Public Playlists</h3>
-    <ul>
-        {% for playlist in public_playlists %}
-        <li><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></li>
-        {% empty %}
-        <li>No public playlists yet.</li>
-        {% endfor %}
-    </ul>
-</div>
+<header class="identity-banner">{% if user.profile.profile_image %}<img src="{{ user.profile.profile_image.url }}" alt="{{ user.username }} profile image">{% else %}<div class="identity-avatar"></div>{% endif %}<div><p class="eyebrow">Creator profile</p><h1>{{ user.username }}</h1><p>{{ user.profile.description|default:"Sharing videos with the VideoShare community." }}</p></div></header>
+<section class="discovery-section"><div class="section-heading"><h2>Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
+<section class="discovery-section"><div class="section-heading"><h2>Public playlists</h2></div><div class="video-grid">{% for playlist in public_playlists %}<article class="card"><div class="card-body"><p class="eyebrow">Playlist</p><h3 class="h5"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3><p class="video-meta">{{ playlist.description|default:"A public collection."|truncatewords:18 }}</p></div></article>{% empty %}<div class="empty-state">No public playlists yet.</div>{% endfor %}</div></section>
 {% endblock %}

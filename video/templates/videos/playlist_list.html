@@ -1,16 +1,6 @@
 {% extends 'base.html' %}
-
+{% block title %}My playlists · VideoShare{% endblock %}
 {% block content %}
-<h2>My Playlists</h2>
-<p><a class="btn btn-primary" href="{% url 'playlist_create' %}">Create Playlist</a></p>
-
-{% for playlist in playlists %}
-    <article>
-        <h3><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3>
-        <p>{{ playlist.get_visibility_display }} · {{ playlist.items.count }} video{{ playlist.items.count|pluralize }}</p>
-        {% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
-    </article>
-{% empty %}
-    <p>You have not created any playlists yet.</p>
-{% endfor %}
+<header class="page-header"><div><p class="eyebrow">Your library</p><h1>My playlists</h1><p>Organize favorites, research, and whatever you want to watch next.</p></div><a class="btn btn-primary" href="{% url 'playlist_create' %}">Create playlist</a></header>
+<div class="video-grid">{% for playlist in playlists %}<article class="card"><div class="card-body"><p class="eyebrow">{{ playlist.get_visibility_display }}</p><h2 class="h4"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h2><p>{{ playlist.description|default:"A personal video collection."|truncatewords:22 }}</p><p class="video-meta">{{ playlist.items.count }} video{{ playlist.items.count|pluralize }}</p></div></article>{% empty %}<div class="empty-state">You have not created any playlists yet.</div>{% endfor %}</div>
 {% endblock %}

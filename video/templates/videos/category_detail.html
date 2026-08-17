@@ -1,12 +1,3 @@
 {% extends 'base.html' %}
-
-{% block content %}
-    <h2>{{ category.name }}</h2>
-    <ul>
-        {% for video in videos %}
-            <li>
-                <a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>
-            </li>
-        {% endfor %}
-    </ul>
-{% endblock %}
+{% block title %}{{ category.name }} · VideoShare{% endblock %}
+{% block content %}<header class="page-header"><div><p class="eyebrow">Category</p><h1>{{ category.name }}</h1><p>{{ category.description }}</p></div></header>{% include 'videos/_video_cards.html' with videos=videos %}{% endblock %}

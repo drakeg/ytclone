@@ -1,11 +1,5 @@
 {% extends 'base.html' %}
-
 {% block content %}
-<h2>{{ heading }}</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Save</button>
-    <a class="btn btn-secondary" href="{% url 'playlist_list' %}">Cancel</a>
-</form>
+<header class="page-header"><div><p class="eyebrow">Your library</p><h1>{{ heading }}</h1><p>Build a collection and choose who can discover it.</p></div></header>
+<form class="form-panel" method="post">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button class="btn btn-primary" type="submit">Save</button><a class="btn btn-outline-secondary" href="{% url 'playlist_list' %}">Cancel</a></div></form>
 {% endblock %}

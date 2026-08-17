@@ -1,11 +1,6 @@
 {% extends 'base.html' %}
-
+{% block title %}Edit {{ video.title }} · VideoShare{% endblock %}
 {% block content %}
-    <h1>Edit {{ video.title }}</h1>
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save changes</button>
-        <a class="btn btn-outline-secondary" href="{% url 'video_detail' video.pk %}">Cancel</a>
-    </form>
+<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Edit {{ video.title }}</h1><p>Update details, media, channel, or publication state.</p></div></header>
+<form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button type="submit" class="btn btn-primary">Save changes</button><a class="btn btn-outline-secondary" href="{% url 'video_detail' video.pk %}">Cancel</a></div></form>
 {% endblock %}

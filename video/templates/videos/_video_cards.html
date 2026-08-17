@@ -1,17 +1,18 @@
-<div class="row g-3">
+<div class="video-grid">
     {% for video in videos %}
-        <div class="col-12 col-sm-6 col-lg-3 video">
+        <article class="video-card">
             <div class="thumbnail">
                 <a href="{% url 'video_detail' video.pk %}">
-                    <img class="img-fluid" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}">
+                    <img src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" loading="lazy">
                 </a>
             </div>
-            <div class="video_title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></div>
-            <div class="video_author">{{ video.author }}</div>
-            <div class="video_views">{{ video.views }} views</div>
-            <div class="video_upload">{{ video.pub_date|timesince }} ago</div>
-        </div>
+            <div class="video-card-body">
+                <h3 class="video-title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3>
+                <p class="video-meta"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></p>
+                <p class="video-meta">{{ video.views }} view{{ video.views|pluralize }} · {{ video.pub_date|timesince }} ago</p>
+            </div>
+        </article>
     {% empty %}
-        <p class="text-body-secondary">No videos to show yet.</p>
+        <div class="empty-state">No videos to show yet.</div>
     {% endfor %}
 </div>

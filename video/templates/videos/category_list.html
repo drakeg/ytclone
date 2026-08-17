@@ -1,12 +1,6 @@
 {% extends 'base.html' %}
-
+{% block title %}Categories · VideoShare{% endblock %}
 {% block content %}
-    <h2>Categories</h2>
-    <ul>
-        {% for category in categories %}
-            <li>
-                <a href="{% url 'category_detail' category.pk %}">{{ category.name }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+<header class="page-header"><div><p class="eyebrow">Browse by interest</p><h1>Categories</h1><p>Jump into a topic and see what the community is making.</p></div></header>
+<div class="video-grid">{% for category in categories %}<article class="card"><div class="card-body"><h2 class="h4"><a href="{% url 'category_detail' category.pk %}">{{ category.name }}</a></h2><p class="video-meta">{{ category.description|default:"Explore videos in this category."|truncatewords:20 }}</p></div></article>{% empty %}<div class="empty-state">No categories yet.</div>{% endfor %}</div>
 {% endblock %}

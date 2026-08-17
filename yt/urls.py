@@ -16,10 +16,11 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.contrib.auth.forms import UserCreationForm
 from django.urls import include, path, reverse_lazy
 from django.views.generic import RedirectView
 from django.views.generic.edit import CreateView
+
+from .forms import RegistrationForm
 
 urlpatterns = [
     path('', RedirectView.as_view(pattern_name='video_list', permanent=False), name='home'),
@@ -28,7 +29,7 @@ urlpatterns = [
         'accounts/register/',
         CreateView.as_view(
             template_name='registration/register.html',
-            form_class=UserCreationForm,
+            form_class=RegistrationForm,
             success_url=reverse_lazy('login'),
         ),
         name='register',

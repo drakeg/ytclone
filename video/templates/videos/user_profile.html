@@ -1,7 +1,43 @@
 {% extends 'base.html' %}
 {% block title %}{{ user.username }} · VideoShare{% endblock %}
 {% block content %}
-<header class="identity-banner">{% if user.profile.profile_image %}<img src="{{ user.profile.profile_image.url }}" alt="{{ user.username }} profile image">{% else %}<div class="identity-avatar"></div>{% endif %}<div><p class="eyebrow">Creator profile</p><h1>{{ user.username }}</h1><p>{{ user.profile.description|default:"Sharing videos with the VideoShare community." }}</p></div></header>
+<header class="identity-banner">
+    <div class="identity-avatar">{{ user.username|slice:":1"|upper }}</div>
+    <div>
+        <p class="eyebrow">Profile</p>
+        <h1>{{ user.get_full_name|default:user.username }}</h1>
+        <p>@{{ user.username }}</p>
+        {% if request.user == user %}
+            <div class="form-actions">
+                <a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a>
+                <a class="btn btn-outline-secondary" href="{% url 'edit_profile' user.username %}">Edit profile</a>
+            </div>
+        {% endif %}
+    </div>
+</header>
+
+{% if request.user == user %}
+<section class="discovery-section">
+    <div class="section-heading"><h2>Your account</h2></div>
+    <div class="card"><div class="card-body">
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Name:</strong> {{ user.get_full_name|default:"Not set" }}</p>
+        <p><strong>Email:</strong> {{ user.email|default:"Not set" }}</p>
+    </div></div>
+</section>
+{% endif %}
+
+<section class="discovery-section">
+    <div class="section-heading"><h2>Channels</h2>{% if request.user == user %}<a class="btn btn-sm btn-primary" href="{% url 'channel_create' %}">New channel</a>{% endif %}</div>
+    <div class="video-grid">
+        {% for channel in user.channel_set.all %}
+            <article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h3 class="h5"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h3><p class="video-meta">{{ channel.description|truncatewords:20 }}</p></div></article>
+        {% empty %}
+            <div class="empty-state">{% if request.user == user %}You do not have a channel yet. Create one to start uploading videos.{% else %}No channels yet.{% endif %}</div>
+        {% endfor %}
+    </div>
+</section>
+
 <section class="discovery-section"><div class="section-heading"><h2>Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
 <section class="discovery-section"><div class="section-heading"><h2>Public playlists</h2></div><div class="video-grid">{% for playlist in public_playlists %}<article class="card"><div class="card-body"><p class="eyebrow">Playlist</p><h3 class="h5"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3><p class="video-meta">{{ playlist.description|default:"A public collection."|truncatewords:18 }}</p></div></article>{% empty %}<div class="empty-state">No public playlists yet.</div>{% endfor %}</div></section>
 {% endblock %}

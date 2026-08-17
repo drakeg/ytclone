@@ -419,9 +419,18 @@ Verification:
 - Migration-leaf regression updated through `0012`
 - Compose configuration, Docker shell scripts, and Python compilation validated
 
-## Next sprint candidate
+## Current sprint: Channel Team Roles
 
-Channel team roles with explicit owner/editor permissions.
+Goal: add owner-managed editors for delegated uploads and video editing.
+
+Planned:
+
+- Owner-only editor administration
+- Assigned-channel uploads
+- Editor access to active channel-video editing
+- Explicit exclusion from analytics, deletion, teams, moderation, and bulk actions
+- Ownership and forged-request regression coverage
+- Docker and non-Docker test instructions
 
 ## Later candidates
 

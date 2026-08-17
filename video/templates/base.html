@@ -39,6 +39,7 @@
                     </a>
                     <a class="avatar-action" href="{% url 'user_profile' user.username %}" aria-label="View your profile">{{ user.username|slice:":1"|upper }}</a>
                 {% else %}
+                    <a class="button button-secondary button-compact" href="{% url 'register' %}">Sign up</a>
                     <a class="button button-primary button-compact" href="{% url 'login' %}">Log in</a>
                 {% endif %}
             </nav>
@@ -76,6 +77,6 @@
         </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js" integrity="sha384-w76AqPfDkMBDXgRZgiwxhTBTkF7CXvN" crossorigin="anonymous"></script>
 </body>
 </html>

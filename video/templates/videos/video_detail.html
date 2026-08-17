@@ -18,7 +18,7 @@
     {% if video.channel %}<p>Channel: <a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></p>{% endif %}
     <p>Category: {{ video.category }}</p>
     <p>Publish Date: {{ video.pub_date }}</p>
-    {% if user == video.author %}<p>Status: {{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</p>{% endif %}
+    {% if may_edit_video %}<p>Status: {{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</p>{% endif %}
 
     {% if user == video.author and video.publication_status == "unlisted" %}
         <section class="my-3" aria-labelledby="share-heading">
@@ -31,10 +31,12 @@
         </section>
     {% endif %}
 
-    {% if user == video.author %}
+    {% if may_edit_video %}
         <p>
             <a class="btn btn-outline-primary" href="{% url 'video_edit' video.pk %}">Edit video</a>
+            {% if user == video.author %}
             <a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>
+            {% endif %}
         </p>
     {% endif %}
 

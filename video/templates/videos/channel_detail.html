@@ -10,6 +10,7 @@
 
         {% if user == channel.owner %}
             <p><a class="btn btn-outline-primary" href="{% url 'channel_analytics' channel.pk %}">View channel analytics</a></p>
+            <p><a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a></p>
         {% endif %}
 
         {% if user.is_authenticated %}

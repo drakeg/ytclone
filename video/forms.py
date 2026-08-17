@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .models import Channel, Comment, Playlist, Video
+from .services.channels import accessible_channels
 
 
 class CommentForm(forms.ModelForm):
@@ -55,9 +56,7 @@ class VideoUploadForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["channel"].queryset = (
-            Channel.objects.filter(owner=user) if user else Channel.objects.none()
-        )
+        self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
         if user and not self.fields["channel"].queryset.exists():
             self.fields["channel"].help_text = "Create a channel before uploading a video."

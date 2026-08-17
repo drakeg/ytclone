@@ -419,11 +419,35 @@ Verification:
 - Migration-leaf regression updated through `0012`
 - Compose configuration, Docker shell scripts, and Python compilation validated
 
-## Next sprint candidate
+## Completed sprint: Channel Team Roles
 
-Channel team roles with explicit owner/editor permissions.
+Goal: add owner-managed editors for delegated uploads and video editing.
+
+Delivered:
+
+- Owner-only editor administration
+- Assigned-channel uploads
+- Editor access to active channel-video editing
+- Explicit exclusion from analytics, deletion, teams, moderation, and bulk actions
+- Ownership and forged-request regression coverage
+- Docker and non-Docker test instructions
+
+Out of scope:
+
+- Delegated analytics, team administration, deletion, bulk actions, and comment moderation
+- Viewer, analyst, and custom roles
+- Invitations, email delivery, membership expiration, and activity audit logs
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 186 tests passed, including 12 focused channel-team tests
+- Migration-leaf regression updated through `0013`
+- Compose configuration validated; the local Docker engine was inaccessible from this workspace, so container execution remains a local handoff check
 
 ## Later candidates
 
+- Channel-team invitations, expiration, and activity history
 - Responsive UI and design-system refresh covering navigation, typography, spacing, forms, tables, video cards, creator dashboards, empty states, accessibility, and mobile behavior
 - Low-cost AWS application hosting and deployment

@@ -449,5 +449,23 @@ Verification:
 ## Later candidates
 
 - Channel-team invitations, expiration, and activity history
-- Responsive UI and design-system refresh covering navigation, typography, spacing, forms, tables, video cards, creator dashboards, empty states, accessibility, and mobile behavior
 - Low-cost AWS application hosting and deployment
+
+## Current sprint: Interface and Design System
+
+Goal: replace prototype styling with an original, polished, responsive video-platform interface.
+
+Planned:
+
+- Cohesive color, type, spacing, elevation, and component tokens
+- Responsive header, navigation drawer, search, and creator actions
+- Redesigned video cards, discovery sections, and playback detail
+- Consistent channels, profiles, playlists, forms, tables, analytics, comments, notifications, and empty states
+- Keyboard focus, contrast, semantic landmarks, and reduced-motion safeguards
+- Docker and non-Docker regression instructions plus desktop/mobile visual verification
+
+Out of scope:
+
+- YouTube branding or pixel-level imitation
+- Product behavior, permissions, recommendation logic, or infrastructure changes
+- Front-end frameworks, paid services, and user-selectable themes

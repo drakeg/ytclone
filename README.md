@@ -27,6 +27,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Viewer-owned comment editing and confirmed deletion with moderation-safe behavior
 - One-level threaded comment replies with parent-scoped moderation and deduplicated notifications
 - Owner-managed channel editors for delegated uploads and video metadata changes
+- Original responsive interface with accessible navigation, polished video surfaces, and shared creator components
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -193,6 +194,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/comment-ownership.md` — author editing, deletion, visibility boundaries, and tests
 - `docs/comment-replies.md` — reply threads, moderation inheritance, notifications, and tests
 - `docs/channel-teams.md` — editor permissions, owner safeguards, migration, and tests
+- `docs/ui-design.md` — visual system, responsive behavior, accessibility, and verification
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -208,4 +210,4 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint will extend channel collaboration with an explicitly bounded workflow such as invitations or activity history. A responsive UI/design-system refresh remains documented in the roadmap backlog. Higher-cost AWS services will be introduced only when usage justifies them.
+The next likely product sprint will either extend channel collaboration with an explicitly bounded workflow or prepare low-cost application hosting. Higher-cost AWS services will be introduced only when usage justifies them.

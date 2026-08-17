@@ -108,6 +108,32 @@ class Channel(models.Model):
         return self.name
 
 
+class ChannelMembership(models.Model):
+    class Role(models.TextChoices):
+        EDITOR = "editor", "Editor"
+
+    channel = models.ForeignKey(
+        Channel, on_delete=models.CASCADE, related_name="memberships"
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="channel_memberships"
+    )
+    role = models.CharField(
+        max_length=20, choices=Role.choices, default=Role.EDITOR
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["channel", "user"], name="unique_channel_team_member"
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.channel}: {self.user} ({self.get_role_display()})"
+
+
 class Playlist(models.Model):
     class Visibility(models.TextChoices):
         PUBLIC = "public", "Public"

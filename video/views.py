@@ -14,6 +14,7 @@ from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoEditForm, Vi
 from .models import (
     Category,
     Channel,
+    ChannelMembership,
     Comment,
     Notification,
     Playlist,
@@ -22,6 +23,7 @@ from .models import (
     WatchHistory,
 )
 from .services.analytics import get_channel_analytics, get_creator_analytics
+from .services.channels import can_edit_video
 from .services.discovery import get_discovery_sections
 from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription
 from .services.moderation import (
@@ -205,6 +207,7 @@ def _render_video_detail(request, video):
 
     viewed_video_ids = request.session.get(VIEWED_VIDEOS_SESSION_KEY, [])
     is_owner = request.user.is_authenticated and request.user.pk == video.author_id
+    may_edit = request.user.is_authenticated and can_edit_video(request.user, video)
 
     if not is_owner and video.pk not in viewed_video_ids:
         Video.objects.filter(pk=video.pk).update(views=F("views") + 1)
@@ -221,6 +224,7 @@ def _render_video_detail(request, video):
             "comments": comments,
             "playlists": playlists,
             "history_entry": history_entry,
+            "may_edit_video": may_edit,
         },
     )
 
@@ -497,9 +501,9 @@ def upload_video(request):
 
 @login_required
 def video_edit(request, pk):
-    video = get_object_or_404(
-        Video, pk=pk, author=request.user, deleted_at__isnull=True
-    )
+    video = get_object_or_404(Video, pk=pk, deleted_at__isnull=True)
+    if not can_edit_video(request.user, video):
+        raise Http404("Video not found")
     if request.method == "POST":
         form = VideoEditForm(
             request.POST, request.FILES, instance=video, user=request.user
@@ -510,6 +514,41 @@ def video_edit(request, pk):
     else:
         form = VideoEditForm(instance=video, user=request.user)
     return render(request, "videos/video_edit.html", {"form": form, "video": video})
+
+
+@login_required
+def channel_team(request, pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    error = None
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        user = User.objects.filter(username=username).first()
+        if user is None:
+            error = "User not found."
+        elif user.pk == request.user.pk:
+            error = "The channel owner is already on the team."
+        elif ChannelMembership.objects.filter(channel=channel, user=user).exists():
+            error = "That user is already an editor."
+        else:
+            ChannelMembership.objects.create(channel=channel, user=user)
+            return redirect("channel_team", pk=channel.pk)
+    memberships = channel.memberships.select_related("user").order_by("user__username")
+    return render(
+        request,
+        "videos/channel_team.html",
+        {"channel": channel, "memberships": memberships, "error": error},
+    )
+
+
+@login_required
+@require_POST
+def channel_team_remove(request, pk, membership_pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    membership = get_object_or_404(
+        ChannelMembership, pk=membership_pk, channel=channel
+    )
+    membership.delete()
+    return redirect("channel_team", pk=channel.pk)
 
 
 @login_required

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <h1>{{ channel.name }} team</h1>
+    <p class="text-muted">Editors can upload to this channel and edit its active videos. Only the owner can manage this list.</p>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form class="row g-2 mb-4" method="post">
+        {% csrf_token %}
+        <div class="col-auto"><label class="visually-hidden" for="username">Exact username</label><input class="form-control" id="username" name="username" placeholder="Exact username" required></div>
+        <div class="col-auto"><button class="btn btn-primary" type="submit">Add editor</button></div>
+    </form>
+    <ul class="list-group">
+        {% for membership in memberships %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>{{ membership.user.username }} · {{ membership.get_role_display }}</span>
+            <form method="post" action="{% url 'channel_team_remove' channel.pk membership.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+        </li>
+        {% empty %}<li class="list-group-item">No editors yet.</li>{% endfor %}
+    </ul>
+</div>
+{% endblock %}

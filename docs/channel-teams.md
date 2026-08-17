@@ -1,8 +1,8 @@
 # Channel Team Roles
 
-## Sprint goal
+## Delivered behavior
 
-Let channel owners delegate upload and video-editing work through an explicit editor role without delegating ownership, analytics, membership administration, deletion, or bulk actions.
+Channel owners can delegate upload and video-editing work through an explicit editor role without delegating ownership, analytics, membership administration, deletion, or bulk actions.
 
 ## Scope and safeguards
 
@@ -40,6 +40,14 @@ python manage.py test
 Focused tests: `python manage.py test video.test_channel_teams`.
 
 Terraform is unaffected. The responsive UI/design-system refresh remains in the roadmap backlog.
+
+## Verification
+
+- Django system checks passed.
+- Migration-drift checks reported no changes.
+- All 186 tests passed, including 12 focused channel-team tests.
+- The migration-leaf regression now covers `0013_channelmembership`.
+- Compose configuration validated, and the documented test service runs the same check, drift, and full-suite sequence. The local Docker engine was not accessible from this workspace, so the container invocation remains a local handoff check.
 
 ## Out of scope
 

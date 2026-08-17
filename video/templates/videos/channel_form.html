@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Create channel · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">Creator setup</p><h1>Create a channel</h1><p>Your channel is where your videos live. Create one before uploading your first video.</p></div></header>
+<form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button type="submit" class="btn btn-primary">Create channel</button><a class="btn btn-outline-secondary" href="{% url 'current_profile' %}">Cancel</a></div></form>
+{% endblock %}

@@ -67,3 +67,16 @@ class RegistrationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(User.objects.filter(username="newuser").exists())
+
+    def test_login_redirects_to_video_list(self):
+        User.objects.create_user(username="viewer", password="StrongTestPassword123!")
+
+        response = self.client.post(
+            reverse("login"),
+            {
+                "username": "viewer",
+                "password": "StrongTestPassword123!",
+            },
+        )
+
+        self.assertRedirects(response, reverse("video_list"))

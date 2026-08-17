@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}Channels · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">People worth following</p><h1>Channels</h1><p>Explore creators and the communities growing around their work.</p></div></header>
+<header class="page-header"><div><p class="eyebrow">People worth following</p><h1>Channels</h1><p>Explore creators and the communities growing around their work.</p>{% if user.is_authenticated %}<div class="form-actions"><a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a></div>{% endif %}</div></header>
 <div class="video-grid">
-{% for channel in channels %}<article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h2 class="h4"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h2><p class="video-meta">{{ channel.description|default:"Discover this creator's videos."|truncatewords:20 }}</p></div></article>{% empty %}<div class="empty-state">No channels yet.</div>{% endfor %}
+{% for channel in channels %}<article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h2 class="h4"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h2><p class="video-meta">{{ channel.description|default:"Discover this creator's videos."|truncatewords:20 }}</p></div></article>{% empty %}<div class="empty-state">No channels yet.{% if user.is_authenticated %} Create the first one.{% endif %}</div>{% endfor %}
 </div>
 {% endblock %}

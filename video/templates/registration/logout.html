@@ -1,9 +1,3 @@
 {% extends 'base.html' %}
-
-{% block content %}
-    <h2>Log Out</h2>
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-primary">Log Out</button>
-    </form>
-{% endblock %}
+{% block title %}Log out · VideoShare{% endblock %}
+{% block content %}<header class="page-header"><div><p class="eyebrow">Account</p><h1>Log out?</h1><p>Your saved progress will be waiting when you return.</p></div></header><form class="form-panel" method="post">{% csrf_token %}<button type="submit" class="btn btn-primary">Log Out</button></form>{% endblock %}

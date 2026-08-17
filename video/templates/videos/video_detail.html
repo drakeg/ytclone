@@ -1,174 +1,121 @@
 {% extends 'base.html' %}
 
+{% block title %}{{ video.title }} · VideoShare{% endblock %}
+
 {% block content %}
-<div class="video-detail">
-    <h2>{{ video.title }}</h2>
-    <p>{{ video.description }}</p>
-    <video
-        id="video-player"
-        src="{{ video.video_file.url }}"
-        controls
-        {% if user.is_authenticated %}
-            data-progress-url="{% url 'playback_progress' video.pk %}"
-            data-resume-position="{{ history_entry.playback_position_seconds }}"
-        {% endif %}
-    ></video>
-    <p>Views: {{ video.views }}</p>
-    <p>Author: {{ video.author }}</p>
-    {% if video.channel %}<p>Channel: <a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></p>{% endif %}
-    <p>Category: {{ video.category }}</p>
-    <p>Publish Date: {{ video.pub_date }}</p>
-    {% if may_edit_video %}<p>Status: {{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</p>{% endif %}
+<article class="video-watch">
+    <div>
+        <div class="player-frame">
+            <video id="video-player" src="{{ video.video_file.url }}" controls {% if user.is_authenticated %}data-progress-url="{% url 'playback_progress' video.pk %}" data-resume-position="{{ history_entry.playback_position_seconds }}"{% endif %}></video>
+        </div>
+        <h1 class="watch-title">{{ video.title }}</h1>
+        <div class="watch-meta">
+            <span>{{ video.views }} view{{ video.views|pluralize }}</span>
+            <span>{{ video.pub_date|date:"M j, Y" }}</span>
+            {% if video.category %}<a href="{% url 'category_detail' video.category.pk %}">{{ video.category }}</a>{% endif %}
+            {% if may_edit_video %}<span>{{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</span>{% endif %}
+        </div>
 
-    {% if user == video.author and video.publication_status == "unlisted" %}
-        <section class="my-3" aria-labelledby="share-heading">
-            <h3 id="share-heading">Unlisted share link</h3>
-            <p><a href="{% url 'shared_video_detail' video.share_token %}">{% url 'shared_video_detail' video.share_token %}</a></p>
-            <form method="post" action="{% url 'video_rotate_share_token' video.pk %}">
-                {% csrf_token %}
-                <button class="btn btn-outline-warning" type="submit">Revoke and create a new link</button>
-            </form>
-        </section>
-    {% endif %}
-
-    {% if may_edit_video %}
-        <p>
-            <a class="btn btn-outline-primary" href="{% url 'video_edit' video.pk %}">Edit video</a>
-            {% if user == video.author %}
-            <a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>
+        <div class="watch-actions">
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-primary">Like</button></form>
+                <form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary">Dislike</button></form>
             {% endif %}
-        </p>
-    {% endif %}
-
-    {% if user.is_authenticated %}
-    <form method="post" action="{% url 'like_video' video.pk %}" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-primary">Like</button>
-    </form>
-    <form method="post" action="{% url 'dislike_video' video.pk %}" class="d-inline">
-        {% csrf_token %}
-        <button type="submit" class="btn btn-outline-secondary">Dislike</button>
-    </form>
-
-    <section>
-        <h3>Save to Playlist</h3>
-        {% for playlist in playlists %}
-        <form method="post" action="{% url 'playlist_add_video' playlist.pk video.pk %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-outline-primary">{{ playlist.name }}</button>
-        </form>
-        {% empty %}
-        <p><a href="{% url 'playlist_create' %}">Create your first playlist</a></p>
-        {% endfor %}
-    </section>
-    {% endif %}
-</div>
-
-<div class="comments">
-    <h3>Comments</h3>
-    {% for comment in comments %}
-    <div class="comment">
-        <p>{{ comment.comment }}</p>
-        <p>Author: {{ comment.author }}</p>
-        <p>Publish Date: {{ comment.pub_date }}</p>
-        {% if user == comment.author %}
-        <p>
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'comment_edit' comment.pk %}">Edit</a>
-            <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a>
-        </p>
-        {% endif %}
-        {% for reply in comment.visible_replies %}
-        <div class="comment ms-4 border-start ps-3">
-            <p>{{ reply.comment }}</p>
-            <p>Author: {{ reply.author }}</p>
-            <p>Publish Date: {{ reply.pub_date }}</p>
-            {% if user == reply.author %}
-            <p>
-                <a class="btn btn-sm btn-outline-primary" href="{% url 'comment_edit' reply.pk %}">Edit</a>
-                <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>
-            </p>
+            {% if may_edit_video %}
+                <a class="btn btn-outline-secondary" href="{% url 'video_edit' video.pk %}">Edit video</a>
+                {% if user == video.author %}<a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>{% endif %}
             {% endif %}
         </div>
-        {% endfor %}
-        {% if user.is_authenticated %}
-        <form class="ms-4 mb-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
-            {% csrf_token %}
-            <label class="form-label" for="reply-{{ comment.pk }}">Reply</label>
-            <textarea class="form-control mb-2" id="reply-{{ comment.pk }}" name="comment" rows="2" required></textarea>
-            <button class="btn btn-sm btn-outline-primary" type="submit">Post reply</button>
-        </form>
+
+        <div class="watch-description">{{ video.description }}</div>
+
+        {% if user == video.author and video.publication_status == "unlisted" %}
+            <section class="panel p-3 my-3" aria-labelledby="share-heading">
+                <h2 class="h5" id="share-heading">Unlisted share link</h2>
+                <p class="text-break"><a href="{% url 'shared_video_detail' video.share_token %}">{% url 'shared_video_detail' video.share_token %}</a></p>
+                <form method="post" action="{% url 'video_rotate_share_token' video.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Revoke and create a new link</button></form>
+            </section>
         {% endif %}
     </div>
-    {% empty %}
-    <p>No comments yet.</p>
-    {% endfor %}
-</div>
 
-{% if user.is_authenticated %}
-<div class="comment-form">
-    <h3>Leave a Comment</h3>
-    <form method="post" action="{% url 'add_comment' video.pk %}">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
-</div>
-{% else %}
-<p><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to comment, react, or save videos.</a></p>
-{% endif %}
+    <aside class="watch-sidebar" aria-label="Video creator and saving options">
+        <p class="eyebrow">Creator</p>
+        {% if video.channel %}
+            <h2 class="h4"><a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></h2>
+        {% else %}
+            <h2 class="h4"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></h2>
+        {% endif %}
+        <p class="video-meta">Uploaded by {{ video.author }}</p>
+
+        {% if user.is_authenticated %}
+            <hr>
+            <h3 class="h6">Save to a playlist</h3>
+            <div class="d-flex flex-wrap gap-2">
+                {% for playlist in playlists %}
+                    <form method="post" action="{% url 'playlist_add_video' playlist.pk video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">{{ playlist.name }}</button></form>
+                {% empty %}
+                    <p class="video-meta"><a href="{% url 'playlist_create' %}">Create your first playlist</a></p>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="video-meta"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to comment, react, or save videos.</a></p>
+        {% endif %}
+    </aside>
+</article>
+
+<section class="comments" aria-labelledby="comments-heading">
+    <div class="section-heading"><h2 id="comments-heading">Comments</h2></div>
+
+    {% if user.is_authenticated %}
+        <form class="form-panel mb-4" method="post" action="{% url 'add_comment' video.pk %}">
+            {% csrf_token %}{{ form.as_p }}<button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    {% endif %}
+
+    {% for comment in comments %}
+        <article class="comment">
+            <div><span class="comment-author">{{ comment.author }}</span> <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span></div>
+            <p class="comment-body">{{ comment.comment }}</p>
+            {% if user == comment.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a></div>{% endif %}
+
+            {% for reply in comment.visible_replies %}
+                <article class="comment-reply">
+                    <div><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span></div>
+                    <p class="comment-body">{{ reply.comment }}</p>
+                    {% if user == reply.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a></div>{% endif %}
+                </article>
+            {% endfor %}
+
+            {% if user.is_authenticated %}
+                <form class="comment-reply mt-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
+                    {% csrf_token %}<label for="reply-{{ comment.pk }}">Reply</label><textarea id="reply-{{ comment.pk }}" name="comment" rows="2" required></textarea><button class="btn btn-sm btn-outline-primary mt-2" type="submit">Post reply</button>
+                </form>
+            {% endif %}
+        </article>
+    {% empty %}
+        <div class="empty-state">No comments yet.</div>
+    {% endfor %}
+</section>
 
 {% if user.is_authenticated %}
 <script>
-    (() => {
-        const player = document.getElementById("video-player");
-        const progressUrl = player.dataset.progressUrl;
-        const resumePosition = Number(player.dataset.resumePosition || 0);
-        let lastSavedSecond = -1;
-
-        const csrfToken = document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("csrftoken="))
-            ?.split("=")[1];
-
-        player.addEventListener("loadedmetadata", () => {
-            if (resumePosition > 0 && resumePosition < player.duration - 5) {
-                player.currentTime = resumePosition;
-            }
-        }, { once: true });
-
-        const saveProgress = () => {
-            if (!Number.isFinite(player.duration) || player.duration <= 0) {
-                return;
-            }
-            const currentSecond = Math.round(player.currentTime);
-            if (currentSecond === lastSavedSecond) {
-                return;
-            }
-            lastSavedSecond = currentSecond;
-            fetch(progressUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrfToken,
-                },
-                body: JSON.stringify({
-                    position_seconds: player.currentTime,
-                    duration_seconds: player.duration,
-                }),
-                credentials: "same-origin",
-                keepalive: true,
-            });
-        };
-
-        player.addEventListener("timeupdate", () => {
-            if (Math.round(player.currentTime) % 10 === 0) {
-                saveProgress();
-            }
-        });
-        player.addEventListener("pause", saveProgress);
-        player.addEventListener("ended", saveProgress);
-        window.addEventListener("pagehide", saveProgress);
-    })();
+(() => {
+    const player = document.getElementById("video-player");
+    const progressUrl = player.dataset.progressUrl;
+    const resumePosition = Number(player.dataset.resumePosition || 0);
+    let lastSavedSecond = -1;
+    const csrfToken = document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1];
+    player.addEventListener("loadedmetadata", () => { if (resumePosition > 0 && resumePosition < player.duration - 5) player.currentTime = resumePosition; }, { once: true });
+    const saveProgress = () => {
+        if (!Number.isFinite(player.duration) || player.duration <= 0) return;
+        const currentSecond = Math.round(player.currentTime);
+        if (currentSecond === lastSavedSecond) return;
+        lastSavedSecond = currentSecond;
+        fetch(progressUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }, body: JSON.stringify({ position_seconds: player.currentTime, duration_seconds: player.duration }), credentials: "same-origin", keepalive: true });
+    };
+    player.addEventListener("timeupdate", () => { if (Math.round(player.currentTime) % 10 === 0) saveProgress(); });
+    player.addEventListener("pause", saveProgress); player.addEventListener("ended", saveProgress); window.addEventListener("pagehide", saveProgress);
+})();
 </script>
 {% endif %}
 {% endblock %}

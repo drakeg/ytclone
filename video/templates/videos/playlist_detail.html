@@ -1,33 +1,6 @@
 {% extends 'base.html' %}
-
+{% block title %}{{ playlist.name }} · VideoShare{% endblock %}
 {% block content %}
-<h2>{{ playlist.name }}</h2>
-<p>{{ playlist.get_visibility_display }} · by {{ playlist.owner.username }}</p>
-{% if playlist.description %}<p>{{ playlist.description }}</p>{% endif %}
-
-{% if request.user == playlist.owner %}
-<p>
-    <a class="btn btn-secondary" href="{% url 'playlist_edit' playlist.pk %}">Edit</a>
-</p>
-<form method="post" action="{% url 'playlist_delete' playlist.pk %}">
-    {% csrf_token %}
-    <button class="btn btn-danger" type="submit">Delete Playlist</button>
-</form>
-{% endif %}
-
-<h3>Videos</h3>
-{% for item in visible_items %}
-    <article>
-        <h4><a href="{% url 'video_detail' item.video.pk %}">{{ item.video.title }}</a></h4>
-        <p>{{ item.video.description|truncatewords:25 }}</p>
-        {% if request.user == playlist.owner %}
-        <form method="post" action="{% url 'playlist_remove_video' playlist.pk item.pk %}">
-            {% csrf_token %}
-            <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
-        </form>
-        {% endif %}
-    </article>
-{% empty %}
-    <p>This playlist is empty.</p>
-{% endfor %}
+<header class="page-header"><div><p class="eyebrow">{{ playlist.get_visibility_display }} playlist · by {{ playlist.owner.username }}</p><h1>{{ playlist.name }}</h1><p>{{ playlist.description|default:"A VideoShare collection." }}</p></div>{% if request.user == playlist.owner %}<div class="d-flex gap-2"><a class="btn btn-outline-secondary" href="{% url 'playlist_edit' playlist.pk %}">Edit</a><form method="post" action="{% url 'playlist_delete' playlist.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Delete playlist</button></form></div>{% endif %}</header>
+<section><div class="section-heading"><h2>Videos</h2></div><div class="video-grid">{% for item in visible_items %}<article class="video-card"><div class="thumbnail"><a href="{% url 'video_detail' item.video.pk %}"><img src="{{ item.video.thumbnail.url }}" alt="Thumbnail for {{ item.video.title }}"></a></div><div class="video-card-body"><h3 class="video-title"><a href="{% url 'video_detail' item.video.pk %}">{{ item.video.title }}</a></h3><p class="video-meta">{{ item.video.description|truncatewords:18 }}</p>{% if request.user == playlist.owner %}<form class="mt-2" method="post" action="{% url 'playlist_remove_video' playlist.pk item.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>{% endif %}</div></article>{% empty %}<div class="empty-state">This playlist is empty.</div>{% endfor %}</div></section>
 {% endblock %}

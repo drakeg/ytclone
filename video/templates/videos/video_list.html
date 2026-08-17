@@ -1,72 +1,46 @@
 {% extends 'base.html' %}
 
+{% block title %}Discover · VideoShare{% endblock %}
+
 {% block content %}
-    <header class="py-4">
-        <h1>Discover</h1>
-        <p class="text-body-secondary">Explore new and popular videos from the community.</p>
+    <header class="hero">
+        <p class="eyebrow">Made by the community</p>
+        <h1>Find your next favorite watch.</h1>
+        <p>Fresh uploads, hidden gems, and ideas worth sharing—all in one calmer corner of the internet.</p>
     </header>
 
     {% if user.is_authenticated %}
         <section class="discovery-section" aria-labelledby="continue-heading">
-            <h2 id="continue-heading">Continue watching</h2>
-            <div class="row g-3">
+            <div class="section-heading"><h2 id="continue-heading">Continue watching</h2></div>
+            <div class="video-grid">
                 {% for video in sections.continue_watching_videos %}
-                    <div class="col-12 col-sm-6 col-lg-3 video">
-                        <div class="thumbnail">
-                            <a href="{% url 'video_detail' video.pk %}">
-                                <img class="img-fluid" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}">
-                            </a>
-                        </div>
-                        <div class="progress mt-2" role="progressbar" aria-label="Playback progress for {{ video.title }}" aria-valuenow="{{ video.resume_position_seconds }}" aria-valuemin="0" aria-valuemax="{{ video.playback_duration_seconds }}">
-                            <div class="progress-bar" style="width: {% widthratio video.resume_position_seconds video.playback_duration_seconds 100 %}%"></div>
-                        </div>
-                        <div class="video_title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></div>
-                        <div class="video_author">{{ video.author }}</div>
-                    </div>
+                    <article class="video-card">
+                        <div class="thumbnail"><a href="{% url 'video_detail' video.pk %}"><img src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}"></a></div>
+                        <div class="progress" role="progressbar" aria-label="Playback progress for {{ video.title }}" aria-valuenow="{{ video.resume_position_seconds }}" aria-valuemin="0" aria-valuemax="{{ video.playback_duration_seconds }}"><div class="progress-bar" style="width: {% widthratio video.resume_position_seconds video.playback_duration_seconds 100 %}%"></div></div>
+                        <div class="video-card-body"><h3 class="video-title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3><p class="video-meta">{{ video.author }}</p></div>
+                    </article>
                 {% empty %}
-                    <p class="text-body-secondary">No unfinished videos. Start watching something new.</p>
+                    <div class="empty-state">No unfinished videos. Start watching something new.</div>
                 {% endfor %}
             </div>
         </section>
     {% endif %}
 
-    <section class="discovery-section" aria-labelledby="newest-heading">
-        <h2 id="newest-heading">Newest videos</h2>
-        {% include 'videos/_video_cards.html' with videos=sections.newest_videos %}
-    </section>
-
-    <section class="discovery-section" aria-labelledby="viewed-heading">
-        <h2 id="viewed-heading">Most viewed</h2>
-        {% include 'videos/_video_cards.html' with videos=sections.most_viewed_videos %}
-    </section>
-
-    <section class="discovery-section" aria-labelledby="liked-heading">
-        <h2 id="liked-heading">Most liked</h2>
-        {% include 'videos/_video_cards.html' with videos=sections.most_liked_videos %}
-    </section>
+    <section class="discovery-section" aria-labelledby="newest-heading"><div class="section-heading"><h2 id="newest-heading">Newest videos</h2></div>{% include 'videos/_video_cards.html' with videos=sections.newest_videos %}</section>
+    <section class="discovery-section" aria-labelledby="viewed-heading"><div class="section-heading"><h2 id="viewed-heading">Most viewed</h2></div>{% include 'videos/_video_cards.html' with videos=sections.most_viewed_videos %}</section>
+    <section class="discovery-section" aria-labelledby="liked-heading"><div class="section-heading"><h2 id="liked-heading">Most liked</h2></div>{% include 'videos/_video_cards.html' with videos=sections.most_liked_videos %}</section>
 
     {% if user.is_authenticated %}
-        <section class="discovery-section" aria-labelledby="recent-heading">
-            <h2 id="recent-heading">Recently watched</h2>
-            {% include 'videos/_video_cards.html' with videos=sections.recently_watched_videos %}
-        </section>
+        <section class="discovery-section" aria-labelledby="recent-heading"><div class="section-heading"><h2 id="recent-heading">Recently watched</h2></div>{% include 'videos/_video_cards.html' with videos=sections.recently_watched_videos %}</section>
     {% endif %}
 
     <section class="discovery-section" aria-labelledby="playlists-heading">
-        <h2 id="playlists-heading">Public playlists</h2>
-        <div class="row g-3">
+        <div class="section-heading"><h2 id="playlists-heading">Public playlists</h2></div>
+        <div class="video-grid">
             {% for playlist in sections.public_playlists %}
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <article class="card h-100">
-                        <div class="card-body">
-                            <h3 class="h5 card-title"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3>
-                            <p class="card-text">{{ playlist.description|default:"A community playlist."|truncatewords:20 }}</p>
-                            <p class="card-text text-body-secondary">By {{ playlist.owner }} · {{ playlist.video_count }} video{{ playlist.video_count|pluralize }}</p>
-                        </div>
-                    </article>
-                </div>
+                <article class="card"><div class="card-body"><p class="eyebrow">Playlist</p><h3 class="h5"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h3><p>{{ playlist.description|default:"A community playlist."|truncatewords:20 }}</p><p class="video-meta">By {{ playlist.owner }} · {{ playlist.video_count }} video{{ playlist.video_count|pluralize }}</p></div></article>
             {% empty %}
-                <p class="text-body-secondary">No public playlists to show yet.</p>
+                <div class="empty-state">No public playlists to show yet.</div>
             {% endfor %}
         </div>
     </section>

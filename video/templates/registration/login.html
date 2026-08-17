@@ -1,36 +1,11 @@
 {% extends 'base.html' %}
-
+{% block title %}Log in · VideoShare{% endblock %}
 {% block content %}
-    <h2>Log In</h2>
-    {% if form.errors %}
-        <p>Your username and password didn't match. Please try again.</p>
-    {% endif %}
-
-    {% if next %}
-        {% if user.is_authenticated %}
-            <p>Your account doesn't have access to this page. To proceed,
-            please login with an account that has access.</p>
-        {% else %}
-            <p>Please login to see this page.</p>
-        {% endif %}
-    {% endif %}
-
-    <form method="post" action="{% url 'login' %}">
-        {% csrf_token %}
-        <table>
-            <tr>
-                <td>{{ form.username.label_tag }}</td>
-                <td>{{ form.username }}</td>
-            </tr>
-            <tr>
-                <td>{{ form.password.label_tag }}</td>
-                <td>{{ form.password }}</td>
-            </tr>
-        </table>
-        <input type="hidden" name="next" value="{{ next }}">
-        <button type="submit" class="btn btn-primary">Log In</button>
-    </form>
-    <p><a href="{% url 'password_reset' %}">Lost password?</a></p>
-
-
+<header class="page-header"><div><p class="eyebrow">Welcome back</p><h1>Log in</h1><p>Continue watching, creating, and collecting.</p></div></header>
+<div class="form-panel">
+{% if form.errors %}<div class="alert alert-danger">Your username and password didn't match. Please try again.</div>{% endif %}
+{% if next %}{% if user.is_authenticated %}<p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>{% else %}<p>Please login to see this page.</p>{% endif %}{% endif %}
+<form method="post" action="{% url 'login' %}">{% csrf_token %}{{ form.as_p }}<input type="hidden" name="next" value="{{ next }}"><button type="submit" class="btn btn-primary">Log In</button></form>
+<p class="mt-3 mb-0"><a href="{% url 'password_reset' %}">Lost password?</a></p>
+</div>
 {% endblock %}

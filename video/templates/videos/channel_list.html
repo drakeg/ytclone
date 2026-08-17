@@ -1,12 +1,8 @@
 {% extends 'base.html' %}
-
+{% block title %}Channels · VideoShare{% endblock %}
 {% block content %}
-    <h2>Channels</h2>
-    <ul>
-        {% for channel in channels %}
-            <li>
-                <a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a>
-            </li>
-        {% endfor %}
-    </ul>
+<header class="page-header"><div><p class="eyebrow">People worth following</p><h1>Channels</h1><p>Explore creators and the communities growing around their work.</p></div></header>
+<div class="video-grid">
+{% for channel in channels %}<article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h2 class="h4"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h2><p class="video-meta">{{ channel.description|default:"Discover this creator's videos."|truncatewords:20 }}</p></div></article>{% empty %}<div class="empty-state">No channels yet.</div>{% endfor %}
+</div>
 {% endblock %}

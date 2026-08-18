@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account_views, category_views, views
+from . import account_views, category_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -33,7 +33,7 @@ urlpatterns = [
     path("channels/<int:pk>/analytics/", views.channel_analytics, name="channel_analytics"),
     path("channels/<int:pk>/team/", views.channel_team, name="channel_team"),
     path("channels/<int:pk>/team/<int:membership_pk>/remove/", views.channel_team_remove, name="channel_team_remove"),
-    path("channels/<int:pk>/subscribe/", views.subscribe, name="subscribe"),
+    path("channels/<int:pk>/subscribe/", subscription_views.subscribe, name="subscribe"),
     path("categories/", views.category_list, name="category_list"),
     path("categories/create/", category_views.category_create, name="category_create"),
     path("categories/create/inline/", category_views.category_create_inline, name="category_create_inline"),

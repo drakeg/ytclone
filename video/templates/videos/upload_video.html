@@ -13,19 +13,16 @@
         </div>
     </div>
     {{ form.as_p }}
-    <div class="card mb-3" id="inline-category-panel">
-        <div class="card-body">
-            <h2 class="h6 mb-2">Need a different category?</h2>
-            <p class="video-meta">Category is optional. You can leave it blank, or create a new one here without leaving this upload.</p>
-            <div class="d-flex gap-2 align-items-end flex-wrap">
-                <div class="flex-grow-1">
-                    <label for="inline-category-name">New category name</label>
-                    <input id="inline-category-name" type="text" maxlength="255" autocomplete="off" placeholder="e.g. Travel">
-                </div>
-                <button id="inline-category-create" type="button" class="btn btn-outline-secondary">Create category</button>
+    <div id="inline-category-panel" class="mt-2 mb-3" hidden>
+        <div class="d-flex gap-2 align-items-end flex-wrap">
+            <div class="flex-grow-1">
+                <label for="inline-category-name">New category name</label>
+                <input id="inline-category-name" type="text" maxlength="255" autocomplete="off" placeholder="e.g. Travel">
             </div>
-            <p id="inline-category-status" class="helptext mb-0" aria-live="polite"></p>
+            <button id="inline-category-create" type="button" class="btn btn-outline-secondary">Create</button>
+            <button id="inline-category-cancel" type="button" class="btn btn-outline-secondary">Cancel</button>
         </div>
+        <p id="inline-category-status" class="helptext mb-0" aria-live="polite"></p>
     </div>
     <p class="helptext">If Chrome's file chooser freezes on your Mac, use the drag-and-drop area above instead of the video file Browse button.</p>
     <div class="form-actions"><button type="submit" class="btn btn-primary">Upload</button></div>
@@ -63,12 +60,44 @@
     }
 
     const categorySelect = document.getElementById('id_category');
+    const categoryPanel = document.getElementById('inline-category-panel');
     const categoryName = document.getElementById('inline-category-name');
     const categoryCreate = document.getElementById('inline-category-create');
+    const categoryCancel = document.getElementById('inline-category-cancel');
     const categoryStatus = document.getElementById('inline-category-status');
     const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
 
-    if (!categorySelect || !categoryName || !categoryCreate || !categoryStatus || !csrfToken) return;
+    if (!categorySelect || !categoryPanel || !categoryName || !categoryCreate || !categoryCancel || !categoryStatus || !csrfToken) return;
+
+    const createValue = '__create_category__';
+    const createOption = new Option('+ Create new category…', createValue);
+    categorySelect.add(createOption);
+
+    const categoryFieldContainer = categorySelect.closest('p');
+    if (categoryFieldContainer) {
+        categoryFieldContainer.insertAdjacentElement('afterend', categoryPanel);
+    }
+
+    let previousCategoryValue = categorySelect.value;
+
+    const closeCategoryCreator = () => {
+        categoryPanel.hidden = true;
+        categoryName.value = '';
+        categoryStatus.textContent = '';
+    };
+
+    categorySelect.addEventListener('change', () => {
+        if (categorySelect.value === createValue) {
+            categorySelect.value = previousCategoryValue;
+            categoryPanel.hidden = false;
+            categoryName.focus();
+        } else {
+            previousCategoryValue = categorySelect.value;
+            closeCategoryCreator();
+        }
+    });
+
+    categoryCancel.addEventListener('click', closeCategoryCreator);
 
     categoryCreate.addEventListener('click', async () => {
         const name = categoryName.value.trim();
@@ -99,13 +128,11 @@
             let option = Array.from(categorySelect.options).find((item) => item.value === String(data.id));
             if (!option) {
                 option = new Option(data.name, data.id);
-                categorySelect.add(option);
+                categorySelect.insertBefore(option, createOption);
             }
             categorySelect.value = String(data.id);
-            categoryName.value = '';
-            categoryStatus.textContent = data.created
-                ? `Created and selected “${data.name}”.`
-                : `Selected existing category “${data.name}”.`;
+            previousCategoryValue = String(data.id);
+            closeCategoryCreator();
         } catch (error) {
             categoryStatus.textContent = 'Could not create category. Try again.';
         } finally {

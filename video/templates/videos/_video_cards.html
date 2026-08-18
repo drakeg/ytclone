@@ -8,6 +8,7 @@
             </div>
             <div class="video-card-body">
                 <h3 class="video-title"><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3>
+                {% if video.audience == "members" %}<p class="eyebrow">Paid members only</p>{% endif %}
                 <p class="video-meta"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></p>
                 <p class="video-meta">{{ video.views }} view{{ video.views|pluralize }} · {{ video.pub_date|timesince }} ago</p>
             </div>

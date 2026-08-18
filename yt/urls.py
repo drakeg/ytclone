@@ -34,5 +34,6 @@ urlpatterns = [
     ),
     path('accounts/profile/', current_profile, name='current_profile'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('monetization/', include('monetization.urls')),
     path('videos/', include('video.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -48,9 +48,11 @@ class VideoUploadForm(forms.ModelForm):
             "thumbnail": forms.ClearableFileInput(
                 attrs={"accept": "image/jpeg,image/png,image/webp"}
             ),
-            "video_file": forms.ClearableFileInput(
-                attrs={"accept": "video/mp4,video/webm,video/quicktime"}
-            ),
+            # Do not set an ``accept`` filter on the video chooser. Chrome on macOS
+            # can spend a very long time filtering large/mixed folders before the
+            # native picker becomes responsive. Server-side validation below still
+            # enforces the supported extensions, MIME types, and upload-size limit.
+            "video_file": forms.ClearableFileInput(),
             "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 

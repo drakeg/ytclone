@@ -70,6 +70,11 @@ class VideoUploadForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
+        # Audience was added after the original upload/edit API. Keep older form
+        # submissions compatible by treating an omitted value as the existing
+        # public behavior rather than rejecting the whole form.
+        self.fields["audience"].required = False
+        self.fields["audience"].initial = Video.Audience.EVERYONE
         self.fields["audience"].help_text = (
             "Paid members only requires an active paid membership for the selected channel."
         )
@@ -80,7 +85,8 @@ class VideoUploadForm(forms.ModelForm):
         cleaned_data = super().clean()
         status = cleaned_data.get("publication_status")
         publish_at = cleaned_data.get("publish_at")
-        audience = cleaned_data.get("audience")
+        audience = cleaned_data.get("audience") or Video.Audience.EVERYONE
+        cleaned_data["audience"] = audience
         channel = cleaned_data.get("channel")
 
         if audience == Video.Audience.MEMBERS_ONLY and channel is not None:

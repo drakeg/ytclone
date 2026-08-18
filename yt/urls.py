@@ -17,6 +17,7 @@ from django.urls import include, path, reverse_lazy
 from django.views.generic import RedirectView
 from django.views.generic.edit import CreateView
 
+from video import access_views
 from video.account_views import current_profile
 from .forms import RegistrationForm
 
@@ -34,5 +35,7 @@ urlpatterns = [
     ),
     path('accounts/profile/', current_profile, name='current_profile'),
     path('accounts/', include('django.contrib.auth.urls')),
+    path('monetization/', include('monetization.urls')),
+    path('media/videos/files/<path:path>', access_views.media_video_file, name='protected_video_media'),
     path('videos/', include('video.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

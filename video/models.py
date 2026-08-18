@@ -20,13 +20,26 @@ class Category(models.Model):
 
 class VideoQuerySet(models.QuerySet):
     def visible_to(self, user):
-        visibility = Q(publication_status=Video.PublicationStatus.PUBLISHED) | Q(
+        publication_visibility = Q(publication_status=Video.PublicationStatus.PUBLISHED) | Q(
             publication_status=Video.PublicationStatus.SCHEDULED,
             publish_at__lte=timezone.now(),
         )
+        audience_visibility = Q(audience=Video.Audience.EVERYONE)
+        visibility = publication_visibility & audience_visibility
+
         if getattr(user, "is_authenticated", False):
+            from monetization.models import ChannelMembershipSubscription
+
+            paid_channel_ids = ChannelMembershipSubscription.objects.filter(
+                subscriber=user,
+                status=ChannelMembershipSubscription.Status.ACTIVE,
+            ).values("tier__monetization_account__channel_id")
+            visibility = publication_visibility & (
+                audience_visibility | Q(channel_id__in=paid_channel_ids)
+            )
             visibility |= Q(author=user)
-        return self.filter(visibility, deleted_at__isnull=True)
+
+        return self.filter(visibility, deleted_at__isnull=True).distinct()
 
 
 class Video(models.Model):
@@ -35,6 +48,10 @@ class Video(models.Model):
         UNLISTED = "unlisted", "Unlisted"
         SCHEDULED = "scheduled", "Scheduled"
         PUBLISHED = "published", "Published"
+
+    class Audience(models.TextChoices):
+        EVERYONE = "everyone", "Everyone"
+        MEMBERS_ONLY = "members", "Paid members only"
 
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -56,24 +73,46 @@ class Video(models.Model):
         choices=PublicationStatus.choices,
         default=PublicationStatus.PUBLISHED,
     )
+    audience = models.CharField(
+        max_length=12,
+        choices=Audience.choices,
+        default=Audience.EVERYONE,
+    )
     publish_at = models.DateTimeField(null=True, blank=True)
     share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     objects = VideoQuerySet.as_manager()
 
+    def has_member_access(self, user):
+        if self.audience == self.Audience.EVERYONE:
+            return True
+        if not getattr(user, "is_authenticated", False):
+            return False
+        if self.author_id == user.pk or (self.channel_id and self.channel.owner_id == user.pk):
+            return True
+        if not self.channel_id:
+            return False
+
+        from monetization.models import ChannelMembershipSubscription
+
+        return ChannelMembershipSubscription.objects.filter(
+            subscriber=user,
+            status=ChannelMembershipSubscription.Status.ACTIVE,
+            tier__monetization_account__channel_id=self.channel_id,
+        ).exists()
+
     def is_visible_to(self, user):
-        return self.deleted_at is None and (
-            self.author_id == getattr(user, "pk", None)
-            or (
-                self.publication_status == self.PublicationStatus.PUBLISHED
-                or (
-                    self.publication_status == self.PublicationStatus.SCHEDULED
-                    and self.publish_at is not None
-                    and self.publish_at <= timezone.now()
-                )
-            )
+        if self.deleted_at is not None:
+            return False
+        if self.author_id == getattr(user, "pk", None):
+            return True
+        publication_visible = self.publication_status == self.PublicationStatus.PUBLISHED or (
+            self.publication_status == self.PublicationStatus.SCHEDULED
+            and self.publish_at is not None
+            and self.publish_at <= timezone.now()
         )
+        return publication_visible and self.has_member_access(user)
 
     def __str__(self):
         return self.title

@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "storages",
     "video",
+    "monetization",
 ]
 
 MIDDLEWARE = [
@@ -115,6 +116,11 @@ MAX_VIDEO_UPLOAD_MB = int(os.getenv("DJANGO_MAX_VIDEO_UPLOAD_MB", "500"))
 MAX_THUMBNAIL_UPLOAD_MB = int(os.getenv("DJANGO_MAX_THUMBNAIL_UPLOAD_MB", "10"))
 MAX_VIDEO_UPLOAD_SIZE = MAX_VIDEO_UPLOAD_MB * 1024 * 1024
 MAX_THUMBNAIL_UPLOAD_SIZE = MAX_THUMBNAIL_UPLOAD_MB * 1024 * 1024
+
+# Revenue share is configurable and snapshotted onto every transaction. 1000 bps = 10%.
+MONETIZATION_PLATFORM_FEE_BPS = int(os.getenv("MONETIZATION_PLATFORM_FEE_BPS", "1000"))
+if not 0 <= MONETIZATION_PLATFORM_FEE_BPS <= 10000:
+    raise RuntimeError("MONETIZATION_PLATFORM_FEE_BPS must be between 0 and 10000.")
 
 USE_S3_MEDIA = env_bool("DJANGO_USE_S3_MEDIA", False)
 

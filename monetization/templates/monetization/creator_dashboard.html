@@ -28,22 +28,22 @@
         <div>
             <p class="eyebrow">Status</p>
             <h2 class="h4 mb-1">Ready to earn</h2>
-            <p class="mb-0">Platform share: {{ platform_fee_bps|floatformat:0 }} basis points of each transaction.</p>
+            <p class="mb-0">Platform share: {{ platform_fee_percent|floatformat:2 }}% of each transaction.</p>
         </div>
         <a class="btn btn-primary" href="{% url 'monetization:tier_create' channel.pk %}">Create membership tier</a>
     </div>
 </section>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Creator net</p><h2 class="h3">${{ creator_net_minor|floatformat:2 }}</h2><p class="video-meta">Amounts shown are sandbox ledger values.</p></div></div></div>
-    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Platform share</p><h2 class="h3">${{ platform_fee_minor|floatformat:2 }}</h2><p class="video-meta">Sandbox platform revenue recorded from memberships.</p></div></div></div>
+    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Creator net</p><h2 class="h3">${{ creator_net_display }}</h2><p class="video-meta">Amounts shown are sandbox ledger values.</p></div></div></div>
+    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Platform share</p><h2 class="h3">${{ platform_fee_display }}</h2><p class="video-meta">Sandbox platform revenue recorded from memberships.</p></div></div></div>
 </div>
 
 <section class="discovery-section mb-4">
     <div class="section-heading"><h2>Membership tiers</h2></div>
     <div class="row g-3">
         {% for tier in tiers %}
-        <div class="col-md-6"><div class="card h-100"><div class="card-body"><h3 class="h5">{{ tier.name }}</h3><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_minor }} / month</p></div></div></div>
+        <div class="col-md-6"><div class="card h-100"><div class="card-body"><h3 class="h5">{{ tier.name }}</h3><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_display }} / month</p></div></div></div>
         {% empty %}
         <div class="empty-state">No membership tiers yet. Create one to offer paid members access.</div>
         {% endfor %}
@@ -53,7 +53,7 @@
 <section class="discovery-section">
     <div class="section-heading"><h2>Recent transactions</h2></div>
     {% for transaction in transactions %}
-        <div class="card mb-2"><div class="card-body"><strong>{{ transaction.get_kind_display }}</strong> · {{ transaction.get_status_display }} · gross {{ transaction.gross_amount_minor }} {{ transaction.currency }} · creator net {{ transaction.creator_net_minor }}</div></div>
+        <div class="card mb-2"><div class="card-body"><strong>{{ transaction.get_kind_display }}</strong> · {{ transaction.get_status_display }} · gross ${{ transaction.gross_display }} · creator net ${{ transaction.creator_net_display }}</div></div>
     {% empty %}
         <div class="empty-state">No sandbox transactions yet.</div>
     {% endfor %}

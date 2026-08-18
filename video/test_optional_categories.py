@@ -26,14 +26,16 @@ class OptionalVideoCategoryTests(TestCase):
         self.assertFalse(form.fields["category"].required)
         self.assertEqual(form.fields["category"].queryset.count(), 0)
 
-    def test_upload_page_offers_inline_category_creation(self):
+    def test_upload_page_offers_category_creation_from_dropdown(self):
         self.client.login(username="creator", password="password123")
 
         response = self.client.get(reverse("upload"))
 
-        self.assertContains(response, "Category is optional")
+        self.assertContains(response, "+ Create new category…")
+        self.assertContains(response, 'id="inline-category-panel"')
         self.assertContains(response, 'id="inline-category-name"')
         self.assertContains(response, reverse("category_create_inline"))
+        self.assertContains(response, 'categoryFieldContainer.insertAdjacentElement')
 
     def test_creator_can_create_category_inline_without_artwork(self):
         self.client.login(username="creator", password="password123")

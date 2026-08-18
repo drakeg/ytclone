@@ -25,6 +25,8 @@ class VideoQuerySet(models.QuerySet):
             publish_at__lte=timezone.now(),
         )
         audience_visibility = Q(audience=Video.Audience.EVERYONE)
+        visibility = publication_visibility & audience_visibility
+
         if getattr(user, "is_authenticated", False):
             from monetization.models import ChannelMembershipSubscription
 
@@ -32,13 +34,12 @@ class VideoQuerySet(models.QuerySet):
                 subscriber=user,
                 status=ChannelMembershipSubscription.Status.ACTIVE,
             ).values("tier__monetization_account__channel_id")
-            audience_visibility |= Q(channel_id__in=paid_channel_ids)
-            publication_visibility |= Q(author=user)
+            visibility = publication_visibility & (
+                audience_visibility | Q(channel_id__in=paid_channel_ids)
+            )
+            visibility |= Q(author=user)
 
-        return self.filter(
-            publication_visibility & audience_visibility | Q(author=user),
-            deleted_at__isnull=True,
-        ).distinct()
+        return self.filter(visibility, deleted_at__isnull=True).distinct()
 
 
 class Video(models.Model):

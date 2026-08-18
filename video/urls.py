@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import account_views, category_views, views
+from . import access_views, account_views, category_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -14,7 +14,7 @@ urlpatterns = [
     path("notifications/read-all/", views.notification_mark_all_read, name="notification_mark_all_read"),
     path("notifications/<int:pk>/read/", views.notification_mark_read, name="notification_mark_read"),
     path("videos/<int:pk>/", views.video_detail, name="video_detail"),
-    path("videos/shared/<uuid:token>/", views.shared_video_detail, name="shared_video_detail"),
+    path("videos/shared/<uuid:token>/", access_views.shared_video_detail, name="shared_video_detail"),
     path("videos/<int:pk>/rotate-share-token/", views.video_rotate_share_token, name="video_rotate_share_token"),
     path("videos/<int:pk>/edit/", views.video_edit, name="video_edit"),
     path("videos/<int:pk>/delete/", views.video_delete, name="video_delete"),

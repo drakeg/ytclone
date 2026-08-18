@@ -98,7 +98,7 @@ class Comment(models.Model):
 class Channel(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    thumbnail = models.ImageField(upload_to="channels/thumbnails")
+    thumbnail = models.ImageField(upload_to="channels/thumbnails", blank=True)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     subscribers = models.ManyToManyField(
         User, related_name="subscriptions", blank=True

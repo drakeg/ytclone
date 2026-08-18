@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Create membership tier · {{ channel.name }} · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">Monetization</p><h1>Create membership tier</h1><p>{{ channel.name }}</p></div></header>
+<form class="form-panel" method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Create tier</button>
+        <a class="btn btn-outline-secondary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Cancel</a>
+    </div>
+</form>
+{% endblock %}

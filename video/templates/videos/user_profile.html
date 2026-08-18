@@ -4,12 +4,12 @@
 <header class="identity-banner">
     <div class="identity-avatar">{{ user.username|slice:":1"|upper }}</div>
     <div>
-        <p class="eyebrow">Profile</p>
+        <p class="eyebrow">{% if user.channel_set.exists %}Creator profile{% else %}Viewer profile{% endif %}</p>
         <h1>{{ user.get_full_name|default:user.username }}</h1>
         <p>@{{ user.username }}</p>
         {% if request.user == user %}
             <div class="form-actions">
-                <a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a>
+                {% if user.channel_set.exists %}<a class="btn btn-primary" href="{% url 'channel_create' %}">Create another channel</a>{% else %}<a class="btn btn-primary" href="{% url 'channel_create' %}">Become a creator</a>{% endif %}
                 <a class="btn btn-outline-secondary" href="{% url 'edit_profile' user.username %}">Edit profile</a>
             </div>
         {% endif %}
@@ -20,6 +20,7 @@
 <section class="discovery-section">
     <div class="section-heading"><h2>Your account</h2></div>
     <div class="card"><div class="card-body">
+        <p><strong>Account use:</strong> {% if is_creator %}Creator — creator studio tools are enabled.{% else %}Viewer — watch, subscribe, comment, save playlists, and keep history without creator tools.{% endif %}</p>
         <p><strong>Username:</strong> {{ user.username }}</p>
         <p><strong>Name:</strong> {{ user.get_full_name|default:"Not set" }}</p>
         <p><strong>Email:</strong> {{ user.email|default:"Not set" }}</p>
@@ -28,12 +29,12 @@
 {% endif %}
 
 <section class="discovery-section">
-    <div class="section-heading"><h2>Channels</h2>{% if request.user == user %}<a class="btn btn-sm btn-primary" href="{% url 'channel_create' %}">New channel</a>{% endif %}</div>
+    <div class="section-heading"><h2>Channels</h2>{% if request.user == user and is_creator %}<a class="btn btn-sm btn-primary" href="{% url 'channel_create' %}">New channel</a>{% endif %}</div>
     <div class="video-grid">
         {% for channel in user.channel_set.all %}
             <article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h3 class="h5"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h3><p class="video-meta">{{ channel.description|truncatewords:20 }}</p></div></article>
         {% empty %}
-            <div class="empty-state">{% if request.user == user %}You do not have a channel yet. Create one to start uploading videos.{% else %}No channels yet.{% endif %}</div>
+            <div class="empty-state">{% if request.user == user %}You are currently using VideoShare as a viewer. Create a channel whenever you want to start publishing.{% else %}No channels yet.{% endif %}</div>
         {% endfor %}
     </div>
 </section>

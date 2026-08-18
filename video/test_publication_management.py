@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Category, Video
+from .models import Category, Channel, Video
 
 
 class PublicationManagementTests(TestCase):
@@ -20,6 +20,12 @@ class PublicationManagementTests(TestCase):
             name="General",
             description="General",
             thumbnail="categories/general.jpg",
+        )
+        self.channel = Channel.objects.create(
+            owner=self.owner,
+            name="Owner channel",
+            description="Owner channel",
+            thumbnail="channels/owner.jpg",
         )
         self.draft = self.create_video(
             "Draft video", self.owner, Video.PublicationStatus.DRAFT

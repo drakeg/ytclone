@@ -8,8 +8,8 @@ from django.utils import timezone
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
-    description = models.TextField()
-    thumbnail = models.ImageField(upload_to="categories/thumbnails")
+    description = models.TextField(blank=True)
+    thumbnail = models.ImageField(upload_to="categories/thumbnails", blank=True)
 
     class Meta:
         verbose_name_plural = "Categories"
@@ -47,7 +47,9 @@ class Video(models.Model):
     )
     likes = models.ManyToManyField(User, related_name="likes", blank=True)
     dislikes = models.ManyToManyField(User, related_name="dislikes", blank=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(
+        Category, on_delete=models.SET_NULL, null=True, blank=True
+    )
     pub_date = models.DateTimeField(auto_now_add=True)
     publication_status = models.CharField(
         max_length=12,

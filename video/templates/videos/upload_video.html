@@ -13,6 +13,20 @@
         </div>
     </div>
     {{ form.as_p }}
+    <div class="card mb-3" id="inline-category-panel">
+        <div class="card-body">
+            <h2 class="h6 mb-2">Need a different category?</h2>
+            <p class="video-meta">Category is optional. You can leave it blank, or create a new one here without leaving this upload.</p>
+            <div class="d-flex gap-2 align-items-end flex-wrap">
+                <div class="flex-grow-1">
+                    <label for="inline-category-name">New category name</label>
+                    <input id="inline-category-name" type="text" maxlength="255" autocomplete="off" placeholder="e.g. Travel">
+                </div>
+                <button id="inline-category-create" type="button" class="btn btn-outline-secondary">Create category</button>
+            </div>
+            <p id="inline-category-status" class="helptext mb-0" aria-live="polite"></p>
+        </div>
+    </div>
     <p class="helptext">If Chrome's file chooser freezes on your Mac, use the drag-and-drop area above instead of the video file Browse button.</p>
     <div class="form-actions"><button type="submit" class="btn btn-primary">Upload</button></div>
 </form>
@@ -21,31 +35,82 @@
     const dropZone = document.getElementById('video-drop-zone');
     const videoInput = document.getElementById('id_video_file');
     const status = document.getElementById('video-drop-status');
-    if (!dropZone || !videoInput || !status) return;
+    if (dropZone && videoInput && status) {
+        const preventDefaults = (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+        };
 
-    const preventDefaults = (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-    };
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+            dropZone.addEventListener(eventName, preventDefaults);
+        });
 
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-        dropZone.addEventListener(eventName, preventDefaults);
-    });
+        dropZone.addEventListener('drop', (event) => {
+            const files = event.dataTransfer && event.dataTransfer.files;
+            if (!files || files.length === 0) return;
 
-    dropZone.addEventListener('drop', (event) => {
-        const files = event.dataTransfer && event.dataTransfer.files;
-        if (!files || files.length === 0) return;
+            const transfer = new DataTransfer();
+            transfer.items.add(files[0]);
+            videoInput.files = transfer.files;
+            videoInput.dispatchEvent(new Event('change', { bubbles: true }));
+        });
 
-        const transfer = new DataTransfer();
-        transfer.items.add(files[0]);
-        videoInput.files = transfer.files;
-        videoInput.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+        videoInput.addEventListener('change', () => {
+            status.textContent = videoInput.files.length
+                ? `Selected: ${videoInput.files[0].name}`
+                : 'No video selected yet.';
+        });
+    }
 
-    videoInput.addEventListener('change', () => {
-        status.textContent = videoInput.files.length
-            ? `Selected: ${videoInput.files[0].name}`
-            : 'No video selected yet.';
+    const categorySelect = document.getElementById('id_category');
+    const categoryName = document.getElementById('inline-category-name');
+    const categoryCreate = document.getElementById('inline-category-create');
+    const categoryStatus = document.getElementById('inline-category-status');
+    const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+
+    if (!categorySelect || !categoryName || !categoryCreate || !categoryStatus || !csrfToken) return;
+
+    categoryCreate.addEventListener('click', async () => {
+        const name = categoryName.value.trim();
+        if (!name) {
+            categoryStatus.textContent = 'Enter a category name first.';
+            return;
+        }
+
+        categoryCreate.disabled = true;
+        categoryStatus.textContent = 'Creating category…';
+        const body = new URLSearchParams({ name });
+
+        try {
+            const response = await fetch('{% url "category_create_inline" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken.value,
+                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                },
+                body,
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                categoryStatus.textContent = data.error || 'Could not create category.';
+                return;
+            }
+
+            let option = Array.from(categorySelect.options).find((item) => item.value === String(data.id));
+            if (!option) {
+                option = new Option(data.name, data.id);
+                categorySelect.add(option);
+            }
+            categorySelect.value = String(data.id);
+            categoryName.value = '';
+            categoryStatus.textContent = data.created
+                ? `Created and selected “${data.name}”.`
+                : `Selected existing category “${data.name}”.`;
+        } catch (error) {
+            categoryStatus.textContent = 'Could not create category. Try again.';
+        } finally {
+            categoryCreate.disabled = false;
+        }
     });
 })();
 </script>

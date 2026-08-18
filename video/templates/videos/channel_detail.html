@@ -2,7 +2,7 @@
 {% block title %}{{ channel.name }} · VideoShare{% endblock %}
 {% block content %}
     <header class="identity-banner">
-        {% if channel.thumbnail %}<img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail">{% else %}<div class="identity-avatar"></div>{% endif %}
+        {% if channel.thumbnail %}<img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail">{% else %}<div class="identity-avatar" aria-label="{{ channel.name }} default channel avatar">{{ channel.name|slice:":1"|upper }}</div>{% endif %}
         <div><p class="eyebrow">Channel</p><h1>{{ channel.name }}</h1><p>{{ channel.description|default:"A VideoShare channel." }}</p></div>
         <div class="identity-actions">
             {% if user == channel.owner %}<a class="btn btn-outline-secondary" href="{% url 'channel_analytics' channel.pk %}">Analytics</a><a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a>{% endif %}

@@ -43,7 +43,17 @@ class VideoUploadForm(forms.ModelForm):
 
     class Meta:
         model = Video
-        fields = ["title", "description", "thumbnail", "video_file", "category", "channel", "publication_status", "publish_at"]
+        fields = [
+            "title",
+            "description",
+            "thumbnail",
+            "video_file",
+            "category",
+            "channel",
+            "publication_status",
+            "audience",
+            "publish_at",
+        ]
         widgets = {
             "thumbnail": forms.ClearableFileInput(
                 attrs={"accept": "image/jpeg,image/png,image/webp"}
@@ -60,6 +70,9 @@ class VideoUploadForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
+        self.fields["audience"].help_text = (
+            "Paid members only requires an active paid membership for the selected channel."
+        )
         if user and not self.fields["channel"].queryset.exists():
             self.fields["channel"].help_text = "Create a channel before uploading a video."
 
@@ -67,6 +80,23 @@ class VideoUploadForm(forms.ModelForm):
         cleaned_data = super().clean()
         status = cleaned_data.get("publication_status")
         publish_at = cleaned_data.get("publish_at")
+        audience = cleaned_data.get("audience")
+        channel = cleaned_data.get("channel")
+
+        if audience == Video.Audience.MEMBERS_ONLY and channel is not None:
+            from monetization.models import CreatorMonetizationAccount
+
+            if not CreatorMonetizationAccount.objects.filter(
+                channel=channel,
+                status=CreatorMonetizationAccount.Status.ACTIVE,
+                payouts_enabled=True,
+                terms_accepted_at__isnull=False,
+            ).exists():
+                self.add_error(
+                    "audience",
+                    "Enable monetization for this channel before publishing members-only videos.",
+                )
+
         if status == Video.PublicationStatus.SCHEDULED:
             if publish_at is None:
                 self.add_error("publish_at", "Choose a publication time.")
@@ -121,7 +151,17 @@ class VideoUploadForm(forms.ModelForm):
 
 class VideoEditForm(VideoUploadForm):
     class Meta(VideoUploadForm.Meta):
-        fields = ["title", "description", "thumbnail", "video_file", "category", "channel", "publication_status", "publish_at"]
+        fields = [
+            "title",
+            "description",
+            "thumbnail",
+            "video_file",
+            "category",
+            "channel",
+            "publication_status",
+            "audience",
+            "publish_at",
+        ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

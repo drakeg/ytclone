@@ -3,6 +3,8 @@ from django.contrib.staticfiles import finders
 from django.test import TestCase
 from django.urls import reverse
 
+from .models import Channel
+
 
 class InterfaceDesignTests(TestCase):
     def test_shared_shell_has_accessible_navigation_and_search(self):
@@ -15,6 +17,12 @@ class InterfaceDesignTests(TestCase):
 
     def test_authenticated_shell_keeps_creator_destinations(self):
         user = User.objects.create_user(username="creator", password="password123")
+        Channel.objects.create(
+            owner=user,
+            name="Creator channel",
+            description="Creator channel",
+            thumbnail="channels/creator.jpg",
+        )
         self.client.force_login(user)
 
         response = self.client.get(reverse("video_list"))

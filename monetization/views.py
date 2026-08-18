@@ -19,6 +19,10 @@ from .models import (
 )
 
 
+def _money(minor):
+    return f"{minor / 100:.2f}"
+
+
 def _owned_channel(user, pk):
     return get_object_or_404(Channel, pk=pk, owner=user)
 
@@ -27,8 +31,8 @@ def _owned_channel(user, pk):
 def creator_dashboard(request, pk):
     channel = _owned_channel(request.user, pk)
     account = CreatorMonetizationAccount.objects.filter(channel=channel).first()
-    tiers = account.membership_tiers.order_by("price_minor", "name") if account else []
-    transactions = (
+    tiers = list(account.membership_tiers.order_by("price_minor", "name")) if account else []
+    transactions = list(
         account.transactions.select_related("payer").all()[:20] if account else []
     )
     creator_net_minor = 0
@@ -43,6 +47,12 @@ def creator_dashboard(request, pk):
         creator_net_minor = totals["creator_net"] or 0
         platform_fee_minor = totals["platform_fee"] or 0
 
+    for tier in tiers:
+        tier.price_display = _money(tier.price_minor)
+    for transaction in transactions:
+        transaction.gross_display = _money(transaction.gross_amount_minor)
+        transaction.creator_net_display = _money(transaction.creator_net_minor)
+
     return render(
         request,
         "monetization/creator_dashboard.html",
@@ -51,9 +61,9 @@ def creator_dashboard(request, pk):
             "account": account,
             "tiers": tiers,
             "transactions": transactions,
-            "creator_net_minor": creator_net_minor,
-            "platform_fee_minor": platform_fee_minor,
-            "platform_fee_bps": settings.MONETIZATION_PLATFORM_FEE_BPS,
+            "creator_net_display": _money(creator_net_minor),
+            "platform_fee_display": _money(platform_fee_minor),
+            "platform_fee_percent": settings.MONETIZATION_PLATFORM_FEE_BPS / 100,
         },
     )
 

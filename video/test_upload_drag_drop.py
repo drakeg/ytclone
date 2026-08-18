@@ -22,6 +22,6 @@ class UploadDragDropTests(TestCase):
 
         self.assertContains(response, 'id="video-drop-zone"')
         self.assertContains(response, "Drag your video here")
-        self.assertContains(response, "This avoids opening Chrome&#x27;s file picker.")
+        self.assertContains(response, "avoids opening Chrome's file picker")
         self.assertContains(response, "new DataTransfer()")
-        self.assertContains(response, 'document.getElementById(\'id_video_file\')')
+        self.assertContains(response, "document.getElementById('id_video_file')")

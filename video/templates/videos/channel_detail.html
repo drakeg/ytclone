@@ -1,13 +1,59 @@
 {% extends 'base.html' %}
+{% load monetization_tags %}
 {% block title %}{{ channel.name }} · VideoShare{% endblock %}
 {% block content %}
     <header class="identity-banner">
         {% if channel.thumbnail %}<img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail">{% else %}<div class="identity-avatar" aria-label="{{ channel.name }} default channel avatar">{{ channel.name|slice:":1"|upper }}</div>{% endif %}
         <div><p class="eyebrow">Channel</p><h1>{{ channel.name }}</h1><p>{{ channel.description|default:"A VideoShare channel." }}</p></div>
         <div class="identity-actions">
-            {% if user == channel.owner %}<a class="btn btn-outline-secondary" href="{% url 'channel_analytics' channel.pk %}">Analytics</a><a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a>{% endif %}
-            {% if user.is_authenticated %}<form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>{% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>{% endif %}
+            {% if user == channel.owner %}
+                <a class="btn btn-outline-secondary" href="{% url 'channel_analytics' channel.pk %}">Analytics</a>
+                <a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a>
+                <a class="btn btn-primary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
+            {% elif user.is_authenticated %}
+                <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
+            {% else %}
+                <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>
+            {% endif %}
         </div>
     </header>
+
+    {% with account=channel.monetization_account %}
+        {% if account and account.is_ready_to_earn %}
+            <section class="discovery-section" aria-labelledby="membership-heading">
+                <div class="section-heading"><div><p class="eyebrow">Support this creator</p><h2 id="membership-heading">Paid memberships</h2></div></div>
+                {% if user != channel.owner %}
+                    {% paid_membership_for user channel as paid_membership %}
+                    {% if paid_membership %}
+                        <div class="card mb-3"><div class="card-body"><strong>You are a paid member.</strong> Your current tier is {{ paid_membership.tier.name }}. Members-only videos from this channel are unlocked while your membership is active.</div></div>
+                    {% else %}
+                        <div class="row g-3">
+                            {% for tier in account.membership_tiers.all %}
+                                {% if tier.is_active %}
+                                <div class="col-md-6">
+                                    <div class="card h-100"><div class="card-body">
+                                        <h3 class="h5">{{ tier.name }}</h3>
+                                        <p>{{ tier.description }}</p>
+                                        <p class="fw-bold">${{ tier.price_minor|money_minor }} / month</p>
+                                        {% if user.is_authenticated %}
+                                            <form method="post" action="{% url 'monetization:join_sandbox_membership' tier.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Join in sandbox</button></form>
+                                        {% else %}
+                                            <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to join</a>
+                                        {% endif %}
+                                    </div></div>
+                                </div>
+                                {% endif %}
+                            {% empty %}
+                                <div class="empty-state">This channel has not published a membership tier yet.</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="video-meta">Manage tiers and earnings from your <a href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization dashboard</a>.</p>
+                {% endif %}
+            </section>
+        {% endif %}
+    {% endwith %}
+
     <section class="discovery-section" aria-labelledby="channel-videos"><div class="section-heading"><h2 id="channel-videos">Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
 {% endblock %}

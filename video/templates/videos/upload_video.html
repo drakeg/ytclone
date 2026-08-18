@@ -3,7 +3,52 @@
 {% block content %}
 <header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Upload video</h1><p>Choose the channel, media, and visibility for your next release.</p></div></header>
 {% if form.channel.field.queryset %}
-<form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button type="submit" class="btn btn-primary">Upload</button></div></form>
+<form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <div id="video-drop-zone" class="card mb-4" style="border-style: dashed;">
+        <div class="card-body text-center">
+            <p class="eyebrow">Recommended</p>
+            <h2 class="h5">Drag your video here</h2>
+            <p class="video-meta mb-2">Drag one video file from Finder into this box. This avoids opening Chrome's file picker.</p>
+            <p id="video-drop-status" class="mb-0" aria-live="polite">No video selected yet.</p>
+        </div>
+    </div>
+    {{ form.as_p }}
+    <p class="helptext">If Chrome's file chooser freezes on your Mac, use the drag-and-drop area above instead of the video file Browse button.</p>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Upload</button></div>
+</form>
+<script>
+(() => {
+    const dropZone = document.getElementById('video-drop-zone');
+    const videoInput = document.getElementById('id_video_file');
+    const status = document.getElementById('video-drop-status');
+    if (!dropZone || !videoInput || !status) return;
+
+    const preventDefaults = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+    };
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+        dropZone.addEventListener(eventName, preventDefaults);
+    });
+
+    dropZone.addEventListener('drop', (event) => {
+        const files = event.dataTransfer && event.dataTransfer.files;
+        if (!files || files.length === 0) return;
+
+        const transfer = new DataTransfer();
+        transfer.items.add(files[0]);
+        videoInput.files = transfer.files;
+        videoInput.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+
+    videoInput.addEventListener('change', () => {
+        status.textContent = videoInput.files.length
+            ? `Selected: ${videoInput.files[0].name}`
+            : 'No video selected yet.';
+    });
+})();
+</script>
 {% else %}
 <div class="form-panel">
     <h2 class="h4">Create a channel first</h2>

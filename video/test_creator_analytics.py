@@ -128,6 +128,7 @@ class CreatorAnalyticsTests(TestCase):
         self.assertNotContains(response, other.title)
 
     def test_authenticated_navigation_links_to_creator_analytics(self):
+        self.create_channel(self.creator, "Creator channel")
         self.client.login(username="creator", password="password123")
 
         response = self.client.get(reverse("video_list"))

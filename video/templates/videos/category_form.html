@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Create category · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">Creator tools</p><h1>Create category</h1><p>Add a topic that creators can use when publishing videos.</p></div></header>
+<form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}{{ form.as_p }}<div class="form-actions"><button type="submit" class="btn btn-primary">Create category</button><a class="btn btn-outline-secondary" href="{% url 'category_list' %}">Cancel</a></div></form>
+{% endblock %}

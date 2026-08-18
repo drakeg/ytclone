@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from .models import Category, Comment, Video
+from .models import Category, Channel, Comment, Video
 
 
 class CommentModerationTests(TestCase):
@@ -23,6 +23,12 @@ class CommentModerationTests(TestCase):
             name="General",
             description="General",
             thumbnail="categories/general.jpg",
+        )
+        self.channel = Channel.objects.create(
+            owner=self.creator,
+            name="Creator channel",
+            description="Creator channel",
+            thumbnail="channels/creator.jpg",
         )
         self.video = self.create_video("Creator video", self.creator)
         self.foreign_video = self.create_video("Foreign video", self.other_creator)

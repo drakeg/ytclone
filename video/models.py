@@ -233,7 +233,7 @@ class Notification(models.Model):
     actor = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="sent_notifications"
     )
-    kind = models.CharField(max_length=20, choices=kind.choices) if False else models.CharField(max_length=20, choices=Kind.choices)
+    kind = models.CharField(max_length=20, choices=Kind.choices)
     video = models.ForeignKey(
         Video, on_delete=models.CASCADE, null=True, blank=True
     )

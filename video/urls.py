@@ -36,6 +36,7 @@ urlpatterns = [
     path("channels/<int:pk>/subscribe/", views.subscribe, name="subscribe"),
     path("categories/", views.category_list, name="category_list"),
     path("categories/create/", category_views.category_create, name="category_create"),
+    path("categories/create/inline/", category_views.category_create_inline, name="category_create_inline"),
     path("categories/<int:pk>/", views.category_detail, name="category_detail"),
     path("search/", views.search, name="search"),
     path("filter/", views.filter_videos, name="filter"),

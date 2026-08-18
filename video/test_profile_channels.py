@@ -60,6 +60,27 @@ class ProfileAndChannelCreationTests(TestCase):
             response, reverse("channel_detail", kwargs={"pk": channel.pk})
         )
 
+    def test_authenticated_user_can_create_channel_without_thumbnail(self):
+        self.client.login(username="creator", password="password123")
+
+        response = self.client.post(
+            reverse("channel_create"),
+            {
+                "name": "Starter Channel",
+                "description": "No artwork yet",
+            },
+        )
+
+        channel = Channel.objects.get(name="Starter Channel")
+        self.assertFalse(channel.thumbnail)
+        self.assertRedirects(
+            response, reverse("channel_detail", kwargs={"pk": channel.pk})
+        )
+
+        detail = self.client.get(reverse("channel_detail", kwargs={"pk": channel.pk}))
+        self.assertContains(detail, "default channel avatar")
+        self.assertContains(detail, ">S</div>")
+
     def test_channel_creation_requires_login(self):
         response = self.client.get(reverse("channel_create"))
 

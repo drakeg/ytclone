@@ -1,8 +1,63 @@
 {% extends 'base.html' %}
 {% block title %}Channels · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">People worth following</p><h1>Channels</h1><p>Explore creators and the communities growing around their work.</p>{% if user.is_authenticated %}<div class="form-actions"><a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a></div>{% endif %}</div></header>
-<div class="video-grid">
-{% for channel in channels %}<article class="card"><div class="card-body"><p class="eyebrow">Channel</p><h2 class="h4"><a href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h2><p class="video-meta">{{ channel.description|default:"Discover this creator's videos."|truncatewords:20 }}</p></div></article>{% empty %}<div class="empty-state">No channels yet.{% if user.is_authenticated %} Create the first one.{% endif %}</div>{% endfor %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Discover creators</p>
+        <h1>Channels</h1>
+        <p>Find creators to follow, explore their public videos, and discover growing communities across VideoShare.</p>
+    </div>
+    {% if user.is_authenticated %}
+        <a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a>
+    {% endif %}
+</header>
+
+{% if channels %}
+<div class="row g-4">
+    {% for channel in channels %}
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="card h-100">
+            <div class="card-body d-flex flex-column">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <a href="{% url 'channel_detail' channel.pk %}" class="flex-shrink-0 text-decoration-none" aria-label="View {{ channel.name }}">
+                        {% if channel.thumbnail %}
+                            <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" class="rounded-circle border" width="88" height="88" style="object-fit: cover;">
+                        {% else %}
+                            <div class="identity-avatar" aria-label="{{ channel.name }} default channel avatar">{{ channel.name|slice:":1"|upper }}</div>
+                        {% endif %}
+                    </a>
+                    <div class="min-w-0 flex-grow-1">
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h2 class="h4 mb-1"><a class="text-decoration-none" href="{% url 'channel_detail' channel.pk %}">{{ channel.name }}</a></h2>
+                            {% if user.is_authenticated and user == channel.owner %}<span class="badge text-bg-dark">Your channel</span>{% endif %}
+                        </div>
+                        <p class="video-meta mb-0">by <a href="{% url 'user_profile' channel.owner.username %}">@{{ channel.owner.username }}</a></p>
+                    </div>
+                </div>
+
+                <p class="mb-3">{{ channel.description|default:"Discover this creator's videos."|truncatewords:28 }}</p>
+
+                <div class="d-flex flex-wrap gap-2 mb-4" aria-label="Channel statistics">
+                    <span class="badge rounded-pill text-bg-light border">{{ channel.subscriber_count }} subscriber{{ channel.subscriber_count|pluralize }}</span>
+                    <span class="badge rounded-pill text-bg-light border">{{ channel.public_video_count }} public video{{ channel.public_video_count|pluralize }}</span>
+                </div>
+
+                <div class="mt-auto d-flex align-items-center justify-content-between gap-2">
+                    <a class="btn btn-outline-primary" href="{% url 'channel_detail' channel.pk %}">View channel</a>
+                    {% if user.is_authenticated and user == channel.owner %}
+                        <a class="btn btn-outline-secondary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+    </div>
+    {% endfor %}
 </div>
+{% else %}
+<div class="empty-state">
+    <h2 class="h4">No channels yet</h2>
+    <p>Creator channels will appear here as the community grows.</p>
+    {% if user.is_authenticated %}<a class="btn btn-primary" href="{% url 'channel_create' %}">Create the first channel</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

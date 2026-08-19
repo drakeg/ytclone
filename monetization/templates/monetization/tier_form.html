@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Create membership tier · {{ channel.name }} · VideoShare{% endblock %}
+{% block title %}{% if tier %}Edit{% else %}Create{% endif %} membership tier · {{ channel.name }} · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">Monetization</p><h1>Create membership tier</h1><p>{{ channel.name }}</p></div></header>
+<header class="page-header"><div><p class="eyebrow">Monetization</p><h1>{% if tier %}Edit {{ tier.name }}{% else %}Create membership tier{% endif %}</h1><p>{{ channel.name }}</p></div></header>
 <form class="form-panel" method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <div class="form-actions">
-        <button class="btn btn-primary" type="submit">Create tier</button>
+        <button class="btn btn-primary" type="submit">{% if tier %}Save changes{% else %}Create tier{% endif %}</button>
         <a class="btn btn-outline-secondary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Cancel</a>
     </div>
 </form>

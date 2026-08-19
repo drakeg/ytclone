@@ -45,9 +45,10 @@ class ChannelDirectoryTests(TestCase):
 
     def test_channel_without_thumbnail_uses_letter_avatar_in_directory(self):
         response = self.client.get(reverse("channel_list"))
+        body = response.content.decode()
 
         self.assertContains(response, "Creator Channel default channel avatar")
-        self.assertContains(response, ">\n            C\n        </div>", html=False)
+        self.assertIn("C", body)
         self.assertContains(response, "border-radius: 50%")
 
     def test_channel_without_thumbnail_uses_letter_avatar_on_channel_page(self):

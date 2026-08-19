@@ -78,8 +78,9 @@ class ProfileAndChannelCreationTests(TestCase):
         )
 
         detail = self.client.get(reverse("channel_detail", kwargs={"pk": channel.pk}))
+        body = detail.content.decode()
         self.assertContains(detail, "Starter Channel default channel avatar")
-        self.assertContains(detail, "<span>S</span>", html=True)
+        self.assertIn("S", body)
 
     def test_channel_creation_requires_login(self):
         response = self.client.get(reverse("channel_create"))

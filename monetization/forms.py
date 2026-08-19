@@ -15,3 +15,16 @@ class MembershipTierForm(forms.Form):
 
     def price_minor(self):
         return int(self.cleaned_data["monthly_price"] * 100)
+
+
+class TipForm(forms.Form):
+    amount = forms.DecimalField(
+        min_value=Decimal("1.00"),
+        max_value=Decimal("10000.00"),
+        max_digits=8,
+        decimal_places=2,
+        help_text="One-time tip amount in USD.",
+    )
+
+    def amount_minor(self):
+        return int(self.cleaned_data["amount"] * 100)

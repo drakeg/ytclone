@@ -10,7 +10,7 @@ from django.views.decorators.http import require_POST
 
 from video.models import Channel
 
-from .forms import MembershipTierForm
+from .forms import MembershipTierForm, TipForm
 from .models import (
     ChannelMembershipSubscription,
     CreatorMonetizationAccount,
@@ -25,6 +25,26 @@ def _money(minor):
 
 def _owned_channel(user, pk):
     return get_object_or_404(Channel, pk=pk, owner=user)
+
+
+def _record_sandbox_payment(*, account, payer, kind, gross_amount_minor, currency="USD", membership_subscription=None):
+    fee_bps = settings.MONETIZATION_PLATFORM_FEE_BPS
+    platform_fee_minor = (gross_amount_minor * fee_bps) // 10000
+    return MonetizationTransaction.objects.create(
+        monetization_account=account,
+        payer=payer,
+        membership_subscription=membership_subscription,
+        kind=kind,
+        status=MonetizationTransaction.Status.SUCCEEDED,
+        currency=currency,
+        gross_amount_minor=gross_amount_minor,
+        platform_fee_minor=platform_fee_minor,
+        provider_fee_minor=0,
+        creator_net_minor=gross_amount_minor - platform_fee_minor,
+        platform_fee_bps=fee_bps,
+        idempotency_key=f"sandbox-{kind}-{uuid.uuid4()}",
+        provider_payment_id=f"test_pay_{uuid.uuid4().hex}",
+    )
 
 
 @login_required
@@ -112,6 +132,50 @@ def tier_create(request, pk):
 
 @login_required
 @require_POST
+def send_sandbox_tip(request, pk):
+    channel = get_object_or_404(Channel, pk=pk)
+    if channel.owner_id == request.user.pk:
+        return HttpResponseForbidden("Channel owners cannot tip their own channel.")
+
+    account = get_object_or_404(CreatorMonetizationAccount, channel=channel)
+    if not account.is_ready_to_earn:
+        return HttpResponseForbidden("This channel is not currently accepting tips.")
+
+    form = TipForm(request.POST)
+    if not form.is_valid():
+        return render(
+            request,
+            "monetization/tip_form.html",
+            {"channel": channel, "form": form},
+            status=400,
+        )
+
+    _record_sandbox_payment(
+        account=account,
+        payer=request.user,
+        kind=MonetizationTransaction.Kind.TIP,
+        gross_amount_minor=form.amount_minor(),
+    )
+    return redirect("channel_detail", pk=channel.pk)
+
+
+@login_required
+def tip_form(request, pk):
+    channel = get_object_or_404(Channel, pk=pk)
+    if channel.owner_id == request.user.pk:
+        return HttpResponseForbidden("Channel owners cannot tip their own channel.")
+    account = get_object_or_404(CreatorMonetizationAccount, channel=channel)
+    if not account.is_ready_to_earn:
+        return HttpResponseForbidden("This channel is not currently accepting tips.")
+    return render(
+        request,
+        "monetization/tip_form.html",
+        {"channel": channel, "form": TipForm()},
+    )
+
+
+@login_required
+@require_POST
 def join_sandbox_membership(request, tier_pk):
     tier = get_object_or_404(
         MembershipTier.objects.select_related(
@@ -151,21 +215,12 @@ def join_sandbox_membership(request, tier_pk):
         subscription.provider_subscription_id = f"test_sub_{subscription.pk}"
     subscription.save()
 
-    fee_bps = settings.MONETIZATION_PLATFORM_FEE_BPS
-    platform_fee_minor = (tier.price_minor * fee_bps) // 10000
-    MonetizationTransaction.objects.create(
-        monetization_account=account,
+    _record_sandbox_payment(
+        account=account,
         payer=request.user,
         membership_subscription=subscription,
         kind=MonetizationTransaction.Kind.MEMBERSHIP,
-        status=MonetizationTransaction.Status.SUCCEEDED,
-        currency=tier.currency,
         gross_amount_minor=tier.price_minor,
-        platform_fee_minor=platform_fee_minor,
-        provider_fee_minor=0,
-        creator_net_minor=tier.price_minor - platform_fee_minor,
-        platform_fee_bps=fee_bps,
-        idempotency_key=f"sandbox-membership-{uuid.uuid4()}",
-        provider_payment_id=f"test_pay_{uuid.uuid4().hex}",
+        currency=tier.currency,
     )
     return redirect("channel_detail", pk=channel.pk)

@@ -1,0 +1,7 @@
+{% if channel.thumbnail %}
+    <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" class="channel-avatar channel-avatar--{{ size|default:'lg' }}">
+{% else %}
+    <div class="channel-letter-avatar channel-letter-avatar--{{ size|default:'lg' }}" role="img" aria-label="{{ channel.name }} default channel avatar">
+        <span>{{ channel.name|slice:":1"|upper }}</span>
+    </div>
+{% endif %}

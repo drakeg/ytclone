@@ -1,62 +1,16 @@
 {% extends 'base.html' %}
 {% block title %}Monetization · {{ channel.name }} · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header">
-    <div>
-        <p class="eyebrow">Creator studio</p>
-        <h1>Monetization · {{ channel.name }}</h1>
-        <p>Earn from paid memberships without subscriber, view, or watch-time thresholds.</p>
-    </div>
-</header>
-
-<div class="alert alert-warning" role="status">
-    <strong>Sandbox mode:</strong> these controls simulate memberships and earnings only. No real cards are charged and no payouts are sent.
-</div>
-
+<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Monetization · {{ channel.name }}</h1><p>Earn from paid memberships without subscriber, view, or watch-time thresholds.</p></div></header>
+<div class="alert alert-warning" role="status"><strong>Sandbox mode:</strong> these controls simulate memberships and earnings only. No real cards are charged and no payouts are sent.</div>
 {% if not account or not account.is_ready_to_earn %}
-<section class="form-panel mb-4">
-    <h2 class="h4">Enable monetization</h2>
-    <p>Your channel does not need a minimum number of subscribers or views. Sandbox onboarding activates test memberships immediately.</p>
-    <form method="post" action="{% url 'monetization:enable_sandbox' channel.pk %}">
-        {% csrf_token %}
-        <button class="btn btn-primary" type="submit">Enable sandbox monetization</button>
-    </form>
-</section>
+<section class="form-panel mb-4"><h2 class="h4">Enable monetization</h2><p>Your channel does not need a minimum number of subscribers or views. Sandbox onboarding activates test memberships immediately.</p><form method="post" action="{% url 'monetization:enable_sandbox' channel.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Enable sandbox monetization</button></form></section>
 {% else %}
-<section class="form-panel mb-4">
-    <div class="d-flex justify-content-between gap-3 flex-wrap align-items-center">
-        <div>
-            <p class="eyebrow">Status</p>
-            <h2 class="h4 mb-1">Ready to earn</h2>
-            <p class="mb-0">Platform share: {{ platform_fee_percent|floatformat:2 }}% of each transaction.</p>
-        </div>
-        <a class="btn btn-primary" href="{% url 'monetization:tier_create' channel.pk %}">Create membership tier</a>
-    </div>
-</section>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Creator net</p><h2 class="h3">${{ creator_net_display }}</h2><p class="video-meta">Amounts shown are sandbox ledger values.</p></div></div></div>
-    <div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Platform share</p><h2 class="h3">${{ platform_fee_display }}</h2><p class="video-meta">Sandbox platform revenue recorded from memberships.</p></div></div></div>
-</div>
-
-<section class="discovery-section mb-4">
-    <div class="section-heading"><h2>Membership tiers</h2></div>
-    <div class="row g-3">
-        {% for tier in tiers %}
-        <div class="col-md-6"><div class="card h-100"><div class="card-body"><h3 class="h5">{{ tier.name }}</h3><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_display }} / month</p></div></div></div>
-        {% empty %}
-        <div class="empty-state">No membership tiers yet. Create one to offer paid members access.</div>
-        {% endfor %}
-    </div>
-</section>
-
-<section class="discovery-section">
-    <div class="section-heading"><h2>Recent transactions</h2></div>
-    {% for transaction in transactions %}
-        <div class="card mb-2"><div class="card-body"><strong>{{ transaction.get_kind_display }}</strong> · {{ transaction.get_status_display }} · gross ${{ transaction.gross_display }} · creator net ${{ transaction.creator_net_display }}</div></div>
-    {% empty %}
-        <div class="empty-state">No sandbox transactions yet.</div>
-    {% endfor %}
-</section>
+<section class="form-panel mb-4"><div class="d-flex justify-content-between gap-3 flex-wrap align-items-center"><div><p class="eyebrow">Status</p><h2 class="h4 mb-1">Ready to earn</h2><p class="mb-0">Platform share: {{ platform_fee_percent|floatformat:2 }}% of each transaction.</p></div><a class="btn btn-primary" href="{% url 'monetization:tier_create' channel.pk %}">Create membership tier</a></div></section>
+<div class="row g-3 mb-4"><div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Creator net</p><h2 class="h3">${{ creator_net_display }}</h2><p class="video-meta">Amounts shown are sandbox ledger values.</p></div></div></div><div class="col-md-6"><div class="card"><div class="card-body"><p class="eyebrow">Platform share</p><h2 class="h3">${{ platform_fee_display }}</h2><p class="video-meta">Sandbox platform revenue recorded from memberships and tips.</p></div></div></div></div>
+<section class="discovery-section mb-4"><div class="section-heading"><h2>Membership tiers</h2></div><div class="row g-3">
+{% for tier in tiers %}<div class="col-md-6"><div class="card h-100"><div class="card-body d-flex flex-column"><div class="d-flex justify-content-between gap-2"><h3 class="h5">{{ tier.name }}</h3><span class="badge {% if tier.is_active %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if tier.is_active %}Active{% else %}Inactive{% endif %}</span></div><p>{{ tier.description }}</p><p class="fw-bold mb-1">${{ tier.price_display }} / month</p><p class="video-meta">{{ tier.active_members }} active member{{ tier.active_members|pluralize }}</p><div class="d-flex gap-2 mt-auto"><a class="btn btn-outline-primary btn-sm" href="{% url 'monetization:tier_edit' tier.pk %}">Edit</a><form method="post" action="{% url 'monetization:tier_toggle' tier.pk %}">{% csrf_token %}<button class="btn btn-outline-secondary btn-sm" type="submit">{% if tier.is_active %}Stop new joins{% else %}Reactivate{% endif %}</button></form></div></div></div></div>{% empty %}<div class="empty-state">No membership tiers yet. Create one to offer paid members access.</div>{% endfor %}
+</div></section>
+<section class="discovery-section"><div class="section-heading"><h2>Recent transactions</h2></div>{% for transaction in transactions %}<div class="card mb-2"><div class="card-body"><strong>{{ transaction.get_kind_display }}</strong> · {{ transaction.get_status_display }} · gross ${{ transaction.gross_display }} · creator net ${{ transaction.creator_net_display }}</div></div>{% empty %}<div class="empty-state">No sandbox transactions yet.</div>{% endfor %}</section>
 {% endif %}
 {% endblock %}

@@ -12,53 +12,27 @@
                 <a class="btn btn-primary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
             {% elif user.is_authenticated %}
                 <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
-            {% else %}
-                <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>
-            {% endif %}
+            {% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>{% endif %}
         </div>
     </header>
-
     {% with account=channel.monetization_account %}
         {% if account and account.is_ready_to_earn %}
             <section class="discovery-section" aria-labelledby="support-heading">
                 <div class="section-heading"><div><p class="eyebrow">Support this creator</p><h2 id="support-heading">Creator support</h2></div></div>
                 {% if user != channel.owner %}
-                    <div class="card mb-3"><div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
-                        <div><h3 class="h5 mb-1">Send a one-time tip</h3><p class="mb-0 video-meta">Support this channel directly. The current flow is sandbox-only and does not move real money.</p></div>
-                        {% if user.is_authenticated %}<a class="btn btn-outline-primary" href="{% url 'monetization:tip_form' channel.pk %}">Tip this creator</a>{% else %}<a class="btn btn-outline-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to tip</a>{% endif %}
-                    </div></div>
+                    <div class="card mb-3"><div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3"><div><h3 class="h5 mb-1">Send a one-time tip</h3><p class="mb-0 video-meta">Support this channel directly. The current flow is sandbox-only and does not move real money.</p></div>{% if user.is_authenticated %}<a class="btn btn-outline-primary" href="{% url 'monetization:tip_form' channel.pk %}">Tip this creator</a>{% else %}<a class="btn btn-outline-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to tip</a>{% endif %}</div></div>
                     {% paid_membership_for user channel as paid_membership %}
                     <h3 class="h4">Paid memberships</h3>
                     {% if paid_membership %}
-                        <div class="card mb-3"><div class="card-body"><strong>You are a paid member.</strong> Your current tier is {{ paid_membership.tier.name }}. Members-only videos from this channel are unlocked while your membership is active.</div></div>
+                        <div class="card mb-3"><div class="card-body"><strong>You are a paid member.</strong><p>Current tier: {{ paid_membership.tier.name }}. Members-only videos are unlocked while this membership is active.</p><form method="post" action="{% url 'monetization:cancel_sandbox_membership' paid_membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel membership</button></form></div></div>
+                        <h4 class="h5">Change tier</h4>
+                        <div class="row g-3">{% for tier in account.membership_tiers.all %}{% if tier.is_active and tier.pk != paid_membership.tier_id %}<div class="col-md-6"><div class="card h-100"><div class="card-body"><h5>{{ tier.name }}</h5><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_minor|money_minor }} / month</p><form method="post" action="{% url 'monetization:join_sandbox_membership' tier.pk %}">{% csrf_token %}<button class="btn btn-outline-primary" type="submit">Switch tier</button></form></div></div></div>{% endif %}{% endfor %}</div>
                     {% else %}
-                        <div class="row g-3">
-                            {% for tier in account.membership_tiers.all %}
-                                {% if tier.is_active %}
-                                <div class="col-md-6">
-                                    <div class="card h-100"><div class="card-body">
-                                        <h4 class="h5">{{ tier.name }}</h4>
-                                        <p>{{ tier.description }}</p>
-                                        <p class="fw-bold">${{ tier.price_minor|money_minor }} / month</p>
-                                        {% if user.is_authenticated %}
-                                            <form method="post" action="{% url 'monetization:join_sandbox_membership' tier.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Join in sandbox</button></form>
-                                        {% else %}
-                                            <a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to join</a>
-                                        {% endif %}
-                                    </div></div>
-                                </div>
-                                {% endif %}
-                            {% empty %}
-                                <div class="empty-state">This channel has not published a membership tier yet.</div>
-                            {% endfor %}
-                        </div>
+                        <div class="row g-3">{% for tier in account.membership_tiers.all %}{% if tier.is_active %}<div class="col-md-6"><div class="card h-100"><div class="card-body"><h4 class="h5">{{ tier.name }}</h4><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_minor|money_minor }} / month</p>{% if user.is_authenticated %}<form method="post" action="{% url 'monetization:join_sandbox_membership' tier.pk %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Join in sandbox</button></form>{% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to join</a>{% endif %}</div></div></div>{% endif %}{% empty %}<div class="empty-state">This channel has not published a membership tier yet.</div>{% endfor %}</div>
                     {% endif %}
-                {% else %}
-                    <p class="video-meta">Manage tiers, tips, and earnings from your <a href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization dashboard</a>.</p>
-                {% endif %}
+                {% else %}<p class="video-meta">Manage tiers, tips, and earnings from your <a href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization dashboard</a>.</p>{% endif %}
             </section>
         {% endif %}
     {% endwith %}
-
     <section class="discovery-section" aria-labelledby="channel-videos"><div class="section-heading"><h2 id="channel-videos">Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
 {% endblock %}

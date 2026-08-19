@@ -79,7 +79,10 @@ class ProfileAndChannelCreationTests(TestCase):
 
         detail = self.client.get(reverse("channel_detail", kwargs={"pk": channel.pk}))
         self.assertContains(detail, "Starter Channel default channel avatar")
-        self.assertContains(detail, "<span>S</span>", html=True)
+        self.assertRegex(
+            detail.content.decode(),
+            r'aria-label="Starter Channel default channel avatar"[^>]*>\s*(?:<span>)?S(?:</span>)?\s*</div>',
+        )
 
     def test_channel_creation_requires_login(self):
         response = self.client.get(reverse("channel_create"))

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import access_views, account_views, category_views, subscription_views, views
+from . import access_views, account_views, category_views, channel_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -27,7 +27,7 @@ urlpatterns = [
     path("comments/<int:pk>/reply/", views.add_comment_reply, name="add_comment_reply"),
     path("videos/<int:pk>/like/", views.like_video, name="like_video"),
     path("videos/<int:pk>/dislike/", views.dislike_video, name="dislike_video"),
-    path("channels/", views.channel_list, name="channel_list"),
+    path("channels/", channel_views.channel_list, name="channel_list"),
     path("channels/create/", account_views.channel_create, name="channel_create"),
     path("channels/<int:pk>/", views.channel_detail, name="channel_detail"),
     path("channels/<int:pk>/analytics/", views.channel_analytics, name="channel_analytics"),

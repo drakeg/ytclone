@@ -43,11 +43,30 @@ class ChannelDirectoryTests(TestCase):
         self.assertContains(response, reverse("channel_detail", args=[self.channel.pk]))
         self.assertContains(response, reverse("user_profile", args=[self.owner.username]))
 
-    def test_channel_without_thumbnail_uses_default_avatar(self):
+    def test_channel_without_thumbnail_uses_letter_avatar_in_directory(self):
         response = self.client.get(reverse("channel_list"))
 
-        self.assertContains(response, "default channel avatar")
-        self.assertContains(response, ">C<", html=False)
+        self.assertContains(response, "Creator Channel default channel avatar")
+        self.assertContains(response, ">\n            C\n        </div>", html=False)
+        self.assertContains(response, "border-radius: 50%")
+
+    def test_channel_without_thumbnail_uses_letter_avatar_on_channel_page(self):
+        response = self.client.get(reverse("channel_detail", args=[self.channel.pk]))
+
+        self.assertContains(response, "Creator Channel default channel avatar")
+        self.assertContains(response, "font-weight: 850")
+        self.assertContains(response, "border-radius: 50%")
+
+    def test_uploaded_thumbnail_replaces_default_letter_avatar(self):
+        self.channel.thumbnail = SimpleUploadedFile(
+            "channel.jpg", b"image", content_type="image/jpeg"
+        )
+        self.channel.save(update_fields=["thumbnail"])
+
+        response = self.client.get(reverse("channel_detail", args=[self.channel.pk]))
+
+        self.assertContains(response, "channel.jpg")
+        self.assertNotContains(response, "default channel avatar")
 
     def test_owner_sees_creator_actions_for_own_channel(self):
         self.client.force_login(self.owner)

@@ -20,11 +20,7 @@
             <div class="card-body d-flex flex-column">
                 <div class="d-flex align-items-start gap-3 mb-3">
                     <a href="{% url 'channel_detail' channel.pk %}" class="flex-shrink-0 text-decoration-none" aria-label="View {{ channel.name }}">
-                        {% if channel.thumbnail %}
-                            <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" class="rounded-circle border" width="88" height="88" style="object-fit: cover;">
-                        {% else %}
-                            <div class="identity-avatar" aria-label="{{ channel.name }} default channel avatar">{{ channel.name|slice:":1"|upper }}</div>
-                        {% endif %}
+                        {% include 'videos/_channel_avatar.html' with channel=channel size='sm' %}
                     </a>
                     <div class="min-w-0 flex-grow-1">
                         <div class="d-flex align-items-center gap-2 flex-wrap">

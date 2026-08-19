@@ -1,7 +1,17 @@
-{% if channel.thumbnail %}
-    <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" class="channel-avatar channel-avatar--{{ size|default:'lg' }}">
-{% else %}
-    <div class="channel-letter-avatar channel-letter-avatar--{{ size|default:'lg' }}" role="img" aria-label="{{ channel.name }} default channel avatar">
-        <span>{{ channel.name|slice:":1"|upper }}</span>
-    </div>
-{% endif %}
+{% if size == 'sm' %}{% with avatar_size='88px' font_size='2rem' %}
+    {% if channel.thumbnail %}
+        <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" width="88" height="88" style="width: {{ avatar_size }}; height: {{ avatar_size }}; object-fit: cover; border-radius: 50%; border: 3px solid rgba(255,255,255,.9); box-shadow: 0 8px 24px rgba(23,21,31,.14);">
+    {% else %}
+        <div role="img" aria-label="{{ channel.name }} default channel avatar" style="width: {{ avatar_size }}; height: {{ avatar_size }}; flex: 0 0 {{ avatar_size }}; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, var(--violet), var(--accent)); color: #fff; border: 3px solid rgba(255,255,255,.92); box-shadow: 0 8px 24px rgba(23,21,31,.16); font-size: {{ font_size }}; font-weight: 850; line-height: 1; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0,0,0,.16);">
+            {{ channel.name|slice:":1"|upper }}
+        </div>
+    {% endif %}
+{% endwith %}{% else %}{% with avatar_size='clamp(6rem, 12vw, 9rem)' font_size='clamp(2.5rem, 6vw, 4.5rem)' %}
+    {% if channel.thumbnail %}
+        <img src="{{ channel.thumbnail.url }}" alt="{{ channel.name }} thumbnail" style="width: {{ avatar_size }}; height: {{ avatar_size }}; flex: 0 0 auto; object-fit: cover; border-radius: 50%; border: 4px solid rgba(255,255,255,.9); box-shadow: 0 12px 32px rgba(0,0,0,.24);">
+    {% else %}
+        <div role="img" aria-label="{{ channel.name }} default channel avatar" style="width: {{ avatar_size }}; height: {{ avatar_size }}; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(145deg, var(--violet), var(--accent)); color: #fff; border: 4px solid rgba(255,255,255,.9); box-shadow: 0 12px 32px rgba(0,0,0,.26); font-size: {{ font_size }}; font-weight: 850; line-height: 1; text-transform: uppercase; text-shadow: 0 2px 4px rgba(0,0,0,.18);">
+            {{ channel.name|slice:":1"|upper }}
+        </div>
+    {% endif %}
+{% endwith %}{% endif %}

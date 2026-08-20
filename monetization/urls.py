@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import stripe_views, views
 
 app_name = "monetization"
 
@@ -8,7 +8,7 @@ urlpatterns = [
     path("channel/<int:pk>/", views.creator_dashboard, name="creator_dashboard"),
     path("channel/<int:pk>/enable-sandbox/", views.enable_sandbox, name="enable_sandbox"),
     path("channel/<int:pk>/stripe/onboard/", views.start_stripe_onboarding, name="start_stripe_onboarding"),
-    path("channel/<int:pk>/stripe/onboard/refresh/", views.stripe_onboarding_refresh, name="stripe_onboarding_refresh"),
+    path("channel/<int:pk>/stripe/onboard/refresh/", stripe_views.onboarding_refresh, name="stripe_onboarding_refresh"),
     path("channel/<int:pk>/stripe/onboard/return/", views.stripe_onboarding_return, name="stripe_onboarding_return"),
     path("channel/<int:pk>/tiers/create/", views.tier_create, name="tier_create"),
     path("tiers/<int:tier_pk>/edit/", views.tier_edit, name="tier_edit"),

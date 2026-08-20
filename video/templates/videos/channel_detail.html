@@ -6,6 +6,7 @@
         {% include 'videos/_channel_avatar.html' with channel=channel size='lg' %}
         <div><p class="eyebrow">Channel</p><h1>{{ channel.name }}</h1><p>{{ channel.description|default:"A VideoShare channel." }}</p></div>
         <div class="identity-actions">
+            <a class="btn btn-outline-secondary" href="{% url 'channel_community' channel.pk %}">Community</a>
             {% if user == channel.owner %}
                 <a class="btn btn-outline-secondary" href="{% url 'channel_analytics' channel.pk %}">Analytics</a>
                 <a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a>

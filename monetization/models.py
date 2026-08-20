@@ -148,7 +148,7 @@ class MonetizationTransaction(models.Model):
     )
     currency = models.CharField(max_length=3, default="USD")
     gross_amount_minor = models.PositiveIntegerField()
-    platform_fee_minor = models.PositiveIntegerField(default=0)
+    platform_fee_minor = models.IntegerField(default=0)
     provider_fee_minor = models.PositiveIntegerField(default=0)
     creator_net_minor = models.IntegerField(default=0)
     platform_fee_bps = models.PositiveIntegerField(default=0)

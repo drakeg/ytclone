@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% load monetization_tags %}
+{% block title %}Paid memberships · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header">
+    <div><p class="eyebrow">Your account</p><h1>Paid memberships</h1><p>See the channels you support and manage membership status in one place.</p></div>
+</header>
+<section class="discovery-section">
+    <div class="row g-3">
+        {% for membership in memberships %}
+            <div class="col-lg-6">
+                <article class="card h-100"><div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between gap-3 align-items-start">
+                        <div>
+                            <p class="eyebrow">{{ membership.get_status_display }}</p>
+                            <h2 class="h5"><a href="{% url 'channel_detail' membership.tier.monetization_account.channel.pk %}">{{ membership.tier.monetization_account.channel.name }}</a></h2>
+                            <p class="mb-1"><strong>{{ membership.tier.name }}</strong> · ${{ membership.tier.price_minor|money_minor }} / month</p>
+                            <p class="video-meta mb-0">Started {{ membership.started_at|date:"M j, Y" }}</p>
+                            {% if membership.canceled_at and membership.status == 'active' %}<p class="video-meta mt-2 mb-0">Cancellation requested. Access remains active until Stripe ends the billing period.</p>{% endif %}
+                        </div>
+                        <span class="badge {% if membership.status == 'active' %}text-bg-success{% elif membership.status == 'past_due' %}text-bg-warning{% else %}text-bg-secondary{% endif %}">{{ membership.get_status_display }}</span>
+                    </div>
+                    {% if membership.status == 'active' and not membership.canceled_at %}
+                        <div class="mt-auto pt-3">
+                            {% if membership.provider_subscription_id and not membership.provider_subscription_id|slice:":9" == 'test_sub_' %}
+                                <form method="post" action="{% url 'monetization:cancel_stripe_membership' membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel at period end</button></form>
+                            {% else %}
+                                <form method="post" action="{% url 'monetization:cancel_sandbox_membership' membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel membership</button></form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div></article>
+            </div>
+        {% empty %}
+            <div class="empty-state">You do not have any paid channel memberships yet.</div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

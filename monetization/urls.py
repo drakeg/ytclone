@@ -1,10 +1,11 @@
 from django.urls import path
 
-from . import stripe_views, views
+from . import billing_views, stripe_views, views
 
 app_name = "monetization"
 
 urlpatterns = [
+    path("memberships/", billing_views.membership_billing, name="membership_billing"),
     path("channel/<int:pk>/", views.creator_dashboard, name="creator_dashboard"),
     path("channel/<int:pk>/enable-sandbox/", views.enable_sandbox, name="enable_sandbox"),
     path("channel/<int:pk>/stripe/onboard/", views.start_stripe_onboarding, name="start_stripe_onboarding"),

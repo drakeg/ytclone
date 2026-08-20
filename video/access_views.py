@@ -7,7 +7,7 @@ from . import views
 from .models import Video
 
 
-AUTHORIZED_SHARED_MEDIA_SESSION_KEY = "authorized_shared_video_media_ids"
+AUTHORIZED_SHARED_MEDIA_SESSION_KEY = "authorized_shared_video_media_grants"
 
 
 def shared_video_detail(request, token):
@@ -20,10 +20,11 @@ def shared_video_detail(request, token):
     if not video.has_member_access(request.user):
         raise Http404("Video not found")
 
-    authorized_ids = request.session.get(AUTHORIZED_SHARED_MEDIA_SESSION_KEY, [])
-    if video.pk not in authorized_ids:
-        authorized_ids.append(video.pk)
-        request.session[AUTHORIZED_SHARED_MEDIA_SESSION_KEY] = authorized_ids[-50:]
+    grants = request.session.get(AUTHORIZED_SHARED_MEDIA_SESSION_KEY, {})
+    if not isinstance(grants, dict):
+        grants = {}
+    grants[str(video.pk)] = str(video.share_token)
+    request.session[AUTHORIZED_SHARED_MEDIA_SESSION_KEY] = dict(list(grants.items())[-50:])
 
     return views._render_video_detail(request, video)
 
@@ -35,8 +36,12 @@ def media_video_file(request, path):
         video_file=storage_name,
         deleted_at__isnull=True,
     )
-    authorized_shared_ids = request.session.get(AUTHORIZED_SHARED_MEDIA_SESSION_KEY, [])
-    if not video.is_visible_to(request.user) and video.pk not in authorized_shared_ids:
+    grants = request.session.get(AUTHORIZED_SHARED_MEDIA_SESSION_KEY, {})
+    has_current_share_grant = (
+        isinstance(grants, dict)
+        and grants.get(str(video.pk)) == str(video.share_token)
+    )
+    if not video.is_visible_to(request.user) and not has_current_share_grant:
         raise Http404("Video not found")
 
     if settings.USE_S3_MEDIA:

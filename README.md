@@ -28,6 +28,12 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - One-level threaded comment replies with parent-scoped moderation and deduplicated notifications
 - Owner-managed channel editors for delegated uploads and video metadata changes
 - Original responsive interface with accessible navigation, polished video surfaces, and shared creator components
+- Self-service registration, profile management, and creator-channel onboarding
+- Viewer and creator navigation tailored to each account's role
+- Optional upload categories and thumbnails with drag-and-drop file selection
+- Test-mode creator monetization with tips, channel memberships, refunds, and accounting
+- Members-only video access with cancellation and payment-lifecycle handling
+- Channel community posts, polls, and highlighted creator Q&A
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -195,6 +201,10 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/comment-replies.md` — reply threads, moderation inheritance, notifications, and tests
 - `docs/channel-teams.md` — editor permissions, owner safeguards, migration, and tests
 - `docs/ui-design.md` — visual system, responsive behavior, accessibility, and verification
+- `docs/viewer-creator-categories.md` — registration, role-aware onboarding, optional categories, and uploads
+- `docs/monetization.md` — test-mode tips, memberships, Stripe configuration, accounting, and tests
+- `docs/channel-community.md` — community posts, polls, highlighted Q&A, permissions, and tests
+- `docs/post-expansion-hardening.md` — current correctness and privacy hardening scope
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -210,4 +220,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint will either extend channel collaboration with an explicitly bounded workflow or prepare low-cost application hosting. Higher-cost AWS services will be introduced only when usage justifies them.
+The current sprint hardens the expanded onboarding, monetization, membership, and
+community foundation. After it closes, the next sprint will be selected from the
+roadmap using the same documentation-first process. Higher-cost AWS services will
+be introduced only when usage justifies them.

@@ -286,6 +286,17 @@ def start_stripe_membership(request, tier_pk):
         return HttpResponseForbidden("Channel owners cannot join their own membership.")
     if account.provider != "stripe" or not account.is_ready_to_earn:
         return HttpResponseForbidden("This channel is not currently accepting Stripe memberships.")
+    existing_active = ChannelMembershipSubscription.objects.filter(
+        subscriber=request.user,
+        status=ChannelMembershipSubscription.Status.ACTIVE,
+        tier__monetization_account=account,
+    ).first()
+    if existing_active:
+        if existing_active.tier_id == tier.pk:
+            return redirect("channel_detail", pk=channel.pk)
+        return HttpResponseBadRequest(
+            "Cancel your existing channel membership before choosing another tier."
+        )
     checkout = stripe_gateway.create_membership_checkout(
         connected_account_id=account.provider_account_id,
         tier_id=tier.pk,

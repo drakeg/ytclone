@@ -29,10 +29,72 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Post-Expansion Hardening
+
+Goal: preserve the recently delivered onboarding, monetization, memberships, and
+community features while tightening access revocation, payment accounting, and
+core navigation behavior.
+
+Scope and acceptance criteria:
+
+- Bind unlisted-media session grants to the current share token so rotating a
+  link immediately revokes previously granted direct-media access.
+- Account for Stripe's cumulative partial-refund values incrementally so total
+  refunds and fee reversals never exceed the provider-reported amount.
+- Prevent a viewer from starting a second Stripe membership for the same channel
+  while another membership is active.
+- Make logout a CSRF-protected POST action and return users to the working home
+  route after logout.
+- Remove unused browser code with invalid integrity metadata.
+- Bring the README, roadmap, and feature documentation up to date with the
+  recently delivered product areas.
+
+Out of scope:
+
+- Live Stripe mode, automatic membership-tier switching, and production payouts
+- A visual redesign or recommendation-system changes
+- New AWS services or Terraform resources
+
+Local verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+The equivalent containerized verification is:
+
+```bash
+docker compose run --build --rm test
+```
+
+Terraform is not in scope. If implementation unexpectedly changes `terraform/`,
+also run the formatting and validation commands documented in the README.
+
+Delivered:
+
+- Share-token-bound media grants with immediate rotation revocation
+- Incremental accounting for cumulative Stripe partial refunds and fee reversals
+- Duplicate active Stripe membership prevention at checkout and webhook boundaries
+- CSRF-protected POST logout with a working homepage redirect
+- Removal of unused browser code with invalid integrity metadata
+- Isolated uploaded-media tests that remain reproducible across repeated local runs
+- Catch-up documentation for onboarding, monetization, memberships, and communities
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 281 tests passed, including the new focused regressions
+- Docker Compose configuration parsed successfully
+- `docker compose run --build --rm test` remains the documented container path;
+  the delivery environment could not access its Docker daemon socket
+
 ## Completed foundation
 
 - Environment-based secrets and production security settings
-- Django 5.2 LTS dependency baseline
+- Django 6.1 dependency baseline
 - Docker development and Gunicorn production runtime
 - CI for Django and Terraform validation
 - Authentication and authorization hardening
@@ -450,6 +512,21 @@ Verification:
 
 - Channel-team invitations, expiration, and activity history
 - Low-cost AWS application hosting and deployment
+
+## Completed product expansion
+
+Delivered after the interface sprint:
+
+- Self-service registration, editable profiles, and creator-channel onboarding
+- Configurable Compose host port and documented local startup workflow
+- Drag-and-drop uploads with optional categories and thumbnails
+- Role-aware viewer and creator navigation
+- Sandbox creator monetization, tips, tiers, and members-only videos
+- Stripe test-mode checkout, webhooks, cancellation lifecycle, refunds, and ledger reporting
+- Channel community posts, polls, and highlighted creator Q&A
+
+The current hardening sprint follows this expansion and closes its documentation
+gap while adding regression coverage around the highest-risk boundaries.
 
 ## Completed sprint: Interface and Design System
 

@@ -94,11 +94,20 @@ The one-off `test` service is profile-isolated, so normal `docker compose up` st
 docker compose up --build --detach
 ```
 
-Create an administrator account with:
+Create a new administrator account with:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
 ```
+
+If your account already exists, promote it by replacing `your_username` below:
+
+```bash
+docker compose exec -e DJANGO_ADMIN_USERNAME=your_username web python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+Then open `http://localhost:8000/admin/` and sign in with that account. If
+`APP_PORT` is not `8000`, use the configured host port instead.
 
 Stop the application with:
 
@@ -126,6 +135,31 @@ python manage.py runserver
 ```
 
 On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead.
+
+## Administrator access
+
+For a new administrator when running without Docker:
+
+```bash
+python manage.py createsuperuser
+```
+
+To promote an existing account on macOS or Linux, replace `your_username`:
+
+```bash
+DJANGO_ADMIN_USERNAME=your_username python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:DJANGO_ADMIN_USERNAME = "your_username"
+python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+Administrator access grants full Django administration privileges, including
+the ability to change or delete application data. Grant it only to trusted
+accounts.
 
 ## Run the full test suite locally
 

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
+from video.models import Channel
 from .models import (
     ChannelMembershipSubscription,
     CreatorMonetizationAccount,
@@ -48,6 +49,84 @@ def invoice_metadata(invoice):
     return dict(parent_meta or {})
 
 
+def _fee_bps(meta):
+    try:
+        return int(meta.get("ytclone_platform_fee_bps", settings.MONETIZATION_PLATFORM_FEE_BPS))
+    except (TypeError, ValueError):
+        return settings.MONETIZATION_PLATFORM_FEE_BPS
+
+
+def handle_checkout_completed(event_id, session):
+    meta = metadata(session)
+    kind = meta.get("ytclone_kind")
+    payer = get_user_model().objects.filter(pk=meta.get("ytclone_payer_id")).first()
+    if not payer:
+        return
+
+    if kind == "tip":
+        channel = Channel.objects.filter(pk=meta.get("ytclone_channel_id")).first()
+        account = (
+            CreatorMonetizationAccount.objects.filter(channel=channel, provider="stripe").first()
+            if channel
+            else None
+        )
+        gross = int(meta.get("ytclone_gross_minor", 0) or 0)
+        fee = int(meta.get("ytclone_platform_fee_minor", 0) or 0)
+        if account and gross > 0:
+            MonetizationTransaction.objects.get_or_create(
+                provider_event_id=event_id,
+                defaults={
+                    "monetization_account": account,
+                    "payer": payer,
+                    "kind": MonetizationTransaction.Kind.TIP,
+                    "status": MonetizationTransaction.Status.SUCCEEDED,
+                    "currency": str(field(session, "currency", "usd") or "usd").upper(),
+                    "gross_amount_minor": gross,
+                    "platform_fee_minor": fee,
+                    "creator_net_minor": gross - fee,
+                    "platform_fee_bps": settings.MONETIZATION_PLATFORM_FEE_BPS,
+                    "provider_payment_id": str(field(session, "payment_intent", "") or ""),
+                },
+            )
+        return
+
+    if kind != "membership":
+        return
+    tier = MembershipTier.objects.select_related("monetization_account").filter(
+        pk=meta.get("ytclone_tier_id")
+    ).first()
+    provider_subscription_id = str(field(session, "subscription", "") or "")
+    if not tier or not provider_subscription_id:
+        return
+    subscription, unused = ChannelMembershipSubscription.objects.get_or_create(
+        tier=tier,
+        subscriber=payer,
+    )
+    subscription.status = ChannelMembershipSubscription.Status.ACTIVE
+    subscription.provider_subscription_id = provider_subscription_id
+    subscription.canceled_at = None
+    subscription.ended_at = None
+    subscription.save()
+    fee_bps = _fee_bps(meta)
+    fee = (tier.price_minor * fee_bps) // 10000
+    MonetizationTransaction.objects.get_or_create(
+        provider_event_id=event_id,
+        defaults={
+            "monetization_account": tier.monetization_account,
+            "payer": payer,
+            "membership_subscription": subscription,
+            "kind": MonetizationTransaction.Kind.MEMBERSHIP,
+            "status": MonetizationTransaction.Status.SUCCEEDED,
+            "currency": tier.currency,
+            "gross_amount_minor": tier.price_minor,
+            "platform_fee_minor": fee,
+            "creator_net_minor": tier.price_minor - fee,
+            "platform_fee_bps": fee_bps,
+            "provider_payment_id": provider_subscription_id,
+        },
+    )
+
+
 def _subscription_for_invoice(invoice):
     provider_subscription_id = invoice_subscription_id(invoice)
     subscription = None
@@ -82,25 +161,16 @@ def _subscription_for_invoice(invoice):
     return subscription
 
 
-def _fee_bps(meta):
-    try:
-        return int(meta.get("ytclone_platform_fee_bps", settings.MONETIZATION_PLATFORM_FEE_BPS))
-    except (TypeError, ValueError):
-        return settings.MONETIZATION_PLATFORM_FEE_BPS
-
-
 def handle_invoice_paid(event_id, invoice):
     subscription = _subscription_for_invoice(invoice)
     if not subscription:
         return
 
-    # A terminal subscription deletion should not be undone by a late invoice event.
     if subscription.status != ChannelMembershipSubscription.Status.ENDED:
         subscription.status = ChannelMembershipSubscription.Status.ACTIVE
         subscription.ended_at = None
         subscription.save(update_fields=["status", "ended_at"])
 
-    # Initial subscription payment is already recorded from Checkout completion.
     if field(invoice, "billing_reason", "") == "subscription_create":
         return
 
@@ -245,7 +315,9 @@ def dispatch(event):
     event_id = str(field(event, "id", "") or "")
     event_type = str(field(event, "type", "") or "")
     obj = field(field(event, "data", {}), "object", {})
-    if event_type == "invoice.paid":
+    if event_type == "checkout.session.completed":
+        handle_checkout_completed(event_id, obj)
+    elif event_type == "invoice.paid":
         handle_invoice_paid(event_id, obj)
     elif event_type == "invoice.payment_failed":
         handle_invoice_failed(event_id, obj)

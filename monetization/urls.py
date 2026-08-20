@@ -21,5 +21,5 @@ urlpatterns = [
     path("tiers/<int:tier_pk>/join-stripe/", views.start_stripe_membership, name="start_stripe_membership"),
     path("memberships/<int:subscription_pk>/cancel-sandbox/", views.cancel_sandbox_membership, name="cancel_sandbox_membership"),
     path("memberships/<int:subscription_pk>/cancel-stripe/", views.cancel_stripe_membership, name="cancel_stripe_membership"),
-    path("stripe/webhook/", views.stripe_webhook, name="stripe_webhook"),
+    path("stripe/webhook/", stripe_views.webhook, name="stripe_webhook"),
 ]

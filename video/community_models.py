@@ -74,6 +74,9 @@ class CommunityPollOption(models.Model):
 
 
 class CommunityPollVote(models.Model):
+    post = models.ForeignKey(
+        CommunityPost, on_delete=models.CASCADE, related_name="poll_votes"
+    )
     option = models.ForeignKey(
         CommunityPollOption, on_delete=models.CASCADE, related_name="votes"
     )
@@ -87,7 +90,7 @@ class CommunityPollVote(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["option", "user"], name="unique_user_per_community_poll_option"
+                fields=["post", "user"], name="unique_user_per_community_poll"
             )
         ]
 

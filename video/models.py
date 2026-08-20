@@ -175,6 +175,52 @@ class ChannelMembership(models.Model):
         return f"{self.channel}: {self.user} ({self.get_role_display()})"
 
 
+class ChannelTeamInvitation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    channel = models.ForeignKey(
+        Channel, on_delete=models.CASCADE, related_name="team_invitations"
+    )
+    invitee = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="channel_team_invitations"
+    )
+    invited_by = models.ForeignKey(
+        User,
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name="sent_channel_team_invitations",
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    status = models.CharField(
+        max_length=12, choices=Status.choices, default=Status.PENDING
+    )
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    responded_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["channel", "invitee"],
+                condition=Q(status="pending"),
+                name="unique_pending_channel_team_invitation",
+            )
+        ]
+
+    @property
+    def is_expired(self):
+        return self.expires_at <= timezone.now()
+
+    def __str__(self):
+        return f"{self.channel}: invite {self.invitee} ({self.get_status_display()})"
+
+
 class Playlist(models.Model):
     class Visibility(models.TextChoices):
         PUBLIC = "public", "Public"

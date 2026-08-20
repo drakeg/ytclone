@@ -26,7 +26,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Reversible creator comment moderation with owner-scoped bulk hide and restore
 - Viewer-owned comment editing and confirmed deletion with moderation-safe behavior
 - One-level threaded comment replies with parent-scoped moderation and deduplicated notifications
-- Owner-managed channel editors for delegated uploads and video metadata changes
+- Owner-managed, consent-based channel editor invitations for delegated uploads and video metadata changes
 - Original responsive interface with accessible navigation, polished video surfaces, and shared creator components
 - Self-service registration, profile management, and creator-channel onboarding
 - Viewer and creator navigation tailored to each account's role

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Team invitations · VideoShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <p class="eyebrow">Your space</p>
+    <h1>Team invitations</h1>
+    <p class="text-muted">Accept an invitation only if you want permission to upload and edit videos for that channel.</p>
+    <div class="content-stack">
+        {% for invitation in invitations %}
+        <article class="surface-card">
+            <h2 class="h4">{{ invitation.channel.name }}</h2>
+            <p>Invited by @{{ invitation.invited_by.username }} · expires {{ invitation.expires_at|date:"M j, Y" }}</p>
+            {% if invitation.is_expired %}
+                <p class="text-muted">This invitation has expired.</p>
+            {% else %}
+                <div class="d-flex gap-2">
+                    <form method="post" action="{% url 'channel_team_invitation_respond' invitation.token 'accept' %}">{% csrf_token %}<button class="btn btn-primary" type="submit">Accept</button></form>
+                    <form method="post" action="{% url 'channel_team_invitation_respond' invitation.token 'decline' %}">{% csrf_token %}<button class="btn btn-outline-secondary" type="submit">Decline</button></form>
+                </div>
+            {% endif %}
+        </article>
+        {% empty %}
+            <div class="empty-state">You have no pending team invitations.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

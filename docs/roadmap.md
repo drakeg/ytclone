@@ -29,6 +29,62 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Channel Team Invitations
+
+Goal: replace immediate editor assignment with an explicit, expiring invitation
+that the intended user can accept or decline.
+
+Scope and acceptance criteria:
+
+- Owners invite an existing user by exact username instead of granting access immediately.
+- Pending invitations expire after seven days and never grant editor permissions.
+- Only the intended recipient can view, accept, or decline an invitation.
+- Acceptance creates one editor membership atomically; decline and expiration do not.
+- Owners can revoke their channel's pending invitations with POST-only actions.
+- Existing editors and their bounded upload/edit permissions remain unchanged.
+- Local Docker and non-Docker verification instructions remain reproducible.
+
+Out of scope:
+
+- Email delivery, reminders, custom roles, and invitation extension
+- Delegated analytics, deletion, monetization, moderation, or team administration
+- Audit-log retention beyond invitation state and timestamps
+- New AWS resources, workers, queues, or paid services
+
+Local verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_channel_team_invitations
+python manage.py test
+```
+
+The equivalent containerized verification is:
+
+```bash
+docker compose run --build --rm test
+```
+
+Delivered:
+
+- Owner-created invitations for existing users by exact username
+- Seven-day expiration with no permissions before acceptance
+- Private invitation inbox with recipient-only accept and decline actions
+- Atomic membership creation and replay-safe response handling
+- Owner-only POST revocation and unchanged active-editor removal
+- Migration `0019_channel_team_invitations`
+- Invitation business logic isolated in `video/services/team_invitations.py`
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 289 tests passed, including eight focused invitation regressions
+- Docker Compose configuration parsed successfully
+- Container execution remains available through the documented command; the
+  delivery environment could not access its Docker daemon socket
+
 ## Completed sprint: Post-Expansion Hardening
 
 Goal: preserve the recently delivered onboarding, monetization, memberships, and
@@ -510,7 +566,7 @@ Verification:
 
 ## Later candidates
 
-- Channel-team invitations, expiration, and activity history
+- Channel-team invitation email delivery, reminders, and activity history
 - Low-cost AWS application hosting and deployment
 
 ## Completed product expansion

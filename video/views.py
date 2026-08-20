@@ -15,6 +15,7 @@ from .models import (
     Category,
     Channel,
     ChannelMembership,
+    ChannelTeamInvitation,
     Comment,
     Notification,
     Playlist,
@@ -45,6 +46,12 @@ from .services.trash import (
     permanently_delete_video,
     restore_video,
     trash_video,
+)
+from .services.team_invitations import (
+    InvitationError,
+    invite_editor,
+    respond_to_invitation,
+    revoke_invitation,
 )
 
 
@@ -522,21 +529,24 @@ def channel_team(request, pk):
     error = None
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
-        user = User.objects.filter(username=username).first()
-        if user is None:
-            error = "User not found."
-        elif user.pk == request.user.pk:
-            error = "The channel owner is already on the team."
-        elif ChannelMembership.objects.filter(channel=channel, user=user).exists():
-            error = "That user is already an editor."
-        else:
-            ChannelMembership.objects.create(channel=channel, user=user)
+        try:
+            invite_editor(channel=channel, invited_by=request.user, username=username)
             return redirect("channel_team", pk=channel.pk)
+        except InvitationError as exc:
+            error = str(exc)
     memberships = channel.memberships.select_related("user").order_by("user__username")
+    invitations = channel.team_invitations.select_related("invitee").filter(
+        status=ChannelTeamInvitation.Status.PENDING
+    )
     return render(
         request,
         "videos/channel_team.html",
-        {"channel": channel, "memberships": memberships, "error": error},
+        {
+            "channel": channel,
+            "memberships": memberships,
+            "invitations": invitations,
+            "error": error,
+        },
     )
 
 
@@ -549,6 +559,53 @@ def channel_team_remove(request, pk, membership_pk):
     )
     membership.delete()
     return redirect("channel_team", pk=channel.pk)
+
+
+@login_required
+@require_POST
+def channel_team_invitation_revoke(request, pk, invitation_pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    invitation = get_object_or_404(
+        ChannelTeamInvitation,
+        pk=invitation_pk,
+        channel=channel,
+        status=ChannelTeamInvitation.Status.PENDING,
+    )
+    revoke_invitation(invitation=invitation)
+    return redirect("channel_team", pk=channel.pk)
+
+
+@login_required
+def channel_team_invitations(request):
+    invitations = request.user.channel_team_invitations.select_related(
+        "channel", "channel__owner", "invited_by"
+    ).filter(status=ChannelTeamInvitation.Status.PENDING)
+    return render(
+        request,
+        "videos/channel_team_invitations.html",
+        {"invitations": invitations},
+    )
+
+
+@login_required
+@require_POST
+def channel_team_invitation_respond(request, token, decision):
+    if decision not in {"accept", "decline"}:
+        raise Http404("Invitation not found")
+    invitation = get_object_or_404(
+        ChannelTeamInvitation,
+        token=token,
+        invitee=request.user,
+        status=ChannelTeamInvitation.Status.PENDING,
+    )
+    response = respond_to_invitation(
+        invitation=invitation,
+        user=request.user,
+        accept=decision == "accept",
+    )
+    if response is None:
+        raise Http404("Invitation not found")
+    return redirect("channel_team_invitations")
 
 
 @login_required

@@ -27,12 +27,18 @@ class ChannelCommunityTests(TestCase):
 
     def test_only_channel_owner_can_create_post(self):
         self.client.force_login(self.viewer)
-        response = self.client.post(reverse("community_post_create", args=[self.channel.pk]), {"body": "Not mine"})
+        response = self.client.post(
+            reverse("community_post_create", args=[self.channel.pk]),
+            {"kind": CommunityPost.Kind.UPDATE, "body": "Not mine"},
+        )
         self.assertEqual(response.status_code, 404)
         self.assertFalse(CommunityPost.objects.exists())
 
         self.client.force_login(self.creator)
-        response = self.client.post(reverse("community_post_create", args=[self.channel.pk]), {"body": "Creator update"})
+        response = self.client.post(
+            reverse("community_post_create", args=[self.channel.pk]),
+            {"kind": CommunityPost.Kind.UPDATE, "body": "Creator update"},
+        )
         self.assertRedirects(response, reverse("channel_community", args=[self.channel.pk]))
         self.assertTrue(CommunityPost.objects.filter(channel=self.channel, body="Creator update").exists())
 

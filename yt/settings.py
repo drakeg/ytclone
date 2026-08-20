@@ -86,18 +86,10 @@ DATABASES = {
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
-    },
-    {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
-    },
+    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
+    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
+    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
 LOGIN_REDIRECT_URL = "video_list"
@@ -109,7 +101,6 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "/media/"
 MAX_VIDEO_UPLOAD_MB = int(os.getenv("DJANGO_MAX_VIDEO_UPLOAD_MB", "500"))
@@ -122,24 +113,28 @@ MONETIZATION_PLATFORM_FEE_BPS = int(os.getenv("MONETIZATION_PLATFORM_FEE_BPS", "
 if not 0 <= MONETIZATION_PLATFORM_FEE_BPS <= 10000:
     raise RuntimeError("MONETIZATION_PLATFORM_FEE_BPS must be between 0 and 10000.")
 
+# Real-provider integration is opt-in and test-mode only. A live sk_live_ key is
+# intentionally rejected so this code cannot move real money by configuration mistake.
+MONETIZATION_PAYMENT_PROVIDER = os.getenv("MONETIZATION_PAYMENT_PROVIDER", "sandbox").strip().lower()
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "").strip()
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "").strip()
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "").strip()
+if STRIPE_SECRET_KEY.startswith("sk_live_"):
+    raise RuntimeError("Live Stripe keys are disabled; use Stripe test mode only.")
+if MONETIZATION_PAYMENT_PROVIDER == "stripe" and STRIPE_SECRET_KEY and not STRIPE_SECRET_KEY.startswith("sk_test_"):
+    raise RuntimeError("STRIPE_SECRET_KEY must be a Stripe test-mode key (sk_test_...).")
+
 USE_S3_MEDIA = env_bool("DJANGO_USE_S3_MEDIA", False)
 
 STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
 }
 
 if USE_S3_MEDIA:
     s3_bucket_name = os.getenv("AWS_STORAGE_BUCKET_NAME")
     if not s3_bucket_name:
-        raise RuntimeError(
-            "AWS_STORAGE_BUCKET_NAME is required when DJANGO_USE_S3_MEDIA=true."
-        )
-
+        raise RuntimeError("AWS_STORAGE_BUCKET_NAME is required when DJANGO_USE_S3_MEDIA=true.")
     s3_options = {
         "bucket_name": s3_bucket_name,
         "region_name": os.getenv("AWS_S3_REGION_NAME", "us-east-1"),
@@ -149,24 +144,16 @@ if USE_S3_MEDIA:
         "querystring_auth": True,
         "querystring_expire": int(os.getenv("AWS_S3_QUERYSTRING_EXPIRE", "3600")),
     }
-
     s3_endpoint_url = os.getenv("AWS_S3_ENDPOINT_URL")
     if s3_endpoint_url:
         s3_options["endpoint_url"] = s3_endpoint_url
-
     s3_custom_domain = os.getenv("AWS_S3_CUSTOM_DOMAIN")
     if s3_custom_domain:
         s3_options["custom_domain"] = s3_custom_domain
         s3_options["url_protocol"] = "https:"
-
-    STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3.S3Storage",
-        "OPTIONS": s3_options,
-    }
+    STORAGES["default"] = {"BACKEND": "storages.backends.s3.S3Storage", "OPTIONS": s3_options}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-# Production security controls. These remain disabled for local HTTP development.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", not DEBUG)
 SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", not DEBUG)

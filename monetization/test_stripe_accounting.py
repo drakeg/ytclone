@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.db.models import Sum
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -194,3 +195,34 @@ class StripeAccountingWebhookTests(TestCase):
         self.assertEqual(reversal.kind, MonetizationTransaction.Kind.REVERSAL)
         self.assertEqual(reversal.platform_fee_minor, -50)
         self.assertEqual(MonetizationTransaction.objects.filter(provider_event_id__startswith="evt_charge_refunded_1").count(), 2)
+
+    def test_cumulative_partial_refunds_record_only_each_increment(self):
+        original = MonetizationTransaction.objects.create(
+            monetization_account=self.account,
+            payer=self.viewer,
+            membership_subscription=self.subscription,
+            kind=MonetizationTransaction.Kind.MEMBERSHIP,
+            status=MonetizationTransaction.Status.SUCCEEDED,
+            gross_amount_minor=500,
+            platform_fee_minor=50,
+            creator_net_minor=450,
+            platform_fee_bps=1000,
+            provider_payment_id="in_test_partial_refund",
+            provider_event_id="evt_original_partial_payment",
+        )
+        for event_id, cumulative_amount in (("evt_partial_1", 300), ("evt_partial_2", 500)):
+            self.post_event({
+                "id": event_id,
+                "type": "charge.refunded",
+                "data": {"object": {
+                    "id": "ch_test_partial_refund",
+                    "invoice": original.provider_payment_id,
+                    "amount_refunded": cumulative_amount,
+                }},
+            })
+
+        refunds = MonetizationTransaction.objects.filter(kind=MonetizationTransaction.Kind.REFUND)
+        reversals = MonetizationTransaction.objects.filter(kind=MonetizationTransaction.Kind.REVERSAL)
+        self.assertEqual(refunds.aggregate(total=Sum("gross_amount_minor"))["total"], 500)
+        self.assertEqual(refunds.aggregate(total=Sum("creator_net_minor"))["total"], -450)
+        self.assertEqual(reversals.aggregate(total=Sum("platform_fee_minor"))["total"], -50)

@@ -39,6 +39,18 @@ class InterfaceDesignTests(TestCase):
             with self.subTest(route_name=route_name):
                 self.assertContains(response, reverse(route_name))
 
+        self.assertContains(response, 'method="post" action="{}"'.format(reverse("logout")))
+        self.assertNotContains(response, 'href="{}"'.format(reverse("logout")))
+
+    def test_logout_post_returns_to_working_homepage(self):
+        user = User.objects.create_user(username="viewer", password="password123")
+        self.client.force_login(user)
+
+        response = self.client.post(reverse("logout"))
+
+        self.assertRedirects(response, reverse("video_list"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
     def test_design_system_includes_mobile_focus_and_motion_safeguards(self):
         stylesheet_path = finders.find("style.css")
         self.assertIsNotNone(stylesheet_path)

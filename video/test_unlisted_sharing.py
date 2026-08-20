@@ -1,6 +1,8 @@
 import uuid
+from unittest.mock import patch
 
 from django.contrib.auth.models import User
+from django.http import HttpResponse
 from django.test import TestCase
 from django.urls import reverse
 
@@ -13,7 +15,7 @@ class UnlistedSharingTests(TestCase):
         self.viewer = User.objects.create_user(username="viewer", password="password123")
         category = Category.objects.create(name="General", description="General", thumbnail="categories/general.jpg")
         channel = Channel.objects.create(name="Channel", description="Channel", thumbnail="channels/channel.jpg", owner=self.creator)
-        self.video = Video.objects.create(title="Secret link video", description="Secret", thumbnail="videos/secret.jpg", video_file="videos/secret.mp4", author=self.creator, channel=channel, category=category, publication_status=Video.PublicationStatus.UNLISTED)
+        self.video = Video.objects.create(title="Secret link video", description="Secret", thumbnail="videos/secret.jpg", video_file="videos/files/secret.mp4", author=self.creator, channel=channel, category=category, publication_status=Video.PublicationStatus.UNLISTED)
 
     def shared_url(self, token=None):
         return reverse("shared_video_detail", kwargs={"token": token or self.video.share_token})
@@ -43,6 +45,20 @@ class UnlistedSharingTests(TestCase):
         self.client.logout()
         self.assertEqual(self.client.get(self.shared_url(old_token)).status_code, 404)
         self.assertEqual(self.client.get(self.shared_url()).status_code, 200)
+
+    @patch("video.access_views.serve", return_value=HttpResponse("media"))
+    def test_rotating_share_token_revokes_existing_direct_media_grant(self, unused_serve):
+        media_url = reverse("protected_video_media", kwargs={"path": "secret.mp4"})
+
+        self.assertEqual(self.client.get(self.shared_url()).status_code, 200)
+        self.assertEqual(self.client.get(media_url).status_code, 200)
+
+        self.video.share_token = uuid.uuid4()
+        self.video.save(update_fields=["share_token"])
+
+        self.assertEqual(self.client.get(media_url).status_code, 404)
+        self.assertEqual(self.client.get(self.shared_url()).status_code, 200)
+        self.assertEqual(self.client.get(media_url).status_code, 200)
 
     def test_non_owner_cannot_rotate_and_get_is_rejected(self):
         url = reverse("video_rotate_share_token", kwargs={"pk": self.video.pk})

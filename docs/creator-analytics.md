@@ -63,6 +63,10 @@ This sprint adds no migrations, dependencies, environment variables, AWS resourc
 
 ## Planned: Watch-time analytics
 
+Implementation sprint started: bounded, idempotent playback heartbeats will feed
+private aggregate creator metrics. The initial retention view uses quarter marks
+(25/50/75/100%) rather than a second-by-second curve.
+
 A future sprint should tell creators how long viewers actually engage with each
 video. The minimum creator-facing metrics are:
 

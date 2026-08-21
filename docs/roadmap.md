@@ -29,6 +29,34 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Current sprint: Creator Watch-Time Analytics
+
+Goal: collect bounded playback heartbeats and expose private, aggregate watch-time
+metrics without treating resume position as elapsed viewing.
+
+Acceptance criteria:
+
+- Record idempotent heartbeats only for visible videos, capped at 15 seconds each.
+- Support authenticated and anonymous playback through privacy-preserving session identifiers.
+- Reject malformed durations, positions, deltas, identifiers, and inaccessible videos.
+- Show creators total watch hours, average view duration, average percentage viewed,
+  and 25/50/75/100% retention reach for each owned video.
+- Support lifetime and trailing 28-day reporting without exposing viewer-level data.
+- Keep telemetry and aggregation in service modules and require no external service.
+
+Out of scope: second-by-second graphs, geography, traffic sources, exports,
+background rollups, warehouses, advertising analytics, or Terraform changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_watch_time_analytics
+python manage.py test
+docker compose run --build --rm test
+```
+
 ## Completed sprint: Channel Team Invitations
 
 Goal: replace immediate editor assignment with an explicit, expiring invitation

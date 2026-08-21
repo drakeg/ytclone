@@ -56,7 +56,29 @@ This sprint adds no migrations, dependencies, environment variables, AWS resourc
 ## Out of scope
 
 - Historical trends, date-range comparisons, and charts
-- Watch time, retention, traffic sources, and geography
+- Traffic sources and geography
 - Per-channel video analytics until videos have an explicit channel relationship
 - CSV export or scheduled reports
 - Background aggregation, data warehouses, or third-party analytics services
+
+## Planned: Watch-time analytics
+
+A future sprint should tell creators how long viewers actually engage with each
+video. The minimum creator-facing metrics are:
+
+- Total watch time, displayed in minutes or hours, for each video and channel
+- Average view duration per qualifying playback
+- Average percentage viewed, based on the video's duration
+- A per-video retention view that shows where viewers stop watching
+- Lifetime and bounded date-range summaries
+
+The current playback-progress field exists to resume an authenticated viewer's
+video. It stores the latest position, not elapsed viewing activity, so summing it
+would produce inaccurate watch hours. Implementation requires dedicated,
+incremental playback telemetry for both authenticated and anonymous sessions.
+
+The sprint must define and test safeguards for repeated events, seeking,
+background tabs, simultaneous sessions, completion, malformed durations, and
+privacy isolation. Raw viewer-level activity must remain private; creators should
+receive only aggregate metrics for videos and channels they own. Local testing
+must cover both Docker and non-Docker workflows before sprint closure.

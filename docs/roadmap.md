@@ -566,6 +566,10 @@ Verification:
 
 ## Later candidates
 
+- Creator watch-time analytics: total watch hours, average view duration,
+  average percentage viewed, and per-video retention reporting. This requires
+  dedicated playback telemetry; the existing resume position must not be used
+  as a watch-time total.
 - Channel-team invitation email delivery, reminders, and activity history
 - Low-cost AWS application hosting and deployment
 

@@ -9,6 +9,7 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoEditForm, VideoUploadForm
 from .models import (
@@ -47,6 +48,7 @@ from .services.trash import (
     restore_video,
     trash_video,
 )
+from .services.watch_time import InvalidWatchEvent, record_watch_event
 from .services.team_invitations import (
     InvitationError,
     invite_editor,
@@ -65,11 +67,13 @@ def video_list(request):
 
 @login_required
 def creator_analytics(request):
-    analytics = get_creator_analytics(request.user)
+    selected_range = request.GET.get("range", "lifetime")
+    days = 28 if selected_range == "28d" else None
+    analytics = get_creator_analytics(request.user, days=days)
     return render(
         request,
         "videos/creator_analytics.html",
-        {"analytics": analytics},
+        {"analytics": analytics, "selected_range": "28d" if days else "lifetime"},
     )
 
 
@@ -177,6 +181,7 @@ def notification_mark_all_read(request):
     return redirect("notification_list")
 
 
+@ensure_csrf_cookie
 def video_detail(request, pk):
     video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     return _render_video_detail(request, video)
@@ -277,6 +282,19 @@ def playback_progress(request, pk):
             "duration_seconds": entry.duration_seconds,
         }
     )
+
+
+@require_POST
+def watch_time_event(request, pk):
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
+    if not request.session.session_key:
+        request.session.create()
+    try:
+        payload = json.loads(request.body)
+        event, created = record_watch_event(video=video, user=request.user, session_key=request.session.session_key, payload=payload)
+    except (json.JSONDecodeError, InvalidWatchEvent):
+        return JsonResponse({"error": "Invalid watch event."}, status=400)
+    return JsonResponse({"event_id": str(event.event_id), "created": created})
 
 
 @login_required

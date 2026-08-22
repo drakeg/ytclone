@@ -29,6 +29,49 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Team Invitation Notifications and Activity
+
+Goal: make consent-based editor invitations discoverable and auditable using the
+existing in-app notification system, without adding email infrastructure.
+
+Acceptance criteria:
+
+- Creating an invitation creates one private notification for its intended recipient.
+- Notification links lead to the recipient's private invitation inbox.
+- Navigation shows the recipient's unexpired pending invitation count.
+- Accepting, declining, or owner-revoking an invitation clears its unread notification.
+- Owners see pending invitations separately from a bounded recent activity history.
+- Expired invitations appear as expired without granting access.
+- All notification, invitation, and channel data remains user/owner scoped.
+
+Out of scope: email delivery, scheduled reminders, push notifications, external
+providers, workers, custom roles, and permanent audit-log retention.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_channel_team_notifications
+python manage.py test
+docker compose run --build --rm test
+```
+
+Delivered:
+
+- One private in-app notification per successfully created invitation
+- Direct notification links to the recipient's invitation inbox
+- Unexpired pending invitation counts in authenticated navigation
+- Automatic unread clearing after accept, decline, or owner revocation
+- Separate owner views for valid pending invitations and 25 recent activity rows
+- Expired invitation presentation without editor access
+- Migration `0021_team_invitation_notifications`
+
+Verification:
+
+- Django checks and migration-drift checks passed directly and in Docker
+- All 301 tests passed directly and through `docker compose run --build --rm test`
+
 ## Completed sprint: Creator Watch-Time Analytics
 
 Goal: collect bounded playback heartbeats and expose private, aggregate watch-time
@@ -609,7 +652,7 @@ Verification:
 
 ## Later candidates
 
-- Channel-team invitation email delivery, reminders, and activity history
+- Optional channel-team invitation email delivery and scheduled reminders
 - Low-cost AWS application hosting and deployment
 
 ## Completed product expansion

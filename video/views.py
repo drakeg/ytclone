@@ -4,7 +4,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import F, Max, Prefetch
+from django.db.models import F, Max, Prefetch, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -27,7 +27,7 @@ from .models import (
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.channels import can_edit_video
 from .services.discovery import get_discovery_sections
-from .services.notifications import notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription
+from .services.notifications import clear_team_invitation_notification, notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription, notify_team_invitation
 from .services.moderation import (
     COMMENT_FILTERS,
     bulk_moderate_comments,
@@ -548,14 +548,19 @@ def channel_team(request, pk):
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
         try:
-            invite_editor(channel=channel, invited_by=request.user, username=username)
+            invitation = invite_editor(channel=channel, invited_by=request.user, username=username)
+            notify_team_invitation(invitation)
             return redirect("channel_team", pk=channel.pk)
         except InvitationError as exc:
             error = str(exc)
     memberships = channel.memberships.select_related("user").order_by("user__username")
+    now = timezone.now()
     invitations = channel.team_invitations.select_related("invitee").filter(
-        status=ChannelTeamInvitation.Status.PENDING
+        status=ChannelTeamInvitation.Status.PENDING, expires_at__gt=now
     )
+    invitation_activity = channel.team_invitations.select_related("invitee", "invited_by").filter(
+        ~Q(status=ChannelTeamInvitation.Status.PENDING) | Q(expires_at__lte=now)
+    )[:25]
     return render(
         request,
         "videos/channel_team.html",
@@ -563,6 +568,7 @@ def channel_team(request, pk):
             "channel": channel,
             "memberships": memberships,
             "invitations": invitations,
+            "invitation_activity": invitation_activity,
             "error": error,
         },
     )
@@ -590,6 +596,7 @@ def channel_team_invitation_revoke(request, pk, invitation_pk):
         status=ChannelTeamInvitation.Status.PENDING,
     )
     revoke_invitation(invitation=invitation)
+    clear_team_invitation_notification(invitation)
     return redirect("channel_team", pk=channel.pk)
 
 
@@ -623,6 +630,7 @@ def channel_team_invitation_respond(request, token, decision):
     )
     if response is None:
         raise Http404("Invitation not found")
+    clear_team_invitation_notification(invitation)
     return redirect("channel_team_invitations")
 
 

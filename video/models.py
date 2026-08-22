@@ -331,6 +331,7 @@ class Notification(models.Model):
         DISLIKE = "dislike", "Dislike"
         SUBSCRIPTION = "subscription", "Subscription"
         UPLOAD = "upload", "New upload"
+        TEAM_INVITATION = "team_invite", "Team invitation"
 
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="notifications"

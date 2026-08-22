@@ -83,3 +83,16 @@ owner or recipient scoping.
 - Delegated analytics, team administration, deletion, bulk actions, or comment moderation
 - Viewer, analyst, and custom roles
 - Email delivery, reminders, custom roles, invitation extension, and audit logs
+
+## Invitation notifications and activity
+
+The existing notification inbox announces team invitations and links directly to
+the private invitation inbox. Navigation shows the number of unexpired pending
+invitations. Accepting, declining, or revoking clears the related unread state.
+Owners see valid pending invitations separately from a bounded 25-row activity
+history, including expired invitations. Email and scheduled delivery remain out
+of scope.
+
+Migration `0021_team_invitation_notifications` adds the notification kind. Django
+checks, migration-drift checks, and all 301 tests passed directly and through
+Docker Compose.

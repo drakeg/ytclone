@@ -1,4 +1,5 @@
 from video.models import Notification
+from django.utils import timezone
 
 
 def create_notification(*, recipient, actor, kind, video=None, channel=None):
@@ -67,3 +68,22 @@ def notify_new_upload(video):
     ]
     Notification.objects.bulk_create(notifications)
     return len(notifications)
+
+
+def notify_team_invitation(invitation):
+    return create_notification(
+        recipient=invitation.invitee,
+        actor=invitation.invited_by,
+        kind=Notification.Kind.TEAM_INVITATION,
+        channel=invitation.channel,
+    )
+
+
+def clear_team_invitation_notification(invitation):
+    return Notification.objects.filter(
+        recipient=invitation.invitee,
+        actor=invitation.invited_by,
+        channel=invitation.channel,
+        kind=Notification.Kind.TEAM_INVITATION,
+        read_at__isnull=True,
+    ).update(read_at=timezone.now())

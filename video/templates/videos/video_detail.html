@@ -24,6 +24,28 @@
         </section>
         {% endif %}
 
+        {% if user.is_authenticated and bookmarks_enabled %}
+        <section class="surface-card mt-3" aria-labelledby="bookmarks-heading">
+            <h2 id="bookmarks-heading" class="h4">Saved moments</h2>
+            <form id="bookmark-form" class="d-flex flex-wrap gap-2 align-items-end mb-3" method="post" action="{% url 'video_bookmark_create' video.pk %}">
+                {% csrf_token %}
+                <div class="flex-grow-1"><label for="bookmark-label">Label</label><input class="form-control" id="bookmark-label" name="label" maxlength="120" required placeholder="What happens here?"></div>
+                <input id="bookmark-position" type="hidden" name="position_seconds" value="0">
+                <button class="btn btn-outline-primary" type="submit">Save current moment</button>
+            </form>
+            <div class="d-flex flex-wrap gap-2">
+                {% for bookmark in bookmarks %}
+                    <div id="bookmark-{{ bookmark.pk }}" class="d-flex gap-1">
+                        <button class="btn btn-outline-secondary video-seek" type="button" data-seek-time="{{ bookmark.position_seconds }}">{{ bookmark.timestamp_display }} · {{ bookmark.label }}</button>
+                        <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit" aria-label="Remove bookmark {{ bookmark.label }}">×</button></form>
+                    </div>
+                {% empty %}
+                    <p class="video-meta mb-0">No saved moments for this video.</p>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
         <div class="watch-actions">
             {% if user.is_authenticated %}
                 <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-primary">Like</button></form>
@@ -116,6 +138,9 @@
     let lastWatchTick = performance.now();
     const csrfToken = document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1];
     document.querySelectorAll(".video-chapter").forEach((button) => button.addEventListener("click", () => { player.currentTime = Number(button.dataset.chapterTime); player.play(); }));
+    document.querySelectorAll(".video-seek").forEach((button) => button.addEventListener("click", () => { player.currentTime = Number(button.dataset.seekTime); player.play(); }));
+    const bookmarkForm = document.getElementById("bookmark-form");
+    bookmarkForm?.addEventListener("submit", () => { document.getElementById("bookmark-position").value = String(player.currentTime || 0); });
     player.addEventListener("loadedmetadata", () => { if (progressUrl && resumePosition > 0 && resumePosition < player.duration - 5) player.currentTime = resumePosition; }, { once: true });
     const saveProgress = () => {
         if (!progressUrl) return;

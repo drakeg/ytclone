@@ -19,6 +19,12 @@
         </li>
         {% empty %}<li class="list-group-item">No pending invitations.</li>{% endfor %}
     </ul>
+    <h2 class="h4 mt-4">Recent invitation activity</h2>
+    <ul class="list-group mb-4">
+        {% for invitation in invitation_activity %}
+        <li class="list-group-item"><strong>{{ invitation.invitee.username }}</strong> · {% if invitation.is_expired and invitation.status == 'pending' %}Expired{% else %}{{ invitation.get_status_display }}{% endif %} · {{ invitation.responded_at|default:invitation.expires_at|date:"M j, Y" }}</li>
+        {% empty %}<li class="list-group-item">No invitation activity yet.</li>{% endfor %}
+    </ul>
     <h2 class="h4">Active editors</h2>
     <ul class="list-group">
         {% for membership in memberships %}

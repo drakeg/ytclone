@@ -26,9 +26,10 @@
                             {% elif notification.kind == "like" %}liked
                             {% elif notification.kind == "dislike" %}disliked
                             {% elif notification.kind == "subscription" %}subscribed to
+                            {% elif notification.kind == "team_invite" %}invited you to edit
                             {% else %}uploaded a new video to{% endif %}
                             {% if notification.video %}<a href="{% url 'video_detail' notification.video.pk %}">{{ notification.video.title }}</a>{% endif %}
-                            {% if notification.channel %}<a href="{% url 'channel_detail' notification.channel.pk %}">{{ notification.channel.name }}</a>{% endif %}
+                            {% if notification.channel %}{% if notification.kind == "team_invite" %}<a href="{% url 'channel_team_invitations' %}">{{ notification.channel.name }}</a>{% else %}<a href="{% url 'channel_detail' notification.channel.pk %}">{{ notification.channel.name }}</a>{% endif %}{% endif %}
                         </p>
                         <small class="text-body-secondary">{{ notification.created_at|timesince }} ago</small>
                     </div>

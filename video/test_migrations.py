@@ -11,7 +11,7 @@ class MigrationConfigurationTests(TestCase):
         loader = MigrationLoader(connection)
         self.assertIn("video", loader.migrated_apps)
         self.assertIn(
-            ("video", "0020_video_watch_events"),
+            ("video", "0021_team_invitation_notifications"),
             loader.graph.leaf_nodes("video"),
         )
 

@@ -21,6 +21,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion
 - Draft, immediate, and scheduled publishing with centralized visibility
+- Creator-managed video chapters with accessible player seek controls
 - Unlisted videos with hard-to-guess, revocable share links
 - Private creator video library with publication-state filters and safe bulk visibility changes
 - Recoverable creator video trash with 30-day retention and restore-to-draft safeguards
@@ -242,6 +243,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/post-expansion-hardening.md` — current correctness and privacy hardening scope
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
+- `docs/video-chapters.md` — timestamp syntax, permissions, player behavior, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
 - `docs/video-channels.md` — video channel ownership, migration, notifications, and tests
 - `docs/notifications.md` — notification events, privacy, unread state, and tests

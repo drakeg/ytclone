@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from .models import Channel, Comment, Playlist, Video
 from .services.channels import accessible_channels
+from .services.chapters import ChapterValidationError, format_chapters, parse_chapters
 
 
 class CommentForm(forms.ModelForm):
@@ -28,6 +29,7 @@ class PlaylistForm(forms.ModelForm):
 
 
 class VideoUploadForm(forms.ModelForm):
+    chapters = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}), help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.")
     allowed_video_extensions = {".mp4", ".webm", ".mov"}
     allowed_video_content_types = {
         "video/mp4",
@@ -80,6 +82,14 @@ class VideoUploadForm(forms.ModelForm):
         )
         if user and not self.fields["channel"].queryset.exists():
             self.fields["channel"].help_text = "Create a channel before uploading a video."
+        if self.instance and self.instance.pk:
+            self.fields["chapters"].initial = format_chapters(self.instance)
+
+    def clean_chapters(self):
+        try:
+            return parse_chapters(self.cleaned_data.get("chapters", ""))
+        except ChapterValidationError as error:
+            raise forms.ValidationError(str(error))
 
     def clean(self):
         cleaned_data = super().clean()

@@ -51,12 +51,44 @@ Terraform checks are not applicable unless files under `terraform/` or its workf
 
 ## Migration and configuration
 
-This sprint adds no migrations, dependencies, environment variables, AWS resources, cookies, or external services.
+The original analytics sprint added no migration. Watch-time analytics adds
+migration `0020_video_watch_events` but no dependency, environment variable, AWS
+resource, cookie category, or external service.
 
 ## Out of scope
 
 - Historical trends, date-range comparisons, and charts
-- Watch time, retention, traffic sources, and geography
+- Traffic sources and geography
 - Per-channel video analytics until videos have an explicit channel relationship
 - CSV export or scheduled reports
 - Background aggregation, data warehouses, or third-party analytics services
+
+## Delivered: Watch-time analytics
+
+Bounded, idempotent playback heartbeats feed private aggregate creator metrics.
+The initial retention view uses quarter marks (25/50/75/100%, with 95% treated
+as completed) rather than a second-by-second curve.
+
+The creator-facing metrics are:
+
+- Total watch time, displayed in minutes or hours, for each video and channel
+- Average view duration per qualifying playback
+- Average percentage viewed, based on the video's duration
+- A per-video retention view that shows where viewers stop watching
+- Lifetime and bounded date-range summaries
+
+The playback-progress field exists to resume an authenticated viewer's
+video. It stores the latest position, not elapsed viewing activity, so summing it
+would produce inaccurate watch hours. Dedicated incremental telemetry supports
+authenticated and anonymous sessions; anonymous identifiers are one-way hashes.
+
+The sprint must define and test safeguards for repeated events, seeking,
+background tabs, simultaneous sessions, completion, malformed durations, and
+privacy isolation. Raw viewer-level activity must remain private; creators should
+receive only aggregate metrics for videos and channels they own. Local testing
+must cover both Docker and non-Docker workflows before sprint closure.
+
+Migration `0020_video_watch_events` stores capped heartbeat events. Collection
+and aggregation live in `video/services/watch_time.py`. Django checks,
+migration-drift checks, and all 295 tests passed both directly and through Docker
+Compose.

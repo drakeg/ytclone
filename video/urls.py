@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import access_views, account_views, category_views, channel_views, subscription_views, views
+from . import access_views, account_views, category_views, channel_views, community_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -21,6 +21,7 @@ urlpatterns = [
     path("videos/<int:pk>/restore/", views.video_restore, name="video_restore"),
     path("videos/<int:pk>/permanent-delete/", views.video_permanent_delete, name="video_permanent_delete"),
     path("videos/<int:pk>/progress/", views.playback_progress, name="playback_progress"),
+    path("videos/<int:pk>/watch-events/", views.watch_time_event, name="watch_time_event"),
     path("videos/<int:pk>/comments/", views.add_comment, name="add_comment"),
     path("comments/<int:pk>/edit/", views.comment_edit, name="comment_edit"),
     path("comments/<int:pk>/delete/", views.comment_delete, name="comment_delete"),
@@ -30,9 +31,18 @@ urlpatterns = [
     path("channels/", channel_views.channel_list, name="channel_list"),
     path("channels/create/", account_views.channel_create, name="channel_create"),
     path("channels/<int:pk>/", views.channel_detail, name="channel_detail"),
+    path("channels/<int:pk>/community/", community_views.channel_community, name="channel_community"),
+    path("channels/<int:pk>/community/posts/", community_views.community_post_create, name="community_post_create"),
+    path("community/posts/<int:post_pk>/like/", community_views.community_post_like, name="community_post_like"),
+    path("community/posts/<int:post_pk>/reply/", community_views.community_reply_create, name="community_reply_create"),
+    path("community/polls/options/<int:option_pk>/vote/", community_views.community_poll_vote, name="community_poll_vote"),
+    path("community/replies/<int:reply_pk>/feature/", community_views.community_reply_feature, name="community_reply_feature"),
     path("channels/<int:pk>/analytics/", views.channel_analytics, name="channel_analytics"),
     path("channels/<int:pk>/team/", views.channel_team, name="channel_team"),
     path("channels/<int:pk>/team/<int:membership_pk>/remove/", views.channel_team_remove, name="channel_team_remove"),
+    path("channels/<int:pk>/team/invitations/<int:invitation_pk>/revoke/", views.channel_team_invitation_revoke, name="channel_team_invitation_revoke"),
+    path("team-invitations/", views.channel_team_invitations, name="channel_team_invitations"),
+    path("team-invitations/<uuid:token>/<str:decision>/", views.channel_team_invitation_respond, name="channel_team_invitation_respond"),
     path("channels/<int:pk>/subscribe/", subscription_views.subscribe, name="subscribe"),
     path("categories/", views.category_list, name="category_list"),
     path("categories/create/", category_views.category_create, name="category_create"),

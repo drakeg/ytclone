@@ -15,6 +15,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
 - Private playback progress with Continue Watching and automatic resume
 - Private creator analytics for uploads, views, reactions, and unique subscribers
+- Private creator watch-time analytics with per-video duration, completion, and retention aggregates
 - Private in-app notifications for comments, reactions, and subscriptions
 - Explicit video-to-channel publishing with subscriber upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics
@@ -26,8 +27,14 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Reversible creator comment moderation with owner-scoped bulk hide and restore
 - Viewer-owned comment editing and confirmed deletion with moderation-safe behavior
 - One-level threaded comment replies with parent-scoped moderation and deduplicated notifications
-- Owner-managed channel editors for delegated uploads and video metadata changes
+- Owner-managed, consent-based channel editor invitations for delegated uploads and video metadata changes
 - Original responsive interface with accessible navigation, polished video surfaces, and shared creator components
+- Self-service registration, profile management, and creator-channel onboarding
+- Viewer and creator navigation tailored to each account's role
+- Optional upload categories and thumbnails with drag-and-drop file selection
+- Test-mode creator monetization with tips, channel memberships, refunds, and accounting
+- Members-only video access with cancellation and payment-lifecycle handling
+- Channel community posts, polls, and highlighted creator Q&A
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -88,11 +95,20 @@ The one-off `test` service is profile-isolated, so normal `docker compose up` st
 docker compose up --build --detach
 ```
 
-Create an administrator account with:
+Create a new administrator account with:
 
 ```bash
 docker compose exec web python manage.py createsuperuser
 ```
+
+If your account already exists, promote it by replacing `your_username` below:
+
+```bash
+docker compose exec -e DJANGO_ADMIN_USERNAME=your_username web python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+Then open `http://localhost:8000/admin/` and sign in with that account. If
+`APP_PORT` is not `8000`, use the configured host port instead.
 
 Stop the application with:
 
@@ -120,6 +136,31 @@ python manage.py runserver
 ```
 
 On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1` instead.
+
+## Administrator access
+
+For a new administrator when running without Docker:
+
+```bash
+python manage.py createsuperuser
+```
+
+To promote an existing account on macOS or Linux, replace `your_username`:
+
+```bash
+DJANGO_ADMIN_USERNAME=your_username python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:DJANGO_ADMIN_USERNAME = "your_username"
+python manage.py shell -c "from django.contrib.auth import get_user_model; user = get_user_model().objects.get(username=__import__('os').environ['DJANGO_ADMIN_USERNAME']); user.is_staff = True; user.is_superuser = True; user.save(update_fields=['is_staff', 'is_superuser']); print(f'Promoted {user.username} to administrator')"
+```
+
+Administrator access grants full Django administration privileges, including
+the ability to change or delete application data. Grant it only to trusted
+accounts.
 
 ## Run the full test suite locally
 
@@ -195,6 +236,10 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/comment-replies.md` — reply threads, moderation inheritance, notifications, and tests
 - `docs/channel-teams.md` — editor permissions, owner safeguards, migration, and tests
 - `docs/ui-design.md` — visual system, responsive behavior, accessibility, and verification
+- `docs/viewer-creator-categories.md` — registration, role-aware onboarding, optional categories, and uploads
+- `docs/monetization.md` — test-mode tips, memberships, Stripe configuration, accounting, and tests
+- `docs/channel-community.md` — community posts, polls, highlighted Q&A, permissions, and tests
+- `docs/post-expansion-hardening.md` — current correctness and privacy hardening scope
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
@@ -210,4 +255,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The next likely product sprint will either extend channel collaboration with an explicitly bounded workflow or prepare low-cost application hosting. Higher-cost AWS services will be introduced only when usage justifies them.
+The current sprint hardens the expanded onboarding, monetization, membership, and
+community foundation. After it closes, the next sprint will be selected from the
+roadmap using the same documentation-first process. Higher-cost AWS services will
+be introduced only when usage justifies them.

@@ -9,12 +9,14 @@ from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import ensure_csrf_cookie
 
 from .forms import CommentForm, EditProfileForm, PlaylistForm, VideoEditForm, VideoUploadForm
 from .models import (
     Category,
     Channel,
     ChannelMembership,
+    ChannelTeamInvitation,
     Comment,
     Notification,
     Playlist,
@@ -46,6 +48,13 @@ from .services.trash import (
     restore_video,
     trash_video,
 )
+from .services.watch_time import InvalidWatchEvent, record_watch_event
+from .services.team_invitations import (
+    InvitationError,
+    invite_editor,
+    respond_to_invitation,
+    revoke_invitation,
+)
 
 
 VIEWED_VIDEOS_SESSION_KEY = "viewed_video_ids"
@@ -58,11 +67,13 @@ def video_list(request):
 
 @login_required
 def creator_analytics(request):
-    analytics = get_creator_analytics(request.user)
+    selected_range = request.GET.get("range", "lifetime")
+    days = 28 if selected_range == "28d" else None
+    analytics = get_creator_analytics(request.user, days=days)
     return render(
         request,
         "videos/creator_analytics.html",
-        {"analytics": analytics},
+        {"analytics": analytics, "selected_range": "28d" if days else "lifetime"},
     )
 
 
@@ -170,6 +181,7 @@ def notification_mark_all_read(request):
     return redirect("notification_list")
 
 
+@ensure_csrf_cookie
 def video_detail(request, pk):
     video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
     return _render_video_detail(request, video)
@@ -270,6 +282,19 @@ def playback_progress(request, pk):
             "duration_seconds": entry.duration_seconds,
         }
     )
+
+
+@require_POST
+def watch_time_event(request, pk):
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
+    if not request.session.session_key:
+        request.session.create()
+    try:
+        payload = json.loads(request.body)
+        event, created = record_watch_event(video=video, user=request.user, session_key=request.session.session_key, payload=payload)
+    except (json.JSONDecodeError, InvalidWatchEvent):
+        return JsonResponse({"error": "Invalid watch event."}, status=400)
+    return JsonResponse({"event_id": str(event.event_id), "created": created})
 
 
 @login_required
@@ -522,21 +547,24 @@ def channel_team(request, pk):
     error = None
     if request.method == "POST":
         username = request.POST.get("username", "").strip()
-        user = User.objects.filter(username=username).first()
-        if user is None:
-            error = "User not found."
-        elif user.pk == request.user.pk:
-            error = "The channel owner is already on the team."
-        elif ChannelMembership.objects.filter(channel=channel, user=user).exists():
-            error = "That user is already an editor."
-        else:
-            ChannelMembership.objects.create(channel=channel, user=user)
+        try:
+            invite_editor(channel=channel, invited_by=request.user, username=username)
             return redirect("channel_team", pk=channel.pk)
+        except InvitationError as exc:
+            error = str(exc)
     memberships = channel.memberships.select_related("user").order_by("user__username")
+    invitations = channel.team_invitations.select_related("invitee").filter(
+        status=ChannelTeamInvitation.Status.PENDING
+    )
     return render(
         request,
         "videos/channel_team.html",
-        {"channel": channel, "memberships": memberships, "error": error},
+        {
+            "channel": channel,
+            "memberships": memberships,
+            "invitations": invitations,
+            "error": error,
+        },
     )
 
 
@@ -549,6 +577,53 @@ def channel_team_remove(request, pk, membership_pk):
     )
     membership.delete()
     return redirect("channel_team", pk=channel.pk)
+
+
+@login_required
+@require_POST
+def channel_team_invitation_revoke(request, pk, invitation_pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    invitation = get_object_or_404(
+        ChannelTeamInvitation,
+        pk=invitation_pk,
+        channel=channel,
+        status=ChannelTeamInvitation.Status.PENDING,
+    )
+    revoke_invitation(invitation=invitation)
+    return redirect("channel_team", pk=channel.pk)
+
+
+@login_required
+def channel_team_invitations(request):
+    invitations = request.user.channel_team_invitations.select_related(
+        "channel", "channel__owner", "invited_by"
+    ).filter(status=ChannelTeamInvitation.Status.PENDING)
+    return render(
+        request,
+        "videos/channel_team_invitations.html",
+        {"invitations": invitations},
+    )
+
+
+@login_required
+@require_POST
+def channel_team_invitation_respond(request, token, decision):
+    if decision not in {"accept", "decline"}:
+        raise Http404("Invitation not found")
+    invitation = get_object_or_404(
+        ChannelTeamInvitation,
+        token=token,
+        invitee=request.user,
+        status=ChannelTeamInvitation.Status.PENDING,
+    )
+    response = respond_to_invitation(
+        invitation=invitation,
+        user=request.user,
+        accept=decision == "accept",
+    )
+    if response is None:
+        raise Http404("Invitation not found")
+    return redirect("channel_team_invitations")
 
 
 @login_required

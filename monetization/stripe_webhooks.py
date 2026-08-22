@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from video.models import Channel
@@ -97,6 +99,16 @@ def handle_checkout_completed(event_id, session):
     ).first()
     provider_subscription_id = str(field(session, "subscription", "") or "")
     if not tier or not provider_subscription_id:
+        return
+    existing_active = ChannelMembershipSubscription.objects.filter(
+        subscriber=payer,
+        status=ChannelMembershipSubscription.Status.ACTIVE,
+        tier__monetization_account=tier.monetization_account,
+    ).first()
+    if existing_active and (
+        existing_active.tier_id != tier.pk
+        or existing_active.provider_subscription_id != provider_subscription_id
+    ):
         return
     subscription, unused = ChannelMembershipSubscription.objects.get_or_create(
         tier=tier,
@@ -224,6 +236,7 @@ def handle_invoice_failed(event_id, invoice):
     )
 
 
+@transaction.atomic
 def handle_charge_refunded(event_id, charge):
     candidate_ids = [
         str(field(charge, "id", "") or ""),
@@ -234,7 +247,7 @@ def handle_charge_refunded(event_id, charge):
     if not candidate_ids:
         return
     original = (
-        MonetizationTransaction.objects.select_related("payer", "membership_subscription")
+        MonetizationTransaction.objects.select_for_update().select_related("payer", "membership_subscription")
         .filter(provider_payment_id__in=candidate_ids, status=MonetizationTransaction.Status.SUCCEEDED)
         .exclude(kind__in=[MonetizationTransaction.Kind.REFUND, MonetizationTransaction.Kind.REVERSAL])
         .order_by("-created_at")
@@ -243,11 +256,34 @@ def handle_charge_refunded(event_id, charge):
     if not original or original.gross_amount_minor <= 0:
         return
 
-    refund_amount = int(field(charge, "amount_refunded", 0) or 0)
+    reported_refund = int(field(charge, "amount_refunded", 0) or 0)
+    if reported_refund <= 0:
+        return
+    reported_refund = min(reported_refund, original.gross_amount_minor)
+    refund_provider_id = str(field(charge, "id", "") or original.provider_payment_id)
+    recorded = MonetizationTransaction.objects.filter(
+        monetization_account=original.monetization_account,
+        kind=MonetizationTransaction.Kind.REFUND,
+        status=MonetizationTransaction.Status.SUCCEEDED,
+        provider_payment_id=refund_provider_id,
+    ).aggregate(total=Sum("gross_amount_minor"))["total"] or 0
+    refund_amount = reported_refund - recorded
     if refund_amount <= 0:
         return
-    refund_amount = min(refund_amount, original.gross_amount_minor)
-    platform_refund = round(original.platform_fee_minor * refund_amount / original.gross_amount_minor)
+
+    total_platform_refund = round(
+        original.platform_fee_minor * reported_refund / original.gross_amount_minor
+    )
+    recorded_platform_refund = -(
+        MonetizationTransaction.objects.filter(
+            monetization_account=original.monetization_account,
+            kind=MonetizationTransaction.Kind.REVERSAL,
+            status=MonetizationTransaction.Status.SUCCEEDED,
+            provider_payment_id=refund_provider_id,
+        ).aggregate(total=Sum("platform_fee_minor"))["total"]
+        or 0
+    )
+    platform_refund = max(total_platform_refund - recorded_platform_refund, 0)
     creator_refund = refund_amount - platform_refund
 
     MonetizationTransaction.objects.get_or_create(
@@ -263,7 +299,7 @@ def handle_charge_refunded(event_id, charge):
             "platform_fee_minor": 0,
             "creator_net_minor": -creator_refund,
             "platform_fee_bps": original.platform_fee_bps,
-            "provider_payment_id": str(field(charge, "id", "") or original.provider_payment_id),
+            "provider_payment_id": refund_provider_id,
         },
     )
     MonetizationTransaction.objects.get_or_create(
@@ -279,7 +315,7 @@ def handle_charge_refunded(event_id, charge):
             "platform_fee_minor": -platform_refund,
             "creator_net_minor": 0,
             "platform_fee_bps": original.platform_fee_bps,
-            "provider_payment_id": str(field(charge, "id", "") or original.provider_payment_id),
+            "provider_payment_id": refund_provider_id,
         },
     )
 

@@ -8,7 +8,7 @@ from django.urls import reverse
 from PIL import Image
 
 from .forms import VideoUploadForm
-from .models import Category, Channel, ChannelMembership, Video
+from .models import Category, Channel, ChannelMembership, ChannelTeamInvitation, Video
 
 
 class ChannelTeamTests(TestCase):
@@ -40,21 +40,23 @@ class ChannelTeamTests(TestCase):
         self.client.login(username="owner", password="password123")
         self.assertEqual(self.client.get(url).status_code, 200)
 
-    def test_owner_can_add_editor_by_exact_username(self):
+    def test_owner_can_invite_editor_by_exact_username(self):
         self.client.login(username="owner", password="password123")
         response = self.client.post(reverse("channel_team", kwargs={"pk": self.channel.pk}), {"username": "editor"})
         self.assertRedirects(response, reverse("channel_team", kwargs={"pk": self.channel.pk}))
-        self.assertTrue(ChannelMembership.objects.filter(channel=self.channel, user=self.editor).exists())
+        self.assertTrue(ChannelTeamInvitation.objects.filter(channel=self.channel, invitee=self.editor).exists())
+        self.assertFalse(ChannelMembership.objects.filter(channel=self.channel, user=self.editor).exists())
 
     def test_invalid_self_duplicate_and_missing_members_are_rejected(self):
-        self.add_editor()
         self.client.login(username="owner", password="password123")
         url = reverse("channel_team", kwargs={"pk": self.channel.pk})
-        for username, message in (("owner", "already on the team"), ("editor", "already an editor"), ("missing", "User not found")):
+        self.client.post(url, {"username": "editor"})
+        for username, message in (("owner", "already on the team"), ("editor", "pending invitation"), ("missing", "User not found")):
             with self.subTest(username=username):
                 response = self.client.post(url, {"username": username})
                 self.assertContains(response, message)
-        self.assertEqual(ChannelMembership.objects.count(), 1)
+        self.assertEqual(ChannelMembership.objects.count(), 0)
+        self.assertEqual(ChannelTeamInvitation.objects.count(), 1)
 
     def test_membership_uniqueness_is_enforced(self):
         self.add_editor()

@@ -7,7 +7,10 @@ Channel owners can delegate upload and video-editing work through an explicit ed
 ## Scope and safeguards
 
 - Owners alone can view and manage a channel's editor list.
-- Owners add editors by exact username and can remove them with POST-only actions.
+- Owners invite editors by exact username and can revoke pending invitations or
+  remove active editors with POST-only actions.
+- Invitations grant no access until the intended recipient accepts them and
+  expire after seven days.
 - Owners cannot add themselves, duplicate memberships, or nonexistent users.
 - Editors can select assigned channels during upload.
 - Editors can edit active videos assigned to their channels, including publication metadata.
@@ -49,8 +52,34 @@ Terraform is unaffected. The responsive UI/design-system refresh remains in the 
 - The migration-leaf regression now covers `0013_channelmembership`.
 - Compose configuration validated, and the documented test service runs the same check, drift, and full-suite sequence. The local Docker engine was not accessible from this workspace, so the container invocation remains a local handoff check.
 
+## Invitation workflow
+
+The invitation workflow adds an authenticated inbox, recipient-only accept and
+decline actions, owner-only revocation, expiration checks, and atomic membership
+creation. It uses only the application database and does not send email.
+
+Focused verification:
+
+```bash
+python manage.py test video.test_channel_team_invitations
+docker compose run --build --rm test
+```
+
+Migration `0019_channel_team_invitations` stores the intended recipient, inviter,
+unguessable token, state, expiry, and response timestamp. Invitation transitions
+are implemented in `video/services/team_invitations.py`; views retain explicit
+owner or recipient scoping.
+
+## Invitation verification
+
+- Django system checks passed.
+- Migration-drift checks reported no changes.
+- All 289 tests passed, including eight focused invitation tests.
+- Compose configuration validated. The delivery environment could not access its
+  Docker daemon socket, so container execution remains a local handoff check.
+
 ## Out of scope
 
 - Delegated analytics, team administration, deletion, bulk actions, or comment moderation
 - Viewer, analyst, and custom roles
-- Invitations, email delivery, expiration, and audit logs
+- Email delivery, reminders, custom roles, invitation extension, and audit logs

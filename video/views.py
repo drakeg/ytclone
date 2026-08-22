@@ -22,11 +22,13 @@ from .models import (
     Playlist,
     PlaylistItem,
     Video,
+    VideoBookmark,
     WatchHistory,
 )
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.channels import can_edit_video
 from .services.chapters import replace_chapters
+from .services.bookmarks import BookmarkValidationError, get_visible_bookmarks, save_bookmark
 from .services.discovery import get_discovery_sections
 from .services.notifications import clear_team_invitation_notification, notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription, notify_team_invitation
 from .services.moderation import (
@@ -209,9 +211,12 @@ def _render_video_detail(request, video):
         .order_by("pub_date", "pk")
     )
     playlists = []
+    bookmarks = []
     history_entry = None
     if request.user.is_authenticated:
         playlists = request.user.playlists.all()
+        if video.is_visible_to(request.user):
+            bookmarks = request.user.video_bookmarks.filter(video=video)
         history_entry, unused = WatchHistory.objects.update_or_create(
             user=request.user,
             video=video,
@@ -236,10 +241,48 @@ def _render_video_detail(request, video):
             "form": CommentForm(),
             "comments": comments,
             "playlists": playlists,
+            "bookmarks": bookmarks,
+            "bookmarks_enabled": video.is_visible_to(request.user),
             "history_entry": history_entry,
             "may_edit_video": may_edit,
         },
     )
+
+
+@login_required
+def video_bookmark_list(request):
+    return render(
+        request,
+        "videos/video_bookmarks.html",
+        {"bookmarks": get_visible_bookmarks(request.user)},
+    )
+
+
+@login_required
+@require_POST
+def video_bookmark_create(request, pk):
+    video = get_object_or_404(Video.objects.visible_to(request.user), pk=pk)
+    try:
+        save_bookmark(
+            user=request.user,
+            video=video,
+            position=request.POST.get("position_seconds"),
+            label=request.POST.get("label"),
+        )
+    except BookmarkValidationError as error:
+        return HttpResponseBadRequest(str(error))
+    return redirect("video_detail", pk=video.pk)
+
+
+@login_required
+@require_POST
+def video_bookmark_delete(request, pk):
+    bookmark = get_object_or_404(VideoBookmark, pk=pk, user=request.user)
+    video_pk = bookmark.video_id
+    bookmark.delete()
+    if request.POST.get("source") == "list":
+        return redirect("video_bookmark_list")
+    return redirect("video_detail", pk=video_pk)
 
 
 @login_required

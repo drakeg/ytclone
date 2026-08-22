@@ -26,6 +26,7 @@ from .models import (
 )
 from .services.analytics import get_channel_analytics, get_creator_analytics
 from .services.channels import can_edit_video
+from .services.chapters import replace_chapters
 from .services.discovery import get_discovery_sections
 from .services.notifications import clear_team_invitation_notification, notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription, notify_team_invitation
 from .services.moderation import (
@@ -516,6 +517,7 @@ def upload_video(request):
             video = form.save(commit=False)
             video.author = request.user
             video.save()
+            replace_chapters(video, form.cleaned_data["chapters"])
             if video.publication_status == Video.PublicationStatus.PUBLISHED:
                 notify_new_upload(video)
             return redirect("video_detail", pk=video.pk)
@@ -534,7 +536,8 @@ def video_edit(request, pk):
             request.POST, request.FILES, instance=video, user=request.user
         )
         if form.is_valid():
-            form.save()
+            video = form.save()
+            replace_chapters(video, form.cleaned_data["chapters"])
             return redirect("video_detail", pk=video.pk)
     else:
         form = VideoEditForm(instance=video, user=request.user)

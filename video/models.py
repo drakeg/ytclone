@@ -118,6 +118,25 @@ class Video(models.Model):
         return self.title
 
 
+class VideoChapter(models.Model):
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="chapters")
+    start_seconds = models.PositiveIntegerField()
+    title = models.CharField(max_length=120)
+
+    class Meta:
+        ordering = ["start_seconds", "pk"]
+        constraints = [models.UniqueConstraint(fields=["video", "start_seconds"], name="unique_chapter_timestamp_per_video")]
+
+    def __str__(self):
+        return f"{self.video}: {self.start_seconds}s {self.title}"
+
+    @property
+    def timestamp_display(self):
+        hours, remainder = divmod(self.start_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes}:{seconds:02d}"
+
+
 class Comment(models.Model):
     video = models.ForeignKey(Video, on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)

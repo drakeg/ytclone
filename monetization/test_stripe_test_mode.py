@@ -63,6 +63,78 @@ class StripeTestModeViewsTests(TestCase):
         self.assertEqual(response.url, "https://checkout.stripe.test/member")
         self.assertEqual(create_checkout.call_args.kwargs["price_minor"], 500)
 
+    @patch("monetization.views.stripe_gateway.create_membership_checkout")
+    def test_existing_membership_prevents_second_stripe_checkout(self, create_checkout):
+        second_tier = MembershipTier.objects.create(
+            monetization_account=self.account,
+            name="Sponsor",
+            price_minor=1000,
+            currency="USD",
+        )
+        ChannelMembershipSubscription.objects.create(
+            tier=self.tier,
+            subscriber=self.viewer,
+            provider_subscription_id="sub_existing",
+        )
+        self.client.force_login(self.viewer)
+
+        same_tier = self.client.post(
+            reverse("monetization:start_stripe_membership", args=[self.tier.pk])
+        )
+        other_tier = self.client.post(
+            reverse("monetization:start_stripe_membership", args=[second_tier.pk])
+        )
+
+        self.assertRedirects(same_tier, reverse("channel_detail", args=[self.channel.pk]))
+        self.assertEqual(other_tier.status_code, 400)
+        create_checkout.assert_not_called()
+
+    @patch("monetization.views.stripe_gateway.construct_webhook_event")
+    def test_checkout_webhook_does_not_create_parallel_active_membership(self, construct_event):
+        existing = ChannelMembershipSubscription.objects.create(
+            tier=self.tier,
+            subscriber=self.viewer,
+            provider_subscription_id="sub_existing",
+        )
+        second_tier = MembershipTier.objects.create(
+            monetization_account=self.account,
+            name="Sponsor",
+            price_minor=1000,
+            currency="USD",
+        )
+        construct_event.return_value = {
+            "id": "evt_parallel_checkout",
+            "type": "checkout.session.completed",
+            "data": {"object": {
+                "subscription": "sub_parallel",
+                "metadata": {
+                    "ytclone_kind": "membership",
+                    "ytclone_tier_id": str(second_tier.pk),
+                    "ytclone_payer_id": str(self.viewer.pk),
+                },
+            }},
+        }
+
+        response = self.client.post(
+            reverse("monetization:stripe_webhook"),
+            data=b"{}",
+            content_type="application/json",
+            HTTP_STRIPE_SIGNATURE="test",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            ChannelMembershipSubscription.objects.filter(
+                subscriber=self.viewer,
+                status=ChannelMembershipSubscription.Status.ACTIVE,
+            ).count(),
+            1,
+        )
+        self.assertEqual(existing.provider_subscription_id, "sub_existing")
+        self.assertFalse(
+            MonetizationTransaction.objects.filter(provider_event_id="evt_parallel_checkout").exists()
+        )
+
     @patch("monetization.views.stripe_gateway.cancel_membership_at_period_end")
     def test_stripe_cancellation_keeps_access_until_webhook_ends_subscription(self, cancel_remote):
         subscription = ChannelMembershipSubscription.objects.create(

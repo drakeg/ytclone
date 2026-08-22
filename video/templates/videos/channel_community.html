@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Community · {{ channel.name }} · VideoShare{% endblock %}
+{% block content %}
+<header class="identity-banner">
+    {% include 'videos/_channel_avatar.html' with channel=channel size='lg' %}
+    <div><p class="eyebrow">Channel community</p><h1>{{ channel.name }}</h1><p>Updates, polls, questions, and conversations with this channel's community.</p></div>
+    <div class="identity-actions"><a class="btn btn-outline-secondary" href="{% url 'channel_detail' channel.pk %}">Videos</a>{% if user == channel.owner %}<a class="btn btn-primary" href="#new-community-post">New post</a>{% endif %}</div>
+</header>
+
+{% if user == channel.owner %}
+<section class="form-panel mb-4" id="new-community-post">
+    <p class="eyebrow">Talk with your audience</p><h2 class="h4">Create a community post</h2>
+    <form method="post" action="{% url 'community_post_create' channel.pk %}">{% csrf_token %}
+        <div class="mb-3"><label class="form-label">Post type</label>{{ post_form.kind }}</div>
+        <div class="mb-3">{{ post_form.body }}</div>
+        <div class="row g-2"><div class="col-md-6">{{ post_form.poll_option_1 }}</div><div class="col-md-6">{{ post_form.poll_option_2 }}</div><div class="col-md-6">{{ post_form.poll_option_3 }}</div><div class="col-md-6">{{ post_form.poll_option_4 }}</div></div>
+        <p class="form-text mt-2">For polls, add at least two options. Option fields are ignored for updates and questions.</p>
+        <button class="btn btn-primary" type="submit">Post to community</button>
+    </form>
+</section>
+{% endif %}
+
+<section class="discovery-section" aria-labelledby="community-posts-heading">
+<div class="section-heading"><div><p class="eyebrow">Community</p><h2 id="community-posts-heading">Latest posts</h2></div></div>
+{% for post in posts %}
+<article class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between gap-3 align-items-start mb-3"><div><strong>{{ channel.name }}</strong><div class="video-meta">@{{ post.author.username }} · {{ post.created_at|timesince }} ago</div></div><span class="badge text-bg-secondary">{{ post.get_kind_display }}</span></div>
+    <div class="mb-3" style="white-space: pre-wrap;">{{ post.body }}</div>
+
+    {% if post.kind == 'poll' %}
+    <div class="mb-3">
+        {% for option in post.poll_options.all %}
+        <div class="d-flex justify-content-between align-items-center gap-2 border rounded p-2 mb-2">
+            <span>{{ option.text }} <span class="video-meta">· {{ option.vote_count }} vote{{ option.vote_count|pluralize }}</span></span>
+            {% if user.is_authenticated %}<form method="post" action="{% url 'community_poll_vote' option.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Vote</button></form>{% else %}<a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to vote</a>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if post.featured_reply %}<div class="alert alert-info"><strong>Creator-highlighted answer</strong><div><strong>@{{ post.featured_reply.author.username }}</strong></div><div style="white-space: pre-wrap;">{{ post.featured_reply.body }}</div></div>{% endif %}
+
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">{% if user.is_authenticated %}<form method="post" action="{% url 'community_post_like' post.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">{% if user in post.likes.all %}Unlike{% else %}Like{% endif %} · {{ post.like_count }}</button></form>{% else %}<a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Like · {{ post.like_count }}</a>{% endif %}<span class="video-meta">{{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}</span></div>
+
+    {% if post.replies.all %}<div class="border-top pt-3">{% for reply in post.replies.all %}<div class="mb-3"><div class="d-flex justify-content-between gap-2"><div><strong>@{{ reply.author.username }}</strong><span class="video-meta"> · {{ reply.created_at|timesince }} ago</span></div>{% if user == channel.owner %}<form method="post" action="{% url 'community_reply_feature' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">{% if post.featured_reply_id == reply.pk %}Unhighlight{% else %}Highlight answer{% endif %}</button></form>{% endif %}</div><div style="white-space: pre-wrap;">{{ reply.body }}</div></div>{% endfor %}</div>{% endif %}
+
+    {% if user.is_authenticated %}<form class="border-top pt-3" method="post" action="{% url 'community_reply_create' post.pk %}">{% csrf_token %}{{ reply_form.body }}<div class="mt-2"><button class="btn btn-sm btn-primary" type="submit">Reply</button></div></form>{% else %}<div class="border-top pt-3"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to join the conversation.</a></div>{% endif %}
+</div></article>
+{% empty %}<div class="empty-state">No community posts yet. {% if user == channel.owner %}Start the first conversation with your audience.{% else %}Check back for updates from this creator.{% endif %}</div>{% endfor %}
+</section>
+{% endblock %}

@@ -1,12 +1,27 @@
+import tempfile
+
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Channel, Video
 
 
 class ChannelDirectoryTests(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.media_directory = tempfile.TemporaryDirectory()
+        cls.media_override = override_settings(MEDIA_ROOT=cls.media_directory.name)
+        cls.media_override.enable()
+        super().setUpClass()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        cls.media_override.disable()
+        cls.media_directory.cleanup()
+
     def setUp(self):
         self.owner = User.objects.create_user(username="creator", password="password123")
         self.viewer = User.objects.create_user(username="viewer", password="password123")

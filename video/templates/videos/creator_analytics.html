@@ -3,7 +3,8 @@
 {% block content %}
     <header class="py-4">
         <h1>Creator Analytics</h1>
-        <p class="text-body-secondary">Lifetime performance for your videos and channels.</p>
+        <p class="text-body-secondary">Aggregate performance for your videos and channels. Viewer-level activity remains private.</p>
+        <form method="get"><label for="analytics-range">Time range</label><select id="analytics-range" name="range" onchange="this.form.submit()"><option value="lifetime"{% if selected_range == 'lifetime' %} selected{% endif %}>Lifetime</option><option value="28d"{% if selected_range == '28d' %} selected{% endif %}>Last 28 days</option></select></form>
     </header>
 
     <section aria-labelledby="summary-heading">
@@ -15,6 +16,7 @@
                     <div class="display-6">{{ analytics.video_count }}</div>
                 </div></div>
             </div>
+            <div class="col-6 col-lg"><div class="card h-100"><div class="card-body"><div class="text-body-secondary">Watch hours</div><div class="display-6">{{ analytics.total_watch_hours_display }}</div></div></div></div>
             <div class="col-6 col-lg">
                 <div class="card h-100"><div class="card-body">
                     <div class="text-body-secondary">Views</div>
@@ -53,6 +55,7 @@
                         <th scope="col">Views</th>
                         <th scope="col">Likes</th>
                         <th scope="col">Dislikes</th>
+                        <th scope="col">Watch time</th><th scope="col">Avg view</th><th scope="col">Avg viewed</th><th scope="col">Retention reach</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -63,9 +66,10 @@
                             <td>{{ video.views }}</td>
                             <td>{{ video.like_count }}</td>
                             <td>{{ video.dislike_count }}</td>
+                            <td>{{ video.watch_seconds }} sec</td><td>{{ video.average_view_seconds }} sec</td><td>{{ video.average_percentage }}%</td><td>25%: {{ video.retention.25 }}% · 50%: {{ video.retention.50 }}% · 75%: {{ video.retention.75 }}% · 100%: {{ video.retention.100 }}%</td>
                         </tr>
                     {% empty %}
-                        <tr><td colspan="5" class="text-body-secondary">Upload a video to start seeing performance data.</td></tr>
+                        <tr><td colspan="9" class="text-body-secondary">Upload a video to start seeing performance data.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

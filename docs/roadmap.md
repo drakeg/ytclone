@@ -29,10 +29,171 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Creator Watch-Time Analytics
+
+Goal: collect bounded playback heartbeats and expose private, aggregate watch-time
+metrics without treating resume position as elapsed viewing.
+
+Acceptance criteria:
+
+- Record idempotent heartbeats only for visible videos, capped at 15 seconds each.
+- Support authenticated and anonymous playback through privacy-preserving session identifiers.
+- Reject malformed durations, positions, deltas, identifiers, and inaccessible videos.
+- Show creators total watch hours, average view duration, average percentage viewed,
+  and 25/50/75/100% retention reach for each owned video.
+- Support lifetime and trailing 28-day reporting without exposing viewer-level data.
+- Keep telemetry and aggregation in service modules and require no external service.
+
+Out of scope: second-by-second graphs, geography, traffic sources, exports,
+background rollups, warehouses, advertising analytics, or Terraform changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_watch_time_analytics
+python manage.py test
+docker compose run --build --rm test
+```
+
+Delivered:
+
+- Idempotent playback heartbeats capped at 15 seconds
+- Authenticated attribution and hashed anonymous session identifiers
+- Active-player and visible-tab browser safeguards with seek resets
+- Creator-only total watch hours, average duration, average percentage viewed,
+  and quarter-mark retention reach per video
+- Lifetime and trailing 28-day filters
+- Migration `0020_video_watch_events` and service-layer aggregation
+
+Verification:
+
+- Django checks and migration-drift checks passed directly and in Docker
+- All 295 tests passed directly and through `docker compose run --build --rm test`
+
+## Completed sprint: Channel Team Invitations
+
+Goal: replace immediate editor assignment with an explicit, expiring invitation
+that the intended user can accept or decline.
+
+Scope and acceptance criteria:
+
+- Owners invite an existing user by exact username instead of granting access immediately.
+- Pending invitations expire after seven days and never grant editor permissions.
+- Only the intended recipient can view, accept, or decline an invitation.
+- Acceptance creates one editor membership atomically; decline and expiration do not.
+- Owners can revoke their channel's pending invitations with POST-only actions.
+- Existing editors and their bounded upload/edit permissions remain unchanged.
+- Local Docker and non-Docker verification instructions remain reproducible.
+
+Out of scope:
+
+- Email delivery, reminders, custom roles, and invitation extension
+- Delegated analytics, deletion, monetization, moderation, or team administration
+- Audit-log retention beyond invitation state and timestamps
+- New AWS resources, workers, queues, or paid services
+
+Local verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_channel_team_invitations
+python manage.py test
+```
+
+The equivalent containerized verification is:
+
+```bash
+docker compose run --build --rm test
+```
+
+Delivered:
+
+- Owner-created invitations for existing users by exact username
+- Seven-day expiration with no permissions before acceptance
+- Private invitation inbox with recipient-only accept and decline actions
+- Atomic membership creation and replay-safe response handling
+- Owner-only POST revocation and unchanged active-editor removal
+- Migration `0019_channel_team_invitations`
+- Invitation business logic isolated in `video/services/team_invitations.py`
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 289 tests passed, including eight focused invitation regressions
+- Docker Compose configuration parsed successfully
+- Container execution remains available through the documented command; the
+  delivery environment could not access its Docker daemon socket
+
+## Completed sprint: Post-Expansion Hardening
+
+Goal: preserve the recently delivered onboarding, monetization, memberships, and
+community features while tightening access revocation, payment accounting, and
+core navigation behavior.
+
+Scope and acceptance criteria:
+
+- Bind unlisted-media session grants to the current share token so rotating a
+  link immediately revokes previously granted direct-media access.
+- Account for Stripe's cumulative partial-refund values incrementally so total
+  refunds and fee reversals never exceed the provider-reported amount.
+- Prevent a viewer from starting a second Stripe membership for the same channel
+  while another membership is active.
+- Make logout a CSRF-protected POST action and return users to the working home
+  route after logout.
+- Remove unused browser code with invalid integrity metadata.
+- Bring the README, roadmap, and feature documentation up to date with the
+  recently delivered product areas.
+
+Out of scope:
+
+- Live Stripe mode, automatic membership-tier switching, and production payouts
+- A visual redesign or recommendation-system changes
+- New AWS services or Terraform resources
+
+Local verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+```
+
+The equivalent containerized verification is:
+
+```bash
+docker compose run --build --rm test
+```
+
+Terraform is not in scope. If implementation unexpectedly changes `terraform/`,
+also run the formatting and validation commands documented in the README.
+
+Delivered:
+
+- Share-token-bound media grants with immediate rotation revocation
+- Incremental accounting for cumulative Stripe partial refunds and fee reversals
+- Duplicate active Stripe membership prevention at checkout and webhook boundaries
+- CSRF-protected POST logout with a working homepage redirect
+- Removal of unused browser code with invalid integrity metadata
+- Isolated uploaded-media tests that remain reproducible across repeated local runs
+- Catch-up documentation for onboarding, monetization, memberships, and communities
+
+Verification:
+
+- Django system checks passed
+- Migration-drift checks reported no changes
+- All 281 tests passed, including the new focused regressions
+- Docker Compose configuration parsed successfully
+- `docker compose run --build --rm test` remains the documented container path;
+  the delivery environment could not access its Docker daemon socket
+
 ## Completed foundation
 
 - Environment-based secrets and production security settings
-- Django 5.2 LTS dependency baseline
+- Django 6.1 dependency baseline
 - Docker development and Gunicorn production runtime
 - CI for Django and Terraform validation
 - Authentication and authorization hardening
@@ -448,8 +609,23 @@ Verification:
 
 ## Later candidates
 
-- Channel-team invitations, expiration, and activity history
+- Channel-team invitation email delivery, reminders, and activity history
 - Low-cost AWS application hosting and deployment
+
+## Completed product expansion
+
+Delivered after the interface sprint:
+
+- Self-service registration, editable profiles, and creator-channel onboarding
+- Configurable Compose host port and documented local startup workflow
+- Drag-and-drop uploads with optional categories and thumbnails
+- Role-aware viewer and creator navigation
+- Sandbox creator monetization, tips, tiers, and members-only videos
+- Stripe test-mode checkout, webhooks, cancellation lifecycle, refunds, and ledger reporting
+- Channel community posts, polls, and highlighted creator Q&A
+
+The current hardening sprint follows this expansion and closes its documentation
+gap while adding regression coverage around the highest-risk boundaries.
 
 ## Completed sprint: Interface and Design System
 

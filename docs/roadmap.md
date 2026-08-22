@@ -29,6 +29,34 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Current sprint: Video Chapters
+
+Goal: let authorized creators define timestamped video sections and let viewers
+jump to them from the existing player.
+
+Acceptance criteria:
+
+- Upload and edit forms accept one chapter per line as `MM:SS Title` or `HH:MM:SS Title`.
+- A chapter list is optional, limited to 50 entries, strictly increasing, and must start at zero.
+- Empty chapter text removes existing chapters only after a valid form submission.
+- Video owners and assigned editors retain their existing edit permissions; no new role is introduced.
+- Visible video pages render ordered, keyboard-accessible chapter controls that seek the player.
+- Chapters inherit all existing video visibility, unlisted-link, member-only, and deletion behavior.
+- Parsing and replacement logic lives in a service module.
+
+Out of scope: automatic chapter generation, transcripts, waveform analysis,
+per-chapter analytics, thumbnail sprites, and external services.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_video_chapters
+python manage.py test
+docker compose run --build --rm test
+```
+
 ## Completed sprint: Team Invitation Notifications and Activity
 
 Goal: make consent-based editor invitations discoverable and auditable using the

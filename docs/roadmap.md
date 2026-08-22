@@ -29,7 +29,7 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
-## Current sprint: Video Chapters
+## Completed sprint: Video Chapters
 
 Goal: let authorized creators define timestamped video sections and let viewers
 jump to them from the existing player.
@@ -56,6 +56,21 @@ python manage.py test video.test_video_chapters
 python manage.py test
 docker compose run --build --rm test
 ```
+
+Delivered:
+
+- Optional chapter entry on upload and edit forms
+- `MM:SS` and `HH:MM:SS` parsing with first-at-zero, ordering, title, and count validation
+- Atomic chapter replacement that preserves existing data after invalid submissions
+- Existing owner/editor authorization with no expanded role permissions
+- Ordered, accessible player controls that seek and resume playback
+- Visibility inheritance and cascade behavior through the parent video
+- Migration `0022_video_chapters` and service-layer parsing/replacement
+
+Verification:
+
+- Django checks and migration-drift checks passed directly and in Docker
+- All 308 tests passed directly and through `docker compose run --build --rm test`
 
 ## Completed sprint: Team Invitation Notifications and Activity
 

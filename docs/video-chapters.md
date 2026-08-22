@@ -1,6 +1,6 @@
 # Video Chapters
 
-## Sprint contract
+## Delivered behavior
 
 Authorized video owners and channel editors can define up to 50 ordered chapters
 on upload or edit. Each nonblank line uses `MM:SS Title` or `HH:MM:SS Title`.
@@ -26,5 +26,9 @@ Docker Compose runs the same required checks:
 docker compose run --build --rm test
 ```
 
-No environment variable, dependency, AWS resource, paid service, or Terraform
-change is planned.
+Migration `0022_video_chapters` stores ordered timestamps and titles. Parsing and
+atomic replacement live in `video/services/chapters.py`. No environment variable,
+dependency, AWS resource, paid service, or Terraform change was introduced.
+
+Django checks, migration-drift checks, and all 308 tests passed both directly and
+through Docker Compose.

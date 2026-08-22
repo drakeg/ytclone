@@ -1,18 +1,22 @@
 # Private Video Bookmarks
 
-## Sprint plan
+## Delivered behavior
 
-Signed-in viewers will be able to save a short label with the current playback
-position of any video they can view. Bookmarks remain private to their owner.
-The video page will show that viewer's saved moments in timestamp order, while a
-private bookmarks page will collect accessible saved moments across videos.
+Signed-in viewers can save a short label with the current playback position of a
+video available through its normal visibility rules. Bookmarks remain private to
+their owner. The video page shows that viewer's saved moments in timestamp order,
+while a private Saved moments page collects accessible bookmarks across videos.
 
-Saving the same position again will update the existing label. Bookmark creation
-and removal will require POST requests, and all reads and writes will be scoped
-to the authenticated user. If a video is deleted or is no longer visible to the
-viewer, its bookmarks will not provide another way to access it.
+Saving the same rounded-second position again updates the existing label. Labels
+are required, trimmed, and limited to 120 characters; positions are bounded from
+zero through 24 hours. Bookmark creation and removal require POST requests, and
+all reads and writes are scoped to the authenticated user. If a video is deleted
+or is no longer visible to the viewer, its bookmarks will not provide another
+way to access it.
 
-The implementation will use Django models and ORM queries only. It introduces no
+The implementation uses Django models and ORM queries only. Migration
+`0023_video_bookmarks` adds the private records, while validation and persistence
+live in `video/services/bookmarks.py`. It introduces no
 new dependency, environment variable, paid service, AWS resource, or Terraform
 change.
 
@@ -34,5 +38,6 @@ check, and the full unit test suite:
 docker compose run --build --rm test
 ```
 
-These instructions must be updated with delivered behavior and the final test
-results before the sprint closes.
+Django checks and migration-drift checks passed both directly and in Docker.
+All 316 tests, including eight focused bookmark regressions, passed through both
+local paths.

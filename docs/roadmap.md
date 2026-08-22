@@ -29,14 +29,14 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
-## Current sprint: Private Video Bookmarks
+## Completed sprint: Private Video Bookmarks
 
 Goal: let signed-in viewers privately save labeled playback moments and return to
 them without exposing viewing activity to creators or other users.
 
 Acceptance criteria:
 
-- A signed-in viewer can save a label and the player's current position on any video they can view.
+- A signed-in viewer can save a label and the player's current position on videos available through normal visibility rules.
 - Saved positions are limited to valid, bounded timestamps and labels are required and length-limited.
 - Saving the same position again updates its label instead of creating a duplicate.
 - Video pages list only the current viewer's bookmarks in timestamp order and provide accessible seek controls.
@@ -58,6 +58,23 @@ python manage.py test video.test_video_bookmarks
 python manage.py test
 docker compose run --build --rm test
 ```
+
+Delivered:
+
+- Private labels and player-current positions for signed-in viewers
+- Exact-position relabeling without duplicate rows
+- Required, trimmed 120-character labels and timestamps bounded from zero to 24 hours
+- Per-video timestamp ordering with accessible seek and remove controls
+- A private Saved moments page that excludes videos no longer visible to the viewer
+- Login-required, owner-scoped, POST-only create and remove operations
+- Cascade cleanup with permanent video deletion and no creator analytics exposure
+- Migration `0023_video_bookmarks` and service-layer validation/persistence
+
+Verification:
+
+- Django checks and migration-drift checks passed directly and in Docker
+- All 316 tests passed directly and through `docker compose run --build --rm test`
+- No dependency, environment variable, AWS resource, paid service, or Terraform change
 
 ## Completed sprint: Video Chapters
 

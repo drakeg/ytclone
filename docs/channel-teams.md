@@ -83,3 +83,9 @@ owner or recipient scoping.
 - Delegated analytics, team administration, deletion, bulk actions, or comment moderation
 - Viewer, analyst, and custom roles
 - Email delivery, reminders, custom roles, invitation extension, and audit logs
+
+## Current notification and activity sprint
+
+The next bounded increment uses the existing notification inbox to announce team
+invitations, adds an unexpired invitation count to navigation, and shows owners a
+recent invitation history. Email and scheduled delivery remain out of scope.

@@ -16,7 +16,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private playback progress with Continue Watching and automatic resume
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private creator watch-time analytics with per-video duration, completion, and retention aggregates
-- Private in-app notifications for comments, reactions, and subscriptions
+- Private in-app notifications for comments, reactions, subscriptions, and channel-team invitations
 - Explicit video-to-channel publishing with subscriber upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion

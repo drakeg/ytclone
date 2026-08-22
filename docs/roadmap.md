@@ -29,6 +29,36 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Current sprint: Private Video Bookmarks
+
+Goal: let signed-in viewers privately save labeled playback moments and return to
+them without exposing viewing activity to creators or other users.
+
+Acceptance criteria:
+
+- A signed-in viewer can save a label and the player's current position on any video they can view.
+- Saved positions are limited to valid, bounded timestamps and labels are required and length-limited.
+- Saving the same position again updates its label instead of creating a duplicate.
+- Video pages list only the current viewer's bookmarks in timestamp order and provide accessible seek controls.
+- A private bookmarks page lists only the current viewer's bookmarks for videos they can still view.
+- Bookmark removal is owner-scoped and POST-only.
+- Bookmarks inherit video deletion and visibility behavior and never appear in creator analytics.
+- Validation and persistence logic lives in a service module.
+
+Out of scope: shared bookmarks, creator access to viewer bookmarks, notes or
+annotations, bookmark folders, automatic highlights, exports, external services,
+and Terraform changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_video_bookmarks
+python manage.py test
+docker compose run --build --rm test
+```
+
 ## Completed sprint: Video Chapters
 
 Goal: let authorized creators define timestamped video sections and let viewers

@@ -6,7 +6,7 @@
 <article class="video-watch">
     <div>
         <div class="player-frame">
-            <video id="video-player" src="{{ video.video_file.url }}" controls {% if user.is_authenticated %}data-progress-url="{% url 'playback_progress' video.pk %}" data-resume-position="{{ history_entry.playback_position_seconds }}"{% endif %}></video>
+            <video id="video-player" src="{{ video.video_file.url }}" controls data-watch-url="{% url 'watch_time_event' video.pk %}" {% if user.is_authenticated %}data-progress-url="{% url 'playback_progress' video.pk %}" data-resume-position="{{ history_entry.playback_position_seconds }}"{% endif %}></video>
         </div>
         <h1 class="watch-title">{{ video.title }}</h1>
         <div class="watch-meta">
@@ -97,25 +97,41 @@
     {% endfor %}
 </section>
 
-{% if user.is_authenticated %}
 <script>
 (() => {
     const player = document.getElementById("video-player");
     const progressUrl = player.dataset.progressUrl;
+    const watchUrl = player.dataset.watchUrl;
     const resumePosition = Number(player.dataset.resumePosition || 0);
+    const playbackSessionId = crypto.randomUUID();
     let lastSavedSecond = -1;
+    let lastWatchTick = performance.now();
     const csrfToken = document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1];
-    player.addEventListener("loadedmetadata", () => { if (resumePosition > 0 && resumePosition < player.duration - 5) player.currentTime = resumePosition; }, { once: true });
+    player.addEventListener("loadedmetadata", () => { if (progressUrl && resumePosition > 0 && resumePosition < player.duration - 5) player.currentTime = resumePosition; }, { once: true });
     const saveProgress = () => {
+        if (!progressUrl) return;
         if (!Number.isFinite(player.duration) || player.duration <= 0) return;
         const currentSecond = Math.round(player.currentTime);
         if (currentSecond === lastSavedSecond) return;
         lastSavedSecond = currentSecond;
         fetch(progressUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }, body: JSON.stringify({ position_seconds: player.currentTime, duration_seconds: player.duration }), credentials: "same-origin", keepalive: true });
     };
+    const saveWatchTime = (force = false) => {
+        const now = performance.now();
+        const watchedSeconds = Math.min(15, Math.round((now - lastWatchTick) / 1000));
+        lastWatchTick = now;
+        if ((!force && (player.paused || player.ended || document.visibilityState !== "visible")) || watchedSeconds < 1 || !Number.isFinite(player.duration) || player.duration <= 0) return;
+        fetch(watchUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }, body: JSON.stringify({ event_id: crypto.randomUUID(), playback_session_id: playbackSessionId, watched_seconds: watchedSeconds, position_seconds: player.currentTime, duration_seconds: player.duration }), credentials: "same-origin", keepalive: true });
+    };
+    setInterval(saveWatchTime, 10000);
+    player.addEventListener("play", () => { lastWatchTick = performance.now(); });
+    player.addEventListener("seeking", () => { lastWatchTick = performance.now(); });
+    document.addEventListener("visibilitychange", () => { lastWatchTick = performance.now(); });
+    player.addEventListener("pause", () => saveWatchTime(true));
+    player.addEventListener("ended", () => saveWatchTime(true));
+    window.addEventListener("pagehide", () => saveWatchTime(true));
     player.addEventListener("timeupdate", () => { if (Math.round(player.currentTime) % 10 === 0) saveProgress(); });
     player.addEventListener("pause", saveProgress); player.addEventListener("ended", saveProgress); window.addEventListener("pagehide", saveProgress);
 })();
 </script>
-{% endif %}
 {% endblock %}

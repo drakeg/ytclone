@@ -303,6 +303,26 @@ class WatchHistory(models.Model):
         return f"{self.user}: {self.video}"
 
 
+class VideoWatchEvent(models.Model):
+    event_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    playback_session_id = models.UUIDField()
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="watch_events")
+    viewer = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="video_watch_events")
+    viewer_session_hash = models.CharField(max_length=64)
+    watched_seconds = models.PositiveSmallIntegerField()
+    position_seconds = models.PositiveIntegerField()
+    duration_seconds = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "pk"]
+        indexes = [
+            models.Index(fields=["video", "created_at"], name="watch_video_created_idx"),
+            models.Index(fields=["video", "playback_session_id"], name="watch_video_session_idx"),
+        ]
+        constraints = [models.CheckConstraint(condition=models.Q(watched_seconds__gte=1, watched_seconds__lte=15), name="watch_event_delta_between_1_and_15")]
+
+
 class Notification(models.Model):
     class Kind(models.TextChoices):
         COMMENT = "comment", "Comment"

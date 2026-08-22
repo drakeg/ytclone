@@ -21,6 +21,7 @@ urlpatterns = [
     path("videos/<int:pk>/restore/", views.video_restore, name="video_restore"),
     path("videos/<int:pk>/permanent-delete/", views.video_permanent_delete, name="video_permanent_delete"),
     path("videos/<int:pk>/progress/", views.playback_progress, name="playback_progress"),
+    path("videos/<int:pk>/watch-events/", views.watch_time_event, name="watch_time_event"),
     path("videos/<int:pk>/comments/", views.add_comment, name="add_comment"),
     path("comments/<int:pk>/edit/", views.comment_edit, name="comment_edit"),
     path("comments/<int:pk>/delete/", views.comment_delete, name="comment_delete"),

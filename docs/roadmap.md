@@ -29,6 +29,49 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Creator Watch-Time Analytics
+
+Goal: collect bounded playback heartbeats and expose private, aggregate watch-time
+metrics without treating resume position as elapsed viewing.
+
+Acceptance criteria:
+
+- Record idempotent heartbeats only for visible videos, capped at 15 seconds each.
+- Support authenticated and anonymous playback through privacy-preserving session identifiers.
+- Reject malformed durations, positions, deltas, identifiers, and inaccessible videos.
+- Show creators total watch hours, average view duration, average percentage viewed,
+  and 25/50/75/100% retention reach for each owned video.
+- Support lifetime and trailing 28-day reporting without exposing viewer-level data.
+- Keep telemetry and aggregation in service modules and require no external service.
+
+Out of scope: second-by-second graphs, geography, traffic sources, exports,
+background rollups, warehouses, advertising analytics, or Terraform changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_watch_time_analytics
+python manage.py test
+docker compose run --build --rm test
+```
+
+Delivered:
+
+- Idempotent playback heartbeats capped at 15 seconds
+- Authenticated attribution and hashed anonymous session identifiers
+- Active-player and visible-tab browser safeguards with seek resets
+- Creator-only total watch hours, average duration, average percentage viewed,
+  and quarter-mark retention reach per video
+- Lifetime and trailing 28-day filters
+- Migration `0020_video_watch_events` and service-layer aggregation
+
+Verification:
+
+- Django checks and migration-drift checks passed directly and in Docker
+- All 295 tests passed directly and through `docker compose run --build --rm test`
+
 ## Completed sprint: Channel Team Invitations
 
 Goal: replace immediate editor assignment with an explicit, expiring invitation
@@ -566,10 +609,6 @@ Verification:
 
 ## Later candidates
 
-- Creator watch-time analytics: total watch hours, average view duration,
-  average percentage viewed, and per-video retention reporting. This requires
-  dedicated playback telemetry; the existing resume position must not be used
-  as a watch-time total.
 - Channel-team invitation email delivery, reminders, and activity history
 - Low-cost AWS application hosting and deployment
 

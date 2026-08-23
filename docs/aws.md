@@ -42,9 +42,35 @@ The application host should receive permissions only for its media bucket and ob
 - list the media bucket
 - read uploaded objects
 - create uploaded objects
-- delete uploaded objects when application deletion is implemented
+- delete uploaded objects through the explicit maintenance cleanup workflow
 
 Public bucket access should remain blocked.
+
+## Orphaned media cleanup
+
+Permanent application deletion removes database state first and intentionally leaves media reclamation to an auditable maintenance operation. The same management command uses Django's configured storage backend for local media or private S3 media.
+
+Always inspect a dry run first:
+
+```bash
+python manage.py cleanup_orphaned_media
+```
+
+The command scans only application-owned upload prefixes and protects all database-referenced objects, including media for videos still in recoverable trash. By default it also protects orphan candidates modified within the last 24 hours and any object whose modification time cannot be determined safely.
+
+After reviewing the report, explicitly request destructive cleanup with:
+
+```bash
+python manage.py cleanup_orphaned_media --delete
+```
+
+Increase the safety window when appropriate, for example:
+
+```bash
+python manage.py cleanup_orphaned_media --delete --min-age-hours 72
+```
+
+Do not schedule destructive cleanup until the dry-run report and storage permissions have been verified in the target environment. S3 cleanup requires the application identity to have object-listing, modification-time metadata access, and deletion permissions for the configured private media prefix.
 
 ## Cost controls
 

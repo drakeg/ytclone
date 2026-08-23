@@ -25,6 +25,7 @@ class SearchResults:
 
 
 def _video_results(query: str, sort: str, user) -> QuerySet:
+    hashtag_query = query[1:] if query.startswith("#") else query
     videos = (
         Video.objects.visible_to(user).select_related("author", "category")
         .annotate(
@@ -32,8 +33,12 @@ def _video_results(query: str, sort: str, user) -> QuerySet:
             relevance=Case(
                 When(title__iexact=query, then=Value(100)),
                 When(title__icontains=query, then=Value(70)),
+                When(tags__name__iexact=query, then=Value(65)),
+                When(hashtags__name__iexact=hashtag_query, then=Value(65)),
                 When(author__username__iexact=query, then=Value(60)),
                 When(category__name__iexact=query, then=Value(55)),
+                When(tags__name__icontains=query, then=Value(50)),
+                When(hashtags__name__icontains=hashtag_query, then=Value(50)),
                 When(author__username__icontains=query, then=Value(45)),
                 When(category__name__icontains=query, then=Value(40)),
                 When(description__icontains=query, then=Value(20)),
@@ -46,6 +51,8 @@ def _video_results(query: str, sort: str, user) -> QuerySet:
             | Q(description__icontains=query)
             | Q(author__username__icontains=query)
             | Q(category__name__icontains=query)
+            | Q(tags__name__icontains=query)
+            | Q(hashtags__name__icontains=hashtag_query)
         )
         .distinct()
     )

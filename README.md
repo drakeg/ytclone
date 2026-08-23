@@ -10,6 +10,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Public user profiles and channels
 - Public, unlisted, and private playlists
 - Private watch history with remove and clear controls
+- Private, labeled video bookmarks with player seek controls
 - Grouped search across videos, channels, and visible playlists
 - Video search sorting by relevance, date, views, and likes
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
@@ -244,6 +245,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 - `docs/publishing.md` — draft and scheduled visibility, privacy, and tests
 - `docs/video-management.md` — owner-only editing, channel moves, deletion, and tests
 - `docs/video-chapters.md` — timestamp syntax, permissions, player behavior, and tests
+- `docs/video-bookmarks.md` — private saved moments, visibility behavior, and tests
 - `docs/channel-analytics.md` — owner-only channel metrics, privacy, and tests
 - `docs/video-channels.md` — video channel ownership, migration, notifications, and tests
 - `docs/notifications.md` — notification events, privacy, unread state, and tests

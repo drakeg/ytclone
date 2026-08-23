@@ -137,6 +137,37 @@ class VideoChapter(models.Model):
         return f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes}:{seconds:02d}"
 
 
+class VideoBookmark(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="video_bookmarks"
+    )
+    video = models.ForeignKey(
+        Video, on_delete=models.CASCADE, related_name="bookmarks"
+    )
+    position_seconds = models.PositiveIntegerField()
+    label = models.CharField(max_length=120)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["position_seconds", "pk"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "video", "position_seconds"],
+                name="unique_video_bookmark_position_per_user",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.user}: {self.video} at {self.position_seconds}s"
+
+    @property
+    def timestamp_display(self):
+        hours, remainder = divmod(self.position_seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return f"{hours}:{minutes:02d}:{seconds:02d}" if hours else f"{minutes}:{seconds:02d}"
+
+
 class Comment(models.Model):
     video = models.ForeignKey(Video, on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)

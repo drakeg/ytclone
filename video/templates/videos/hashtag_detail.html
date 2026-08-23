@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}#{{ hashtag.name }} · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header">
+    <div><p class="eyebrow">Hashtag</p><h1>#{{ hashtag.name }}</h1><p>Videos using this hashtag.</p></div>
+</header>
+<section class="discovery-section" aria-labelledby="hashtag-videos-heading">
+    <div class="section-heading"><h2 id="hashtag-videos-heading">Videos</h2></div>
+    {% include 'videos/_video_cards.html' with videos=videos %}
+</section>
+{% endblock %}

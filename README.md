@@ -230,6 +230,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Documentation
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
+- `docs/development-handoff.md` — repository continuity guide for a new development session or assistant
 - `docs/unlisted-sharing.md` — revocable direct links and privacy boundaries
 - `docs/publication-management.md` — creator filters, bulk visibility safeguards, and tests
 - `docs/video-trash.md` — recovery, retention, permanent deletion, and media-cleanup boundaries
@@ -259,7 +260,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-The current sprint hardens the expanded onboarding, monetization, membership, and
-community foundation. After it closes, the next sprint will be selected from the
-roadmap using the same documentation-first process. Higher-cost AWS services will
-be introduced only when usage justifies them.
+Private video bookmarks are the latest completed sprint. Before starting more
+work, update local `main`, review the roadmap and handoff, and select one focused
+next sprint using the documentation-first delivery process. Higher-cost AWS
+services will be introduced only when usage justifies them.

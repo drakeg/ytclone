@@ -8,6 +8,7 @@ from django.utils import timezone
 from .models import Channel, Comment, Playlist, Video
 from .services.channels import accessible_channels
 from .services.chapters import ChapterValidationError, format_chapters, parse_chapters
+from .services.metadata import normalize_tag_names
 
 
 class CommentForm(forms.ModelForm):
@@ -29,6 +30,11 @@ class PlaylistForm(forms.ModelForm):
 
 
 class VideoUploadForm(forms.ModelForm):
+    tags = forms.CharField(
+        required=False,
+        help_text="Optional. Separate tags with commas, for example: rv travel, camping, solar.",
+        widget=forms.TextInput(attrs={"placeholder": "rv travel, camping, solar"}),
+    )
     chapters = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}), help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.")
     allowed_video_extensions = {".mp4", ".webm", ".mov"}
     allowed_video_content_types = {
@@ -84,6 +90,15 @@ class VideoUploadForm(forms.ModelForm):
             self.fields["channel"].help_text = "Create a channel before uploading a video."
         if self.instance and self.instance.pk:
             self.fields["chapters"].initial = format_chapters(self.instance)
+            self.fields["tags"].initial = ", ".join(
+                self.instance.tags.values_list("name", flat=True)
+            )
+
+    def clean_tags(self):
+        try:
+            return normalize_tag_names(self.cleaned_data.get("tags", ""))
+        except ValueError as error:
+            raise forms.ValidationError(str(error))
 
     def clean_chapters(self):
         try:
@@ -121,6 +136,10 @@ class VideoUploadForm(forms.ModelForm):
         else:
             cleaned_data["publish_at"] = None
         return cleaned_data
+
+    def save(self, commit=True):
+        self.instance._pending_tag_names = self.cleaned_data.get("tags", [])
+        return super().save(commit=commit)
 
     def clean_thumbnail(self):
         thumbnail = self.cleaned_data.get("thumbnail")

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 
 from django.contrib.auth.models import AnonymousUser
-from django.db.models import Case, Count, IntegerField, Q, QuerySet, Value, When
+from django.db.models import Case, Count, Exists, IntegerField, OuterRef, Q, QuerySet, Value, When
 
+from ..metadata_models import Hashtag, Tag
 from ..models import Channel, Playlist, Video
 
 
@@ -27,18 +28,37 @@ class SearchResults:
 def _video_results(query: str, sort: str, user) -> QuerySet:
     hashtag_query = query[1:] if query.startswith("#") else query
     videos = (
-        Video.objects.visible_to(user).select_related("author", "category")
+        Video.objects.visible_to(user)
+        .select_related("author", "category")
         .annotate(
             like_count=Count("likes", distinct=True),
+            tag_exact=Exists(
+                Tag.objects.filter(videos=OuterRef("pk"), name__iexact=query)
+            ),
+            tag_contains=Exists(
+                Tag.objects.filter(videos=OuterRef("pk"), name__icontains=query)
+            ),
+            hashtag_exact=Exists(
+                Hashtag.objects.filter(
+                    videos=OuterRef("pk"), name__iexact=hashtag_query
+                )
+            ),
+            hashtag_contains=Exists(
+                Hashtag.objects.filter(
+                    videos=OuterRef("pk"), name__icontains=hashtag_query
+                )
+            ),
+        )
+        .annotate(
             relevance=Case(
                 When(title__iexact=query, then=Value(100)),
                 When(title__icontains=query, then=Value(70)),
-                When(tags__name__iexact=query, then=Value(65)),
-                When(hashtags__name__iexact=hashtag_query, then=Value(65)),
+                When(tag_exact=True, then=Value(65)),
+                When(hashtag_exact=True, then=Value(65)),
                 When(author__username__iexact=query, then=Value(60)),
                 When(category__name__iexact=query, then=Value(55)),
-                When(tags__name__icontains=query, then=Value(50)),
-                When(hashtags__name__icontains=hashtag_query, then=Value(50)),
+                When(tag_contains=True, then=Value(50)),
+                When(hashtag_contains=True, then=Value(50)),
                 When(author__username__icontains=query, then=Value(45)),
                 When(category__name__icontains=query, then=Value(40)),
                 When(description__icontains=query, then=Value(20)),
@@ -51,10 +71,9 @@ def _video_results(query: str, sort: str, user) -> QuerySet:
             | Q(description__icontains=query)
             | Q(author__username__icontains=query)
             | Q(category__name__icontains=query)
-            | Q(tags__name__icontains=query)
-            | Q(hashtags__name__icontains=hashtag_query)
+            | Q(tag_contains=True)
+            | Q(hashtag_contains=True)
         )
-        .distinct()
     )
 
     ordering = {

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import access_views, account_views, category_views, channel_views, community_views, subscription_views, views
+from . import access_views, account_views, category_views, channel_views, community_views, metadata_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -51,6 +51,7 @@ urlpatterns = [
     path("categories/create/", category_views.category_create, name="category_create"),
     path("categories/create/inline/", category_views.category_create_inline, name="category_create_inline"),
     path("categories/<int:pk>/", views.category_detail, name="category_detail"),
+    path("hashtags/<str:name>/", metadata_views.hashtag_detail, name="hashtag_detail"),
     path("search/", views.search, name="search"),
     path("filter/", views.filter_videos, name="filter"),
     path("profile/<str:username>/", views.user_profile, name="user_profile"),

@@ -11,6 +11,11 @@
                 {% if video.audience == "members" %}<p class="eyebrow">Paid members only</p>{% endif %}
                 <p class="video-meta"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></p>
                 <p class="video-meta">{{ video.views }} view{{ video.views|pluralize }} · {{ video.pub_date|timesince }} ago</p>
+                {% if video.hashtags.exists %}
+                    <p class="video-meta">
+                        {% for hashtag in video.hashtags.all %}<a href="{% url 'hashtag_detail' hashtag.name %}">#{{ hashtag.name }}</a>{% if not forloop.last %} {% endif %}{% endfor %}
+                    </p>
+                {% endif %}
             </div>
         </article>
     {% empty %}

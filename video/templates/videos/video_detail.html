@@ -15,6 +15,12 @@
             {% if video.category %}<a href="{% url 'category_detail' video.category.pk %}">{{ video.category }}</a>{% endif %}
             {% if may_edit_video %}<span>{{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</span>{% endif %}
         </div>
+        {% if video.tags.exists or video.hashtags.exists %}
+        <div class="d-flex flex-wrap gap-2 mt-2" aria-label="Video topics">
+            {% for tag in video.tags.all %}<span class="badge text-bg-secondary">{{ tag.name }}</span>{% endfor %}
+            {% for hashtag in video.hashtags.all %}<a class="badge text-bg-light text-decoration-none" href="{% url 'hashtag_detail' hashtag.name %}">#{{ hashtag.name }}</a>{% endfor %}
+        </div>
+        {% endif %}
         {% if video.chapters.exists %}
         <section class="surface-card mt-3" aria-labelledby="chapters-heading">
             <h2 id="chapters-heading" class="h4">Chapters</h2>

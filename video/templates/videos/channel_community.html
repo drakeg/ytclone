@@ -11,10 +11,10 @@
 <section class="form-panel mb-4" id="new-community-post">
     <p class="eyebrow">Talk with your audience</p><h2 class="h4">Create a community post</h2>
     <form method="post" action="{% url 'community_post_create' channel.pk %}">{% csrf_token %}
-        <div class="mb-3"><label class="form-label">Post type</label>{{ post_form.kind }}</div>
+        <div class="row g-3 mb-3"><div class="col-md-6"><label class="form-label">Post type</label>{{ post_form.kind }}</div><div class="col-md-6"><label class="form-label">Who can see this?</label>{{ post_form.audience }}</div></div>
         <div class="mb-3">{{ post_form.body }}</div>
         <div class="row g-2"><div class="col-md-6">{{ post_form.poll_option_1 }}</div><div class="col-md-6">{{ post_form.poll_option_2 }}</div><div class="col-md-6">{{ post_form.poll_option_3 }}</div><div class="col-md-6">{{ post_form.poll_option_4 }}</div></div>
-        <p class="form-text mt-2">For polls, add at least two options. Option fields are ignored for updates and questions.</p>
+        <p class="form-text mt-2">For polls, add at least two options. Paid-members-only posts are visible and interactive only for active paid members and the channel owner.</p>
         <button class="btn btn-primary" type="submit">Post to community</button>
     </form>
 </section>
@@ -24,7 +24,7 @@
 <div class="section-heading"><div><p class="eyebrow">Community</p><h2 id="community-posts-heading">Latest posts</h2></div></div>
 {% for post in posts %}
 <article class="card mb-3"><div class="card-body">
-    <div class="d-flex justify-content-between gap-3 align-items-start mb-3"><div><strong>{{ channel.name }}</strong><div class="video-meta">@{{ post.author.username }} · {{ post.created_at|timesince }} ago</div></div><span class="badge text-bg-secondary">{{ post.get_kind_display }}</span></div>
+    <div class="d-flex justify-content-between gap-3 align-items-start mb-3"><div><strong>{{ channel.name }}</strong><div class="video-meta">@{{ post.author.username }} · {{ post.created_at|timesince }} ago</div></div><div class="d-flex gap-2"><span class="badge text-bg-secondary">{{ post.get_kind_display }}</span>{% if post.audience == 'members' %}<span class="badge text-bg-primary">Paid members only</span>{% endif %}</div></div>
     <div class="mb-3" style="white-space: pre-wrap;">{{ post.body }}</div>
 
     {% if post.kind == 'poll' %}
@@ -42,10 +42,10 @@
 
     <div class="d-flex flex-wrap gap-2 align-items-center mb-3">{% if user.is_authenticated %}<form method="post" action="{% url 'community_post_like' post.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">{% if user in post.likes.all %}Unlike{% else %}Like{% endif %} · {{ post.like_count }}</button></form>{% else %}<a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Like · {{ post.like_count }}</a>{% endif %}<span class="video-meta">{{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}</span></div>
 
-    {% if post.replies.all %}<div class="border-top pt-3">{% for reply in post.replies.all %}<div class="mb-3"><div class="d-flex justify-content-between gap-2"><div><strong>@{{ reply.author.username }}</strong><span class="video-meta"> · {{ reply.created_at|timesince }} ago</span></div>{% if user == channel.owner %}<form method="post" action="{% url 'community_reply_feature' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">{% if post.featured_reply_id == reply.pk %}Unhighlight{% else %}Highlight answer{% endif %}</button></form>{% endif %}</div><div style="white-space: pre-wrap;">{{ reply.body }}</div></div>{% endfor %}</div>{% endif %}
+    {% if post.replies.all %}<div class="border-top pt-3">{% for reply in post.replies.all %}<div class="mb-3"><div class="d-flex justify-content-between gap-2"><div><strong>@{{ reply.author.username }}</strong>{% if reply.show_supporter_badge %} <span class="badge text-bg-primary">Paid member</span>{% endif %}<span class="video-meta"> · {{ reply.created_at|timesince }} ago</span></div>{% if user == channel.owner %}<form method="post" action="{% url 'community_reply_feature' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">{% if post.featured_reply_id == reply.pk %}Unhighlight{% else %}Highlight answer{% endif %}</button></form>{% endif %}</div><div style="white-space: pre-wrap;">{{ reply.body }}</div></div>{% endfor %}</div>{% endif %}
 
     {% if user.is_authenticated %}<form class="border-top pt-3" method="post" action="{% url 'community_reply_create' post.pk %}">{% csrf_token %}{{ reply_form.body }}<div class="mt-2"><button class="btn btn-sm btn-primary" type="submit">Reply</button></div></form>{% else %}<div class="border-top pt-3"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to join the conversation.</a></div>{% endif %}
 </div></article>
-{% empty %}<div class="empty-state">No community posts yet. {% if user == channel.owner %}Start the first conversation with your audience.{% else %}Check back for updates from this creator.{% endif %}</div>{% endfor %}
+{% empty %}<div class="empty-state">No community posts available yet. {% if user == channel.owner %}Start the first conversation with your audience.{% else %}Check back for updates from this creator.{% endif %}</div>{% endfor %}
 </section>
 {% endblock %}

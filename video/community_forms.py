@@ -11,7 +11,7 @@ class CommunityPostForm(forms.ModelForm):
 
     class Meta:
         model = CommunityPost
-        fields = ["kind", "body"]
+        fields = ["kind", "audience", "body"]
         widgets = {
             "body": forms.Textarea(
                 attrs={
@@ -24,15 +24,18 @@ class CommunityPostForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Preserve the original community-post API: callers that submit only a
-        # body still create a normal Update post. The post-type selector is an
-        # enhancement, not a new required field for existing clients/tests.
+        # body still create a normal public Update post. Post type and audience
+        # are enhancements, not new required fields for existing clients/tests.
         self.fields["kind"].required = False
         self.fields["kind"].initial = CommunityPost.Kind.UPDATE
+        self.fields["audience"].required = False
+        self.fields["audience"].initial = CommunityPost.Audience.EVERYONE
 
     def clean(self):
         cleaned = super().clean()
         kind = cleaned.get("kind") or CommunityPost.Kind.UPDATE
         cleaned["kind"] = kind
+        cleaned["audience"] = cleaned.get("audience") or CommunityPost.Audience.EVERYONE
         if kind == CommunityPost.Kind.POLL:
             options = [
                 cleaned.get(f"poll_option_{number}", "").strip()

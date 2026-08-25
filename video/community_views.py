@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Exists, OuterRef, Prefetch
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+
+from monetization.models import ChannelMembershipSubscription
 
 from .community_forms import CommunityPostForm, CommunityReplyForm
 from .community_models import (
@@ -12,23 +14,42 @@ from .community_models import (
     CommunityReply,
 )
 from .models import Channel
+from .services.community_access import can_view_community_post, visible_community_posts
 
 
 def channel_community(request, pk):
     channel = get_object_or_404(Channel, pk=pk)
-    replies = CommunityReply.objects.select_related("author")
+    supporter_badge = ChannelMembershipSubscription.objects.filter(
+        subscriber_id=OuterRef("author_id"),
+        tier__monetization_account__channel=channel,
+        status=ChannelMembershipSubscription.Status.ACTIVE,
+        show_supporter_badge=True,
+    )
+    replies = CommunityReply.objects.select_related("author").annotate(
+        show_supporter_badge=Exists(supporter_badge)
+    )
     options = CommunityPollOption.objects.annotate(vote_count=Count("votes"))
     posts = (
-        CommunityPost.objects.filter(channel=channel)
+        visible_community_posts(request.user, channel)
         .select_related("author", "featured_reply", "featured_reply__author")
-        .prefetch_related(Prefetch("replies", queryset=replies), Prefetch("poll_options", queryset=options), "likes")
-        .annotate(like_count=Count("likes", distinct=True), reply_count=Count("replies", distinct=True))
+        .prefetch_related(
+            Prefetch("replies", queryset=replies),
+            Prefetch("poll_options", queryset=options),
+            "likes",
+        )
+        .annotate(
+            like_count=Count("likes", distinct=True),
+            reply_count=Count("replies", distinct=True),
+        )
     )
     user_poll_votes = {}
     if request.user.is_authenticated:
         user_poll_votes = {
             vote.post_id: vote.option_id
-            for vote in CommunityPollVote.objects.filter(user=request.user, post__channel=channel)
+            for vote in CommunityPollVote.objects.filter(
+                user=request.user,
+                post__in=posts,
+            )
         }
     return render(
         request,
@@ -60,10 +81,20 @@ def community_post_create(request, pk):
     return redirect("channel_community", pk=channel.pk)
 
 
+def _visible_post_or_404(user, post_pk):
+    post = get_object_or_404(
+        CommunityPost.objects.select_related("channel"),
+        pk=post_pk,
+    )
+    if not can_view_community_post(user, post):
+        raise Http404("Community post not found")
+    return post
+
+
 @login_required
 @require_POST
 def community_post_like(request, post_pk):
-    post = get_object_or_404(CommunityPost, pk=post_pk)
+    post = _visible_post_or_404(request.user, post_pk)
     if post.likes.filter(pk=request.user.pk).exists():
         post.likes.remove(request.user)
     else:
@@ -74,7 +105,7 @@ def community_post_like(request, post_pk):
 @login_required
 @require_POST
 def community_reply_create(request, post_pk):
-    post = get_object_or_404(CommunityPost.objects.select_related("channel"), pk=post_pk)
+    post = _visible_post_or_404(request.user, post_pk)
     form = CommunityReplyForm(request.POST)
     if form.is_valid():
         reply = form.save(commit=False)
@@ -87,8 +118,13 @@ def community_reply_create(request, post_pk):
 @login_required
 @require_POST
 def community_poll_vote(request, option_pk):
-    option = get_object_or_404(CommunityPollOption.objects.select_related("post"), pk=option_pk)
-    if option.post.kind != CommunityPost.Kind.POLL:
+    option = get_object_or_404(
+        CommunityPollOption.objects.select_related("post__channel"),
+        pk=option_pk,
+    )
+    if option.post.kind != CommunityPost.Kind.POLL or not can_view_community_post(
+        request.user, option.post
+    ):
         raise Http404("Poll not found")
     CommunityPollVote.objects.update_or_create(
         post=option.post,
@@ -101,7 +137,9 @@ def community_poll_vote(request, option_pk):
 @login_required
 @require_POST
 def community_reply_feature(request, reply_pk):
-    reply = get_object_or_404(CommunityReply.objects.select_related("post__channel"), pk=reply_pk)
+    reply = get_object_or_404(
+        CommunityReply.objects.select_related("post__channel"), pk=reply_pk
+    )
     if reply.post.channel.owner_id != request.user.pk:
         raise Http404("Reply not found")
     reply.post.featured_reply = None if reply.post.featured_reply_id == reply.pk else reply

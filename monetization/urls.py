@@ -6,6 +6,11 @@ app_name = "monetization"
 
 urlpatterns = [
     path("memberships/", billing_views.membership_billing, name="membership_billing"),
+    path(
+        "memberships/<int:subscription_pk>/supporter-badge/",
+        billing_views.toggle_supporter_badge,
+        name="toggle_supporter_badge",
+    ),
     path("channel/<int:pk>/", views.creator_dashboard, name="creator_dashboard"),
     path("channel/<int:pk>/enable-sandbox/", views.enable_sandbox, name="enable_sandbox"),
     path("channel/<int:pk>/stripe/onboard/", views.start_stripe_onboarding, name="start_stripe_onboarding"),

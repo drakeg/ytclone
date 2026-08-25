@@ -91,6 +91,7 @@ class ChannelMembershipSubscription(models.Model):
         blank=True,
         unique=True,
     )
+    show_supporter_badge = models.BooleanField(default=False)
     started_at = models.DateTimeField(auto_now_add=True)
     canceled_at = models.DateTimeField(null=True, blank=True)
     ended_at = models.DateTimeField(null=True, blank=True)

@@ -8,6 +8,10 @@ class CommunityPost(models.Model):
         QUESTION = "question", "Question"
         POLL = "poll", "Poll"
 
+    class Audience(models.TextChoices):
+        EVERYONE = "everyone", "Everyone"
+        MEMBERS_ONLY = "members", "Paid members only"
+
     channel = models.ForeignKey(
         "video.Channel", on_delete=models.CASCADE, related_name="community_posts"
     )
@@ -17,6 +21,11 @@ class CommunityPost(models.Model):
         related_name="community_posts",
     )
     kind = models.CharField(max_length=12, choices=Kind.choices, default=Kind.UPDATE)
+    audience = models.CharField(
+        max_length=12,
+        choices=Audience.choices,
+        default=Audience.EVERYONE,
+    )
     body = models.TextField(max_length=5000)
     likes = models.ManyToManyField(
         settings.AUTH_USER_MODEL,

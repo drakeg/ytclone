@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load video_qa_tags %}
 
 {% block title %}{{ video.title }} · VideoShare{% endblock %}
 
@@ -100,25 +101,53 @@
 </article>
 
 <section class="comments" aria-labelledby="comments-heading">
-    <div class="section-heading"><h2 id="comments-heading">Comments</h2></div>
+    <div class="section-heading d-flex flex-wrap justify-content-between gap-2 align-items-center">
+        <h2 id="comments-heading">Comments &amp; Q&amp;A</h2>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Comment filter">
+            <a class="btn {% if request.GET.comments == 'questions' %}btn-outline-secondary{% else %}btn-primary{% endif %}" href="{% url 'video_detail' video.pk %}#comments-heading">All</a>
+            <a class="btn {% if request.GET.comments == 'questions' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_detail' video.pk %}?comments=questions#comments-heading">Questions</a>
+        </div>
+    </div>
 
     {% if user.is_authenticated %}
         <form class="form-panel mb-4" method="post" action="{% url 'add_comment' video.pk %}">
-            {% csrf_token %}{{ form.as_p }}<button type="submit" class="btn btn-primary">Submit</button>
+            {% csrf_token %}{{ form.as_p }}
+            <div class="d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">Comment</button>
+                <button type="submit" class="btn btn-outline-primary" formaction="{% url 'ask_video_question' video.pk %}">Ask question</button>
+            </div>
+            <p class="form-text mt-2 mb-0">Questions stay public like normal comments, but creators can highlight a helpful reply as the answer.</p>
         </form>
     {% endif %}
 
     {% for comment in comments %}
+        {% if request.GET.comments != 'questions' or comment.question %}
         <article class="comment">
-            <div><span class="comment-author">{{ comment.author }}</span> <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span></div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="comment-author">{{ comment.author }}</span>
+                <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span>
+                {% if comment.question %}<span class="badge text-bg-primary">Question</span>{% endif %}
+                {% supporter_badge_for comment.author video as is_supporter %}{% if is_supporter %}<span class="badge text-bg-warning">Paid member</span>{% endif %}
+            </div>
             <p class="comment-body">{{ comment.comment }}</p>
             {% if user == comment.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a></div>{% endif %}
+
+            {% if comment.question.featured_reply %}
+                <div class="alert alert-info mt-3 mb-3">
+                    <strong>Creator-highlighted answer</strong>
+                    <div><strong>@{{ comment.question.featured_reply.author.username }}</strong></div>
+                    <div>{{ comment.question.featured_reply.comment }}</div>
+                </div>
+            {% endif %}
 
             {% for reply in comment.visible_replies %}
                 <article class="comment-reply">
                     <div><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span></div>
                     <p class="comment-body">{{ reply.comment }}</p>
-                    {% if user == reply.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a></div>{% endif %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% if user == reply.author %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>{% endif %}
+                        {% if user == video.author and comment.question %}<form method="post" action="{% url 'feature_question_answer' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">{% if comment.question.featured_reply_id == reply.pk %}Unhighlight answer{% else %}Highlight answer{% endif %}</button></form>{% endif %}
+                    </div>
                 </article>
             {% endfor %}
 
@@ -128,6 +157,7 @@
                 </form>
             {% endif %}
         </article>
+        {% endif %}
     {% empty %}
         <div class="empty-state">No comments yet.</div>
     {% endfor %}

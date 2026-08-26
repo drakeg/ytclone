@@ -1,7 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
-from video.community_models import CommunityPost, CommunityReply
 from video.models import Video
 from video.moderation_models import (
     CommunityPostModerationState,
@@ -46,7 +45,13 @@ def take_down_video(*, actor, video, reason):
         video.publication_status = Video.PublicationStatus.DRAFT
         video.publish_at = None
         video.save(update_fields=["publication_status", "publish_at"])
-        _audit(actor=actor, action="video_takedown", target_type="video", target_id=video.pk, reason=reason)
+        _audit(
+            actor=actor,
+            action="video_takedown",
+            target_type="video",
+            target_id=video.pk,
+            reason=reason,
+        )
     return created
 
 
@@ -60,7 +65,13 @@ def restore_video(*, actor, video, reason):
     video.publish_at = state.original_publish_at
     video.save(update_fields=["publication_status", "publish_at"])
     state.delete()
-    _audit(actor=actor, action="video_restore", target_type="video", target_id=video.pk, reason=reason)
+    _audit(
+        actor=actor,
+        action="video_restore",
+        target_type="video",
+        target_id=video.pk,
+        reason=reason,
+    )
     return True
 
 
@@ -74,22 +85,38 @@ def set_community_post_hidden(*, actor, post, hidden, reason):
         changed = bool(deleted)
         action = "community_post_restore"
     if changed:
-        _audit(actor=actor, action=action, target_type="community_post", target_id=post.pk, reason=reason)
+        _audit(
+            actor=actor,
+            action=action,
+            target_type="community_post",
+            target_id=post.pk,
+            reason=reason,
+        )
     return changed
 
 
+@transaction.atomic
 def set_community_reply_hidden(*, actor, reply, hidden, reason=None, audit=True):
     if audit:
         reason = _reason(reason)
     if hidden:
         _, changed = CommunityReplyModerationState.objects.get_or_create(reply=reply)
         action = "community_reply_hide"
+        if changed and reply.post.featured_reply_id == reply.pk:
+            reply.post.featured_reply = None
+            reply.post.save(update_fields=["featured_reply", "updated_at"])
     else:
         deleted, _ = CommunityReplyModerationState.objects.filter(reply=reply).delete()
         changed = bool(deleted)
         action = "community_reply_restore"
     if changed and audit:
-        _audit(actor=actor, action=action, target_type="community_reply", target_id=reply.pk, reason=reason)
+        _audit(
+            actor=actor,
+            action=action,
+            target_type="community_reply",
+            target_id=reply.pk,
+            reason=reason,
+        )
     return changed
 
 

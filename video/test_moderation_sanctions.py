@@ -30,7 +30,11 @@ class ModerationSanctionTests(TestCase):
             channel=self.channel,
             publication_status=Video.PublicationStatus.PUBLISHED,
         )
-        self.post = CommunityPost.objects.create(channel=self.channel, author=self.creator, body="Update")
+        self.post = CommunityPost.objects.create(
+            channel=self.channel,
+            author=self.creator,
+            body="Hidden policy-violating community post body",
+        )
         self.reply = CommunityReply.objects.create(
             post=self.post,
             author=self.viewer,
@@ -127,7 +131,7 @@ class ModerationSanctionTests(TestCase):
         self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
         self.client.force_login(self.viewer)
         response = self.client.get(reverse("channel_community", args=[self.channel.pk]))
-        self.assertNotContains(response, "Update")
+        self.assertNotContains(response, "Hidden policy-violating community post body")
         self.client.force_login(self.staff)
         self.client.post(post_url, {"action": "restore", "reason": "Reviewed"})
         self.client.post(reply_url, {"action": "restore", "reason": "Reviewed"})

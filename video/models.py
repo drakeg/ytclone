@@ -24,8 +24,12 @@ class VideoQuerySet(models.QuerySet):
             publication_status=Video.PublicationStatus.SCHEDULED,
             publish_at__lte=timezone.now(),
         )
-        audience_visibility = Q(audience=Video.Audience.EVERYONE)
-        visibility = publication_visibility & audience_visibility
+        public_audience = Q(audience=Video.Audience.EVERYONE) | Q(
+            audience=Video.Audience.MEMBERS_ONLY,
+            public_release_at__isnull=False,
+            public_release_at__lte=timezone.now(),
+        )
+        visibility = publication_visibility & public_audience
 
         if getattr(user, "is_authenticated", False):
             from monetization.models import ChannelMembershipSubscription
@@ -35,7 +39,7 @@ class VideoQuerySet(models.QuerySet):
                 status=ChannelMembershipSubscription.Status.ACTIVE,
             ).values("tier__monetization_account__channel_id")
             visibility = publication_visibility & (
-                audience_visibility | Q(channel_id__in=paid_channel_ids)
+                public_audience | Q(channel_id__in=paid_channel_ids)
             )
             visibility |= Q(author=user)
 
@@ -79,13 +83,24 @@ class Video(models.Model):
         default=Audience.EVERYONE,
     )
     publish_at = models.DateTimeField(null=True, blank=True)
+    public_release_at = models.DateTimeField(null=True, blank=True)
     share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
     objects = VideoQuerySet.as_manager()
 
+    @property
+    def is_early_access(self):
+        return (
+            self.audience == self.Audience.MEMBERS_ONLY
+            and self.public_release_at is not None
+            and self.public_release_at > timezone.now()
+        )
+
     def has_member_access(self, user):
         if self.audience == self.Audience.EVERYONE:
+            return True
+        if self.public_release_at is not None and self.public_release_at <= timezone.now():
             return True
         if not getattr(user, "is_authenticated", False):
             return False

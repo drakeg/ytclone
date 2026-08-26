@@ -1,5 +1,7 @@
-from video.models import Notification
+from django.db import transaction
 from django.utils import timezone
+
+from video.models import Notification, Video
 
 
 def create_notification(*, recipient, actor, kind, video=None, channel=None):
@@ -53,7 +55,7 @@ def notify_subscription(*, channel, actor):
     )
 
 
-def notify_new_upload(video):
+def _create_upload_notifications(video):
     if video.channel_id is None:
         return 0
     notifications = [
@@ -68,6 +70,58 @@ def notify_new_upload(video):
     ]
     Notification.objects.bulk_create(notifications)
     return len(notifications)
+
+
+def notify_new_upload(video):
+    """Deliver upload notifications once for an immediately published video."""
+    with transaction.atomic():
+        locked = Video.objects.select_for_update().select_related("channel", "author").get(pk=video.pk)
+        if locked.upload_notifications_sent_at is not None:
+            return 0
+        count = _create_upload_notifications(locked)
+        locked.upload_notifications_sent_at = timezone.now()
+        locked.save(update_fields=["upload_notifications_sent_at"])
+        video.upload_notifications_sent_at = locked.upload_notifications_sent_at
+        return count
+
+
+def deliver_due_scheduled_upload_notifications(*, limit=25, now=None):
+    """Deliver notifications for due scheduled uploads, at most once per video."""
+    now = now or timezone.now()
+    due_ids = list(
+        Video.objects.filter(
+            publication_status=Video.PublicationStatus.SCHEDULED,
+            publish_at__isnull=False,
+            publish_at__lte=now,
+            upload_notifications_sent_at__isnull=True,
+            deleted_at__isnull=True,
+        )
+        .order_by("publish_at", "pk")
+        .values_list("pk", flat=True)[:limit]
+    )
+    delivered_videos = 0
+    delivered_notifications = 0
+    for video_id in due_ids:
+        with transaction.atomic():
+            video = (
+                Video.objects.select_for_update()
+                .select_related("channel", "author")
+                .get(pk=video_id)
+            )
+            if video.upload_notifications_sent_at is not None:
+                continue
+            if (
+                video.publication_status != Video.PublicationStatus.SCHEDULED
+                or video.publish_at is None
+                or video.publish_at > now
+                or video.deleted_at is not None
+            ):
+                continue
+            delivered_notifications += _create_upload_notifications(video)
+            video.upload_notifications_sent_at = now
+            video.save(update_fields=["upload_notifications_sent_at"])
+            delivered_videos += 1
+    return delivered_videos, delivered_notifications
 
 
 def notify_team_invitation(invitation):

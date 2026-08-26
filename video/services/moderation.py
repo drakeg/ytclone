@@ -1,4 +1,5 @@
 from video.models import Comment
+from video.services.channels import accessible_channels
 
 
 COMMENT_FILTERS = (
@@ -13,14 +14,19 @@ BULK_ACTIONS = {
 }
 
 
+def creator_comment_queryset(user):
+    channels = accessible_channels(user)
+    return Comment.objects.filter(
+        video__channel__in=channels,
+        video__deleted_at__isnull=True,
+    ).select_related("author", "parent", "video", "video__channel")
+
+
 def get_creator_comments(user, requested_filter):
     selected_filter = (
         requested_filter if requested_filter in FILTER_VALUES else "all"
     )
-    comments = Comment.objects.filter(
-        video__author=user,
-        video__deleted_at__isnull=True,
-    ).select_related("author", "parent", "video", "video__channel")
+    comments = creator_comment_queryset(user)
     if selected_filter == "visible":
         comments = comments.filter(is_hidden=False)
     elif selected_filter == "hidden":
@@ -36,8 +42,6 @@ def bulk_moderate_comments(user, comment_ids, action):
     except (TypeError, ValueError):
         raise ValueError("Invalid comment selection.") from None
 
-    return Comment.objects.filter(
-        pk__in=normalized_ids,
-        video__author=user,
-        video__deleted_at__isnull=True,
-    ).update(is_hidden=BULK_ACTIONS[action])
+    return creator_comment_queryset(user).filter(pk__in=normalized_ids).update(
+        is_hidden=BULK_ACTIONS[action]
+    )

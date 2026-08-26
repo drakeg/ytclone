@@ -1,3 +1,5 @@
+from django.db.models import Q
+
 from video.models import Comment
 from video.services.channels import accessible_channels
 
@@ -17,9 +19,9 @@ BULK_ACTIONS = {
 def creator_comment_queryset(user):
     channels = accessible_channels(user)
     return Comment.objects.filter(
-        video__channel__in=channels,
+        Q(video__author=user) | Q(video__channel__in=channels),
         video__deleted_at__isnull=True,
-    ).select_related("author", "parent", "video", "video__channel")
+    ).select_related("author", "parent", "video", "video__channel").distinct()
 
 
 def get_creator_comments(user, requested_filter):

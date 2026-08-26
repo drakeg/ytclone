@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Audience · VideoShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <h1 class="mb-1">Audience</h1>
+        <p class="text-muted mb-0">Subscribers and paid memberships for channels you own.</p>
+    </div>
+
+    {% for item in channel_audiences %}
+        <section class="card mb-4">
+            <div class="card-header"><strong>{{ item.channel.name }}</strong></div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-lg-5">
+                        <h2 class="h5">Free subscribers</h2>
+                        <p class="text-muted small">People following this channel. This does not reveal private viewing history.</p>
+                        <div class="list-group list-group-flush">
+                        {% for subscriber in item.free_subscribers %}
+                            <div class="list-group-item px-0">{{ subscriber.username }}</div>
+                        {% empty %}
+                            <div class="text-muted">No subscribers yet.</div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-lg-7">
+                        <h2 class="h5">Paid memberships</h2>
+                        <p class="text-muted small">Membership status is read-only here; billing changes continue through the payment lifecycle.</p>
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead><tr><th>Member</th><th>Tier</th><th>Status</th><th>Started</th></tr></thead>
+                                <tbody>
+                                {% for membership in item.paid_memberships %}
+                                    <tr>
+                                        <td>{{ membership.subscriber.username }}</td>
+                                        <td>{{ membership.tier.name }}</td>
+                                        <td>{{ membership.get_status_display }}</td>
+                                        <td>{{ membership.started_at }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="4" class="text-muted">No paid memberships yet.</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,9 +1,12 @@
 from django.urls import path
 
-from . import access_views, account_views, category_views, channel_views, community_views, metadata_views, qa_views, subscription_views, views
+from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
+    path("site-admin/", administration_views.site_admin_dashboard, name="site_admin_dashboard"),
+    path("site-admin/comments/<int:pk>/moderate/", administration_views.site_admin_comment_moderate, name="site_admin_comment_moderate"),
+    path("creator/audience/", administration_views.creator_audience, name="creator_audience"),
     path("creator/analytics/", views.creator_analytics, name="creator_analytics"),
     path("creator/comments/", views.creator_comment_list, name="creator_comment_list"),
     path("creator/comments/moderate/", views.creator_comment_bulk_moderation, name="creator_comment_bulk_moderation"),

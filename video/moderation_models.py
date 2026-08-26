@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
 
 class VideoModerationState(models.Model):
@@ -42,3 +44,10 @@ class ModerationAuditEvent(models.Model):
 
     def __str__(self):
         return f"{self.actor}: {self.action} {self.target_type}#{self.target_id}"
+
+
+@receiver(pre_save, sender="video.Video")
+def keep_moderated_video_private(sender, instance, **kwargs):
+    if instance.pk and VideoModerationState.objects.filter(video_id=instance.pk).exists():
+        instance.publication_status = "draft"
+        instance.publish_at = None

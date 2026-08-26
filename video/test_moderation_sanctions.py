@@ -31,7 +31,11 @@ class ModerationSanctionTests(TestCase):
             publication_status=Video.PublicationStatus.PUBLISHED,
         )
         self.post = CommunityPost.objects.create(channel=self.channel, author=self.creator, body="Update")
-        self.reply = CommunityReply.objects.create(post=self.post, author=self.viewer, body="Reply")
+        self.reply = CommunityReply.objects.create(
+            post=self.post,
+            author=self.viewer,
+            body="Hidden abusive reply body",
+        )
 
     def test_staff_video_takedown_requires_reason_and_restores_original_state(self):
         self.client.force_login(self.staff)
@@ -137,7 +141,7 @@ class ModerationSanctionTests(TestCase):
         self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
         self.client.force_login(self.viewer)
         page = self.client.get(reverse("channel_community", args=[self.channel.pk]))
-        self.assertNotContains(page, "Reply")
+        self.assertNotContains(page, "Hidden abusive reply body")
         response = self.client.post(url, {"action": "restore"})
         self.assertEqual(response.status_code, 404)
         self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())

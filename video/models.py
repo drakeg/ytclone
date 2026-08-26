@@ -84,6 +84,7 @@ class Video(models.Model):
     )
     publish_at = models.DateTimeField(null=True, blank=True)
     public_release_at = models.DateTimeField(null=True, blank=True)
+    upload_notifications_sent_at = models.DateTimeField(null=True, blank=True)
     share_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     deleted_at = models.DateTimeField(null=True, blank=True)
 

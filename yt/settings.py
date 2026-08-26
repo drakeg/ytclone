@@ -92,6 +92,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Password hashing is intentionally expensive in normal operation. Unit tests create
+# many users and do not need production-strength hashing, so CI can explicitly opt
+# into Django's fast MD5 test hasher. This flag is never enabled by default.
+if env_bool("DJANGO_FAST_TEST_HASHER", False):
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
 LOGIN_REDIRECT_URL = "video_list"
 LOGOUT_REDIRECT_URL = "video_list"
 

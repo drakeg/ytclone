@@ -18,6 +18,7 @@ jobs:
       DJANGO_SECURE_SSL_REDIRECT: "false"
       DJANGO_SESSION_COOKIE_SECURE: "false"
       DJANGO_CSRF_COOKIE_SECURE: "false"
+      DJANGO_FAST_TEST_HASHER: "true"
 
     steps:
       - uses: actions/checkout@v7
@@ -37,4 +38,4 @@ jobs:
         run: python manage.py makemigrations --check --dry-run
 
       - name: Run tests
-        run: python manage.py test
+        run: python manage.py test --parallel 4

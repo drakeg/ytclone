@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Site Administration · VideoShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="mb-1">Site Administration</h1>
+            <p class="text-muted mb-0">Whole-site operations and moderation for trusted staff.</p>
+        </div>
+        <a class="btn btn-outline-primary" href="{% url 'admin:index' %}">Open Django admin</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Users</div><div class="fs-3 fw-semibold">{{ user_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Channels</div><div class="fs-3 fw-semibold">{{ channel_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Videos</div><div class="fs-3 fw-semibold">{{ video_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Comments</div><div class="fs-3 fw-semibold">{{ comment_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Hidden</div><div class="fs-3 fw-semibold">{{ hidden_comment_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Paid members</div><div class="fs-3 fw-semibold">{{ active_paid_membership_count }}</div></div></div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>Recent comments</strong>
+            <span class="text-muted small">Latest 50</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Author</th><th>Video</th><th>Channel</th><th>Comment</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for comment in recent_comments %}
+                    <tr>
+                        <td>{{ comment.author.username }}</td>
+                        <td><a href="{% url 'video_detail' comment.video_id %}">{{ comment.video.title }}</a></td>
+                        <td>{{ comment.video.channel|default:"—" }}</td>
+                        <td>{{ comment.comment|truncatechars:120 }}</td>
+                        <td>{% if comment.is_hidden %}<span class="badge text-bg-secondary">Hidden</span>{% else %}<span class="badge text-bg-success">Visible</span>{% endif %}</td>
+                        <td>
+                            <form method="post" action="{% url 'site_admin_comment_moderate' comment.pk %}">
+                                {% csrf_token %}
+                                {% if comment.is_hidden %}
+                                    <button class="btn btn-sm btn-outline-success" type="submit" name="action" value="restore">Restore</button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-outline-danger" type="submit" name="action" value="hide">Hide</button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6" class="text-muted">No comments yet.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

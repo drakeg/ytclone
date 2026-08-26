@@ -4,6 +4,7 @@ from monetization.models import ChannelMembershipSubscription
 from video.community_models import CommunityPost, CommunityReply
 from video.models import Channel, Comment, Video
 from video.moderation_models import ModerationAuditEvent
+from video.services.moderation_actions import set_comment_hidden
 
 User = get_user_model()
 
@@ -27,14 +28,18 @@ def get_site_admin_overview():
     }
 
 
-def moderate_site_comment(*, comment_id, action):
+def moderate_site_comment(*, actor, comment_id, action, reason):
     if action not in {"hide", "restore"}:
         raise ValueError("Invalid moderation action.")
     comment = Comment.objects.filter(pk=comment_id).first()
     if comment is None:
         return False
-    comment.is_hidden = action == "hide"
-    comment.save(update_fields=["is_hidden"])
+    set_comment_hidden(
+        actor=actor,
+        comment=comment,
+        hidden=action == "hide",
+        reason=reason,
+    )
     return True
 
 

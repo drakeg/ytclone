@@ -93,6 +93,7 @@ class MemberEarlyAccessTests(TestCase):
 
     def test_everyone_audience_rejects_public_release_time(self):
         video = self.create_video()
+        local_now = timezone.localtime()
         form = VideoEditForm(
             data={
                 "title": video.title,
@@ -100,7 +101,7 @@ class MemberEarlyAccessTests(TestCase):
                 "channel": self.channel.pk,
                 "publication_status": Video.PublicationStatus.PUBLISHED,
                 "audience": Video.Audience.EVERYONE,
-                "public_release_at": (timezone.now() + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M"),
+                "public_release_at": (local_now + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M"),
                 "tags": "",
                 "chapters": "",
             },
@@ -113,6 +114,7 @@ class MemberEarlyAccessTests(TestCase):
 
     def test_early_access_public_release_must_be_future(self):
         video = self.create_video()
+        local_now = timezone.localtime()
         form = VideoEditForm(
             data={
                 "title": video.title,
@@ -120,7 +122,7 @@ class MemberEarlyAccessTests(TestCase):
                 "channel": self.channel.pk,
                 "publication_status": Video.PublicationStatus.PUBLISHED,
                 "audience": Video.Audience.MEMBERS_ONLY,
-                "public_release_at": (timezone.now() - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+                "public_release_at": (local_now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
                 "tags": "",
                 "chapters": "",
             },
@@ -132,7 +134,7 @@ class MemberEarlyAccessTests(TestCase):
         self.assertIn("public_release_at", form.errors)
 
     def test_scheduled_member_release_must_precede_public_release(self):
-        now = timezone.now()
+        local_now = timezone.localtime()
         video = self.create_video()
         form = VideoEditForm(
             data={
@@ -141,8 +143,8 @@ class MemberEarlyAccessTests(TestCase):
                 "channel": self.channel.pk,
                 "publication_status": Video.PublicationStatus.SCHEDULED,
                 "audience": Video.Audience.MEMBERS_ONLY,
-                "publish_at": (now + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M"),
-                "public_release_at": (now + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M"),
+                "publish_at": (local_now + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M"),
+                "public_release_at": (local_now + timedelta(days=1)).strftime("%Y-%m-%dT%H:%M"),
                 "tags": "",
                 "chapters": "",
             },

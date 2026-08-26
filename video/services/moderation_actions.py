@@ -71,10 +71,12 @@ def restore_video(*, actor, video, reason):
     state = VideoModerationState.objects.filter(video=video).first()
     if state is None:
         return False
-    video.publication_status = state.original_publication_status
-    video.publish_at = state.original_publish_at
-    video.save(update_fields=["publication_status", "publish_at"])
+    original_status = state.original_publication_status
+    original_publish_at = state.original_publish_at
     state.delete()
+    video.publication_status = original_status
+    video.publish_at = original_publish_at
+    video.save(update_fields=["publication_status", "publish_at"])
     _audit(actor=actor, action="video_restore", target_type="video", target_id=video.pk, reason=reason)
     return True
 

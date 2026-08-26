@@ -7,4 +7,4 @@ class VideoConfig(AppConfig):
 
     def ready(self):
         # Focused model modules belong to the video app and register signals here.
-        from . import community_models, metadata_models, qa_models  # noqa: F401
+        from . import community_models, metadata_models, moderation_models, qa_models  # noqa: F401

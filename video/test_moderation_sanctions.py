@@ -1,0 +1,103 @@
+from django.contrib.auth.models import User
+from django.test import TestCase
+from django.urls import reverse
+
+from .community_models import CommunityPost, CommunityReply
+from .models import Channel, Video
+from .moderation_models import (
+    CommunityPostModerationState,
+    CommunityReplyModerationState,
+    ModerationAuditEvent,
+    VideoModerationState,
+)
+
+
+class ModerationSanctionTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(username="staff", password="password123", is_staff=True)
+        self.creator = User.objects.create_user(username="creator", password="password123")
+        self.editor = User.objects.create_user(username="editor", password="password123")
+        self.viewer = User.objects.create_user(username="viewer", password="password123")
+        self.channel = Channel.objects.create(owner=self.creator, name="Channel", description="")
+        self.channel.memberships.create(user=self.editor)
+        self.video = Video.objects.create(
+            title="Public video",
+            description="",
+            thumbnail="videos/thumbnails/a.jpg",
+            video_file="videos/files/a.mp4",
+            author=self.creator,
+            channel=self.channel,
+            publication_status=Video.PublicationStatus.PUBLISHED,
+        )
+        self.post = CommunityPost.objects.create(channel=self.channel, author=self.creator, body="Update")
+        self.reply = CommunityReply.objects.create(post=self.post, author=self.viewer, body="Reply")
+
+    def test_staff_video_takedown_requires_reason_and_restores_original_state(self):
+        self.client.force_login(self.staff)
+        url = reverse("site_admin_video_moderate", args=[self.video.pk])
+        response = self.client.post(url, {"action": "hide", "reason": ""})
+        self.assertEqual(response.status_code, 400)
+        self.client.post(url, {"action": "hide", "reason": "Policy violation"})
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.publication_status, Video.PublicationStatus.DRAFT)
+        self.assertTrue(VideoModerationState.objects.filter(video=self.video).exists())
+        self.assertTrue(ModerationAuditEvent.objects.filter(action="video_takedown", target_id=self.video.pk).exists())
+        self.client.post(url, {"action": "restore", "reason": "Appeal accepted"})
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.publication_status, Video.PublicationStatus.PUBLISHED)
+        self.assertFalse(VideoModerationState.objects.filter(video=self.video).exists())
+
+    def test_non_staff_cannot_use_site_sanctions(self):
+        self.client.force_login(self.creator)
+        response = self.client.post(
+            reverse("site_admin_video_moderate", args=[self.video.pk]),
+            {"action": "hide", "reason": "No"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.publication_status, Video.PublicationStatus.PUBLISHED)
+
+    def test_staff_can_suspend_and_reactivate_user_with_audit(self):
+        self.client.force_login(self.staff)
+        url = reverse("site_admin_user_moderate", args=[self.viewer.pk])
+        self.client.post(url, {"action": "suspend", "reason": "Abuse"})
+        self.viewer.refresh_from_db()
+        self.assertFalse(self.viewer.is_active)
+        self.assertTrue(ModerationAuditEvent.objects.filter(action="user_suspend", target_id=self.viewer.pk).exists())
+        self.client.post(url, {"action": "reactivate", "reason": "Resolved"})
+        self.viewer.refresh_from_db()
+        self.assertTrue(self.viewer.is_active)
+
+    def test_staff_cannot_suspend_self(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse("site_admin_user_moderate", args=[self.staff.pk]),
+            {"action": "suspend", "reason": "Mistake"},
+        )
+        self.assertEqual(response.status_code, 400)
+        self.staff.refresh_from_db()
+        self.assertTrue(self.staff.is_active)
+
+    def test_staff_can_hide_and_restore_community_content(self):
+        self.client.force_login(self.staff)
+        post_url = reverse("site_admin_community_post_moderate", args=[self.post.pk])
+        reply_url = reverse("site_admin_community_reply_moderate", args=[self.reply.pk])
+        self.client.post(post_url, {"action": "hide", "reason": "Spam"})
+        self.client.post(reply_url, {"action": "hide", "reason": "Harassment"})
+        self.assertTrue(CommunityPostModerationState.objects.filter(post=self.post).exists())
+        self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
+        self.client.post(post_url, {"action": "restore", "reason": "Reviewed"})
+        self.client.post(reply_url, {"action": "restore", "reason": "Reviewed"})
+        self.assertFalse(CommunityPostModerationState.objects.filter(post=self.post).exists())
+        self.assertFalse(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
+
+    def test_channel_editor_can_moderate_reply_but_other_user_cannot(self):
+        url = reverse("community_reply_moderate", args=[self.reply.pk])
+        self.client.force_login(self.editor)
+        self.client.post(url, {"action": "hide"})
+        self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
+        CommunityReplyModerationState.objects.filter(reply=self.reply).delete()
+        self.client.force_login(self.viewer)
+        response = self.client.post(url, {"action": "hide"})
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())

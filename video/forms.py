@@ -61,6 +61,7 @@ class VideoUploadForm(forms.ModelForm):
             "publication_status",
             "audience",
             "publish_at",
+            "public_release_at",
         ]
         widgets = {
             "thumbnail": forms.ClearableFileInput(
@@ -72,6 +73,7 @@ class VideoUploadForm(forms.ModelForm):
             # enforces the supported extensions, MIME types, and upload-size limit.
             "video_file": forms.ClearableFileInput(),
             "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
+            "public_release_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -85,6 +87,10 @@ class VideoUploadForm(forms.ModelForm):
         self.fields["audience"].initial = Video.Audience.EVERYONE
         self.fields["audience"].help_text = (
             "Paid members only requires an active paid membership for the selected channel."
+        )
+        self.fields["public_release_at"].required = False
+        self.fields["public_release_at"].help_text = (
+            "Optional for paid-members-only videos. Members can watch first; everyone gets access automatically at this time."
         )
         if user and not self.fields["channel"].queryset.exists():
             self.fields["channel"].help_text = "Create a channel before uploading a video."
@@ -110,6 +116,7 @@ class VideoUploadForm(forms.ModelForm):
         cleaned_data = super().clean()
         status = cleaned_data.get("publication_status")
         publish_at = cleaned_data.get("publish_at")
+        public_release_at = cleaned_data.get("public_release_at")
         audience = cleaned_data.get("audience") or Video.Audience.EVERYONE
         cleaned_data["audience"] = audience
         channel = cleaned_data.get("channel")
@@ -128,11 +135,29 @@ class VideoUploadForm(forms.ModelForm):
                     "Enable monetization for this channel before publishing members-only videos.",
                 )
 
+        if audience == Video.Audience.EVERYONE:
+            cleaned_data["public_release_at"] = None
+            if public_release_at is not None:
+                self.add_error(
+                    "public_release_at",
+                    "Public release timing is only available for paid-members-only videos.",
+                )
+        elif public_release_at is not None and public_release_at <= timezone.now():
+            self.add_error(
+                "public_release_at",
+                "Choose a future public release time, or leave it blank to keep the video members only.",
+            )
+
         if status == Video.PublicationStatus.SCHEDULED:
             if publish_at is None:
                 self.add_error("publish_at", "Choose a publication time.")
             elif publish_at <= timezone.now():
                 self.add_error("publish_at", "Choose a future publication time.")
+            elif public_release_at is not None and public_release_at <= publish_at:
+                self.add_error(
+                    "public_release_at",
+                    "Public release must be after the scheduled member publication time.",
+                )
         else:
             cleaned_data["publish_at"] = None
         return cleaned_data
@@ -196,6 +221,7 @@ class VideoEditForm(VideoUploadForm):
             "publication_status",
             "audience",
             "publish_at",
+            "public_release_at",
         ]
 
     def __init__(self, *args, **kwargs):

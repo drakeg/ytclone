@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from .community_models import CommunityPost, CommunityReply
-from .models import Comment, Video
+from .models import Video
 from .services.administration import get_creator_audience, get_site_admin_overview, moderate_site_comment
 from .services.moderation_actions import (
     restore_video,
@@ -29,7 +29,12 @@ def site_admin_dashboard(request):
 def site_admin_comment_moderate(request, pk):
     action = request.POST.get("action", "")
     try:
-        found = moderate_site_comment(comment_id=pk, action=action)
+        found = moderate_site_comment(
+            actor=request.user,
+            comment_id=pk,
+            action=action,
+            reason=request.POST.get("reason", ""),
+        )
     except ValueError as error:
         return HttpResponseBadRequest(str(error))
     if not found:

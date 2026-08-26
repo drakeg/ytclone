@@ -31,6 +31,22 @@ def _audit(*, actor, action, target_type, target_id, reason):
     )
 
 
+def set_comment_hidden(*, actor, comment, hidden, reason):
+    reason = _reason(reason)
+    if comment.is_hidden == hidden:
+        return False
+    comment.is_hidden = hidden
+    comment.save(update_fields=["is_hidden"])
+    _audit(
+        actor=actor,
+        action="comment_hide" if hidden else "comment_restore",
+        target_type="comment",
+        target_id=comment.pk,
+        reason=reason,
+    )
+    return True
+
+
 @transaction.atomic
 def take_down_video(*, actor, video, reason):
     reason = _reason(reason)
@@ -45,13 +61,7 @@ def take_down_video(*, actor, video, reason):
         video.publication_status = Video.PublicationStatus.DRAFT
         video.publish_at = None
         video.save(update_fields=["publication_status", "publish_at"])
-        _audit(
-            actor=actor,
-            action="video_takedown",
-            target_type="video",
-            target_id=video.pk,
-            reason=reason,
-        )
+        _audit(actor=actor, action="video_takedown", target_type="video", target_id=video.pk, reason=reason)
     return created
 
 
@@ -65,13 +75,7 @@ def restore_video(*, actor, video, reason):
     video.publish_at = state.original_publish_at
     video.save(update_fields=["publication_status", "publish_at"])
     state.delete()
-    _audit(
-        actor=actor,
-        action="video_restore",
-        target_type="video",
-        target_id=video.pk,
-        reason=reason,
-    )
+    _audit(actor=actor, action="video_restore", target_type="video", target_id=video.pk, reason=reason)
     return True
 
 
@@ -85,13 +89,7 @@ def set_community_post_hidden(*, actor, post, hidden, reason):
         changed = bool(deleted)
         action = "community_post_restore"
     if changed:
-        _audit(
-            actor=actor,
-            action=action,
-            target_type="community_post",
-            target_id=post.pk,
-            reason=reason,
-        )
+        _audit(actor=actor, action=action, target_type="community_post", target_id=post.pk, reason=reason)
     return changed
 
 
@@ -110,13 +108,7 @@ def set_community_reply_hidden(*, actor, reply, hidden, reason=None, audit=True)
         changed = bool(deleted)
         action = "community_reply_restore"
     if changed and audit:
-        _audit(
-            actor=actor,
-            action=action,
-            target_type="community_reply",
-            target_id=reply.pk,
-            reason=reason,
-        )
+        _audit(actor=actor, action=action, target_type="community_reply", target_id=reply.pk, reason=reason)
     return changed
 
 

@@ -1,4 +1,4 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import AnonymousUser, User
 from django.test import TestCase
 from django.urls import reverse
 
@@ -10,6 +10,7 @@ from .moderation_models import (
     ModerationAuditEvent,
     VideoModerationState,
 )
+from .services.publication import bulk_update_publication
 
 
 class ModerationSanctionTests(TestCase):
@@ -41,11 +42,33 @@ class ModerationSanctionTests(TestCase):
         self.video.refresh_from_db()
         self.assertEqual(self.video.publication_status, Video.PublicationStatus.DRAFT)
         self.assertTrue(VideoModerationState.objects.filter(video=self.video).exists())
+        self.assertFalse(Video.objects.visible_to(AnonymousUser()).filter(pk=self.video.pk).exists())
         self.assertTrue(ModerationAuditEvent.objects.filter(action="video_takedown", target_id=self.video.pk).exists())
         self.client.post(url, {"action": "restore", "reason": "Appeal accepted"})
         self.video.refresh_from_db()
         self.assertEqual(self.video.publication_status, Video.PublicationStatus.PUBLISHED)
         self.assertFalse(VideoModerationState.objects.filter(video=self.video).exists())
+        self.assertTrue(Video.objects.visible_to(AnonymousUser()).filter(pk=self.video.pk).exists())
+
+    def test_creator_cannot_republish_active_staff_takedown(self):
+        self.client.force_login(self.staff)
+        self.client.post(
+            reverse("site_admin_video_moderate", args=[self.video.pk]),
+            {"action": "hide", "reason": "Policy violation"},
+        )
+        self.video.publication_status = Video.PublicationStatus.PUBLISHED
+        self.video.save()
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.publication_status, Video.PublicationStatus.DRAFT)
+
+        updated = bulk_update_publication(
+            self.creator,
+            [self.video.pk],
+            Video.PublicationStatus.PUBLISHED,
+        )
+        self.assertEqual(updated, 0)
+        self.video.refresh_from_db()
+        self.assertEqual(self.video.publication_status, Video.PublicationStatus.DRAFT)
 
     def test_non_staff_cannot_use_site_sanctions(self):
         self.client.force_login(self.creator)
@@ -78,6 +101,18 @@ class ModerationSanctionTests(TestCase):
         self.staff.refresh_from_db()
         self.assertTrue(self.staff.is_active)
 
+    def test_staff_comment_moderation_requires_reason_and_is_audited(self):
+        from .models import Comment
+
+        comment = Comment.objects.create(video=self.video, author=self.viewer, comment="Moderate")
+        self.client.force_login(self.staff)
+        url = reverse("site_admin_comment_moderate", args=[comment.pk])
+        self.assertEqual(self.client.post(url, {"action": "hide"}).status_code, 400)
+        self.client.post(url, {"action": "hide", "reason": "Harassment"})
+        comment.refresh_from_db()
+        self.assertTrue(comment.is_hidden)
+        self.assertTrue(ModerationAuditEvent.objects.filter(action="comment_hide", target_id=comment.pk).exists())
+
     def test_staff_can_hide_and_restore_community_content(self):
         self.client.force_login(self.staff)
         post_url = reverse("site_admin_community_post_moderate", args=[self.post.pk])
@@ -86,6 +121,10 @@ class ModerationSanctionTests(TestCase):
         self.client.post(reply_url, {"action": "hide", "reason": "Harassment"})
         self.assertTrue(CommunityPostModerationState.objects.filter(post=self.post).exists())
         self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
+        self.client.force_login(self.viewer)
+        response = self.client.get(reverse("channel_community", args=[self.channel.pk]))
+        self.assertNotContains(response, "Update")
+        self.client.force_login(self.staff)
         self.client.post(post_url, {"action": "restore", "reason": "Reviewed"})
         self.client.post(reply_url, {"action": "restore", "reason": "Reviewed"})
         self.assertFalse(CommunityPostModerationState.objects.filter(post=self.post).exists())
@@ -96,8 +135,9 @@ class ModerationSanctionTests(TestCase):
         self.client.force_login(self.editor)
         self.client.post(url, {"action": "hide"})
         self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
-        CommunityReplyModerationState.objects.filter(reply=self.reply).delete()
         self.client.force_login(self.viewer)
-        response = self.client.post(url, {"action": "hide"})
+        page = self.client.get(reverse("channel_community", args=[self.channel.pk]))
+        self.assertNotContains(page, "Reply")
+        response = self.client.post(url, {"action": "restore"})
         self.assertEqual(response.status_code, 404)
-        self.assertFalse(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())
+        self.assertTrue(CommunityReplyModerationState.objects.filter(reply=self.reply).exists())

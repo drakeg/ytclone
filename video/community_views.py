@@ -103,7 +103,11 @@ def community_poll_vote(request, option_pk):
 @login_required
 @require_POST
 def community_reply_feature(request, reply_pk):
-    reply = get_object_or_404(CommunityReply.objects.select_related("post__channel"), pk=reply_pk)
+    reply = get_object_or_404(
+        CommunityReply.objects.select_related("post__channel"),
+        pk=reply_pk,
+        moderation_state__isnull=True,
+    )
     if reply.post.channel.owner_id != request.user.pk:
         raise Http404("Reply not found")
     reply.post.featured_reply = None if reply.post.featured_reply_id == reply.pk else reply

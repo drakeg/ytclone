@@ -70,12 +70,12 @@ class AdministrationTests(TestCase):
     def test_staff_can_moderate_any_comment(self):
         self.client.force_login(self.staff)
         url = reverse("site_admin_comment_moderate", args=[self.other_comment.pk])
-        response = self.client.post(url, {"action": "hide"})
+        response = self.client.post(url, {"action": "hide", "reason": "Abusive comment"})
         self.assertRedirects(response, reverse("site_admin_dashboard"))
         self.other_comment.refresh_from_db()
         self.assertTrue(self.other_comment.is_hidden)
 
-        self.client.post(url, {"action": "restore"})
+        self.client.post(url, {"action": "restore", "reason": "Reviewed"})
         self.other_comment.refresh_from_db()
         self.assertFalse(self.other_comment.is_hidden)
 
@@ -83,7 +83,7 @@ class AdministrationTests(TestCase):
         self.client.force_login(self.owner)
         response = self.client.post(
             reverse("site_admin_comment_moderate", args=[self.comment.pk]),
-            {"action": "hide"},
+            {"action": "hide", "reason": "No access"},
         )
         self.assertEqual(response.status_code, 302)
         self.comment.refresh_from_db()

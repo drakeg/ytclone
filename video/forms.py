@@ -8,6 +8,7 @@ from django.utils import timezone
 from .models import Channel, Comment, Playlist, Video
 from .services.channels import accessible_channels
 from .services.chapters import ChapterValidationError, format_chapters, parse_chapters
+from .services.media_probe import MediaProbeError, probe_uploaded_video, should_auto_classify_as_short
 from .services.metadata import normalize_tag_names
 
 
@@ -32,16 +33,29 @@ class PlaylistForm(forms.ModelForm):
 class VideoUploadForm(forms.ModelForm):
     content_format = forms.ChoiceField(
         required=False,
-        choices=(("video", "Standard video"), ("short", "Short")),
-        initial="video",
-        help_text="Choose Short for short-form vertical-style content. This does not crop or transcode the file.",
+        choices=(
+            ("auto", "Auto-detect"),
+            ("video", "Standard video"),
+            ("short", "Short"),
+        ),
+        initial="auto",
+        help_text=(
+            "Auto-detect marks portrait or square videos up to 3 minutes as Shorts. "
+            "Choose a format explicitly to override detection."
+        ),
     )
     tags = forms.CharField(
         required=False,
         help_text="Optional. Separate tags with commas, for example: rv travel, camping, solar.",
         widget=forms.TextInput(attrs={"placeholder": "rv travel, camping, solar"}),
     )
-    chapters = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}), help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.")
+    chapters = forms.CharField(
+        required=False,
+        widget=forms.Textarea(
+            attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}
+        ),
+        help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.",
+    )
     allowed_video_extensions = {".mp4", ".webm", ".mov"}
     allowed_video_content_types = {
         "video/mp4",
@@ -84,6 +98,10 @@ class VideoUploadForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._auto_video_probe = None
+        self._existing_is_short = bool(
+            self.instance and self.instance.pk and hasattr(self.instance, "short_metadata")
+        )
         self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
         self.fields["audience"].required = False
@@ -103,7 +121,7 @@ class VideoUploadForm(forms.ModelForm):
                 self.instance.tags.values_list("name", flat=True)
             )
             self.fields["content_format"].initial = (
-                "short" if hasattr(self.instance, "short_metadata") else "video"
+                "short" if self._existing_is_short else "video"
             )
 
     def clean_tags(self):
@@ -170,11 +188,18 @@ class VideoUploadForm(forms.ModelForm):
 
     def save(self, commit=True):
         self.instance._pending_tag_names = self.cleaned_data.get("tags", [])
-        requested_format = self.cleaned_data.get("content_format")
-        if requested_format:
-            self.instance._pending_short_state = requested_format == "short"
-        elif not self.instance.pk:
-            self.instance._pending_short_state = False
+        requested_format = self.cleaned_data.get("content_format") or "auto"
+        if requested_format == "short":
+            desired_short_state = True
+        elif requested_format == "video":
+            desired_short_state = False
+        elif self._auto_video_probe is not None:
+            desired_short_state = should_auto_classify_as_short(self._auto_video_probe)
+        elif self.instance.pk:
+            desired_short_state = self._existing_is_short
+        else:
+            desired_short_state = False
+        self.instance._pending_short_state = desired_short_state
         return super().save(commit=commit)
 
     def clean_thumbnail(self):
@@ -217,6 +242,12 @@ class VideoUploadForm(forms.ModelForm):
                 f"Video files must be {settings.MAX_VIDEO_UPLOAD_MB} MB or smaller."
             )
 
+        requested_format = self.data.get("content_format") or "auto"
+        if requested_format == "auto":
+            try:
+                self._auto_video_probe = probe_uploaded_video(video_file)
+            except MediaProbeError:
+                self._auto_video_probe = None
         return video_file
 
 

@@ -31,6 +31,10 @@ class VideoQuerySet(models.QuerySet):
         )
         visibility = publication_visibility & public_audience
 
+        is_staff = bool(
+            getattr(user, "is_authenticated", False)
+            and getattr(user, "is_staff", False)
+        )
         if getattr(user, "is_authenticated", False):
             from monetization.models import ChannelMembershipSubscription
 
@@ -41,9 +45,17 @@ class VideoQuerySet(models.QuerySet):
             visibility = publication_visibility & (
                 public_audience | Q(channel_id__in=paid_channel_ids)
             )
-            visibility |= Q(author=user)
+            if is_staff:
+                visibility |= Q(author=user)
+            else:
+                visibility |= Q(author=user, channel__moderation_state__isnull=True)
 
-        return self.filter(visibility, deleted_at__isnull=True).distinct()
+        queryset = self.filter(visibility, deleted_at__isnull=True)
+        if not is_staff:
+            queryset = queryset.filter(
+                Q(channel__isnull=True) | Q(channel__moderation_state__isnull=True)
+            )
+        return queryset.distinct()
 
 
 class Video(models.Model):
@@ -98,7 +110,15 @@ class Video(models.Model):
             and self.public_release_at > timezone.now()
         )
 
+    def _channel_is_suspended(self):
+        return bool(self.channel_id and hasattr(self.channel, "moderation_state"))
+
     def has_member_access(self, user):
+        if self._channel_is_suspended() and not (
+            getattr(user, "is_authenticated", False)
+            and getattr(user, "is_staff", False)
+        ):
+            return False
         if self.audience == self.Audience.EVERYONE:
             return True
         if self.public_release_at is not None and self.public_release_at <= timezone.now():
@@ -120,6 +140,11 @@ class Video(models.Model):
 
     def is_visible_to(self, user):
         if self.deleted_at is not None:
+            return False
+        if self._channel_is_suspended() and not (
+            getattr(user, "is_authenticated", False)
+            and getattr(user, "is_staff", False)
+        ):
             return False
         if self.author_id == getattr(user, "pk", None):
             return True
@@ -308,19 +333,18 @@ class Playlist(models.Model):
 
     class Meta:
         ordering = ["-updated_at", "name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["owner", "name"], name="unique_playlist_name_per_owner"
-            )
-        ]
 
     def __str__(self):
         return self.name
 
     def can_view(self, user):
-        return self.visibility != self.Visibility.PRIVATE or (
-            user.is_authenticated and user.pk == self.owner_id
-        )
+        if self.visibility == self.Visibility.PUBLIC:
+            return True
+        if not getattr(user, "is_authenticated", False):
+            return False
+        if self.owner_id == user.pk:
+            return True
+        return self.visibility == self.Visibility.UNLISTED
 
 
 class PlaylistItem(models.Model):
@@ -334,90 +358,12 @@ class PlaylistItem(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ["position", "added_at"]
+        ordering = ["position", "added_at", "pk"]
         constraints = [
             models.UniqueConstraint(
-                fields=["playlist", "video"],
-                name="unique_video_per_playlist",
+                fields=["playlist", "video"], name="unique_video_per_playlist"
             )
         ]
 
     def __str__(self):
         return f"{self.playlist}: {self.video}"
-
-
-class WatchHistory(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="watch_history"
-    )
-    video = models.ForeignKey(
-        Video, on_delete=models.CASCADE, related_name="history_entries"
-    )
-    watched_at = models.DateTimeField(auto_now=True)
-    playback_position_seconds = models.PositiveIntegerField(default=0)
-    duration_seconds = models.PositiveIntegerField(default=0)
-
-    class Meta:
-        ordering = ["-watched_at"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["user", "video"], name="unique_video_per_user_history"
-            )
-        ]
-
-    def __str__(self):
-        return f"{self.user}: {self.video}"
-
-
-class VideoWatchEvent(models.Model):
-    event_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
-    playback_session_id = models.UUIDField()
-    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="watch_events")
-    viewer = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="video_watch_events")
-    viewer_session_hash = models.CharField(max_length=64)
-    watched_seconds = models.PositiveSmallIntegerField()
-    position_seconds = models.PositiveIntegerField()
-    duration_seconds = models.PositiveIntegerField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["created_at", "pk"]
-        indexes = [
-            models.Index(fields=["video", "created_at"], name="watch_video_created_idx"),
-            models.Index(fields=["video", "playback_session_id"], name="watch_video_session_idx"),
-        ]
-        constraints = [models.CheckConstraint(condition=models.Q(watched_seconds__gte=1, watched_seconds__lte=15), name="watch_event_delta_between_1_and_15")]
-
-
-class Notification(models.Model):
-    class Kind(models.TextChoices):
-        COMMENT = "comment", "Comment"
-        REPLY = "reply", "Reply"
-        LIKE = "like", "Like"
-        DISLIKE = "dislike", "Dislike"
-        SUBSCRIPTION = "subscription", "Subscription"
-        UPLOAD = "upload", "New upload"
-        TEAM_INVITATION = "team_invite", "Team invitation"
-
-    recipient = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="notifications"
-    )
-    actor = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, related_name="sent_notifications"
-    )
-    kind = models.CharField(max_length=20, choices=Kind.choices)
-    video = models.ForeignKey(
-        Video, on_delete=models.CASCADE, null=True, blank=True
-    )
-    channel = models.ForeignKey(
-        Channel, on_delete=models.CASCADE, null=True, blank=True
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    read_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        ordering = ["-created_at", "-pk"]
-
-    @property
-    def is_read(self):
-        return self.read_at is not None

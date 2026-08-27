@@ -1,4 +1,7 @@
+from django.db.models import Exists, OuterRef
+
 from video.models import Video
+from video.shorts_models import VideoShort
 
 
 PUBLICATION_FILTERS = (
@@ -15,9 +18,11 @@ BULK_PUBLICATION_STATUSES = {
 
 def get_creator_videos(user, requested_status):
     selected_status = requested_status if requested_status in FILTER_VALUES else "all"
-    videos = Video.objects.filter(
-        author=user, deleted_at__isnull=True
-    ).select_related("channel", "category")
+    videos = (
+        Video.objects.filter(author=user, deleted_at__isnull=True)
+        .select_related("channel", "category")
+        .annotate(is_short=Exists(VideoShort.objects.filter(video_id=OuterRef("pk"))))
+    )
     if selected_status != "all":
         videos = videos.filter(publication_status=selected_status)
     return videos.order_by("-pub_date", "-pk"), selected_status

@@ -28,8 +28,14 @@ def channel_list(request):
 
 def channel_detail(request, pk):
     channel = require_available_channel(request.user, pk=pk)
-    videos = channel.videos.visible_to(request.user).select_related("author", "category")
-    return render(request, "videos/channel_detail.html", {"channel": channel, "videos": videos})
+    visible = channel.videos.visible_to(request.user).select_related("author", "category")
+    videos = visible.filter(short_metadata__isnull=True)
+    shorts = visible.filter(short_metadata__isnull=False)
+    return render(
+        request,
+        "videos/channel_detail.html",
+        {"channel": channel, "videos": videos, "shorts": shorts},
+    )
 
 
 def channel_community(request, pk):

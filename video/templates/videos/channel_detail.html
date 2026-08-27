@@ -42,5 +42,15 @@
             </section>
         {% endif %}
     {% endwith %}
+    {% if shorts %}
+    <section class="discovery-section" aria-labelledby="channel-shorts">
+        <div class="section-heading"><div><p class="eyebrow">Short-form</p><h2 id="channel-shorts">Shorts</h2></div><a href="{% url 'shorts_feed' %}">Browse all Shorts</a></div>
+        <div class="row g-3">
+            {% for video in shorts %}
+            <div class="col-6 col-md-4 col-lg-3"><div class="card h-100"><a href="{% url 'video_detail' video.pk %}"><img class="card-img-top" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" style="aspect-ratio:9/16; object-fit:cover;"></a><div class="card-body"><span class="badge text-bg-dark mb-2">Short</span><h3 class="h6"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3></div></div></div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
     <section class="discovery-section" aria-labelledby="channel-videos"><div class="section-heading"><h2 id="channel-videos">Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
 {% endblock %}

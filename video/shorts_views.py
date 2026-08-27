@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import Video
 from .services.channels import can_edit_video
-from .services.short_clips import ShortClipError, create_short_from_video
+from .services.short_clips import ShortClipError, create_short_from_video, rerender_short_from_source
 from .shorts_forms import ShortClipForm
 from .shorts_models import VideoShort
 
@@ -54,8 +54,50 @@ def create_short_from_long_form(request, pk):
         else:
             return redirect("video_edit", pk=short.pk)
 
+    return render(request, "videos/create_short_from_video.html", {"form": form, "source_video": source_video})
+
+
+@login_required
+def rerender_short(request, pk):
+    short = get_object_or_404(Video, pk=pk, deleted_at__isnull=True)
+    if not can_edit_video(request.user, short):
+        return HttpResponseForbidden("You cannot re-render this Short.")
+    try:
+        metadata = short.short_metadata
+    except VideoShort.DoesNotExist:
+        return HttpResponseBadRequest("Only Shorts can be re-rendered.")
+    if not metadata.source_video_id:
+        return HttpResponseBadRequest("This Short was not generated from a source video.")
+
+    source_video = metadata.source_video
+    form = ShortClipForm(
+        request.POST or None,
+        initial={
+            "title": short.title,
+            "description": short.description,
+            "start_seconds": metadata.source_start_seconds,
+            "end_seconds": metadata.source_end_seconds,
+            "reframing_mode": metadata.reframing_mode,
+        },
+    )
+    form.fields["title"].disabled = True
+    form.fields["description"].disabled = True
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            rerender_short_from_source(
+                short=short,
+                start_seconds=form.cleaned_data["start_seconds"],
+                end_seconds=form.cleaned_data["end_seconds"],
+                reframing_mode=form.cleaned_data["reframing_mode"],
+            )
+        except ShortClipError as error:
+            form.add_error(None, str(error))
+        else:
+            return redirect("video_edit", pk=short.pk)
+
     return render(
         request,
         "videos/create_short_from_video.html",
-        {"form": form, "source_video": source_video},
+        {"form": form, "source_video": source_video, "short": short, "rerender": True},
     )

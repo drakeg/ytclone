@@ -1,12 +1,14 @@
 from django.db.models import Count, Q
 from django.shortcuts import render
 
-from .models import Channel, Video
+from .models import Video
+from .services.channel_access import available_channels
 
 
 def channel_list(request):
     channels = (
-        Channel.objects.select_related("owner")
+        available_channels(request.user)
+        .select_related("owner")
         .annotate(
             subscriber_count=Count("subscribers", distinct=True),
             public_video_count=Count(

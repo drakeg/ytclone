@@ -3,6 +3,7 @@ from django.db import transaction
 
 from video.models import Video
 from video.moderation_models import (
+    ChannelModerationState,
     CommunityPostModerationState,
     CommunityReplyModerationState,
     ModerationAuditEvent,
@@ -29,6 +30,26 @@ def _audit(*, actor, action, target_type, target_id, reason):
         target_id=target_id,
         reason=reason,
     )
+
+
+def set_channel_suspended(*, actor, channel, suspended, reason):
+    reason = _reason(reason)
+    if suspended:
+        _, changed = ChannelModerationState.objects.get_or_create(channel=channel)
+        action = "channel_suspend"
+    else:
+        deleted, _ = ChannelModerationState.objects.filter(channel=channel).delete()
+        changed = bool(deleted)
+        action = "channel_restore"
+    if changed:
+        _audit(
+            actor=actor,
+            action=action,
+            target_type="channel",
+            target_id=channel.pk,
+            reason=reason,
+        )
+    return changed
 
 
 def set_comment_hidden(*, actor, comment, hidden, reason):

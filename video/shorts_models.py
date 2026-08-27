@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 class VideoShort(models.Model):
@@ -24,3 +26,14 @@ class VideoShort(models.Model):
 
     def __str__(self):
         return f"Short: {self.video}"
+
+
+@receiver(post_save, sender="video.Video")
+def sync_short_metadata(sender, instance, **kwargs):
+    desired = getattr(instance, "_pending_short_state", None)
+    if desired is None:
+        return
+    if desired:
+        VideoShort.objects.get_or_create(video=instance)
+    else:
+        VideoShort.objects.filter(video=instance).delete()

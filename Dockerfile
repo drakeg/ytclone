@@ -6,7 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN addgroup --system app && adduser --system --ingroup app app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && addgroup --system app \
+    && adduser --system --ingroup app app
 
 COPY requirements.txt .
 RUN python -m pip install --no-cache-dir --upgrade pip \

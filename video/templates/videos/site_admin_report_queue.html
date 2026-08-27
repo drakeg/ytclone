@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Reports · Site Administration · VideoShare{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div><p class="eyebrow">Site administration</p><h1 class="mb-1">Content reports</h1><p class="text-muted mb-0">Private viewer reports awaiting staff review.</p></div>
+        <a class="btn btn-outline-secondary" href="{% url 'site_admin_dashboard' %}">Back to administration</a>
+    </div>
+
+    <div class="btn-group mb-4" role="group" aria-label="Report status">
+        {% for value, label in status_options %}
+            <a class="btn {% if selected_status == value %}btn-primary{% else %}btn-outline-primary{% endif %}" href="?status={{ value }}">{{ label }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Reported</th><th>Reporter</th><th>Target</th><th>Reason</th><th>Details</th><th>Review</th></tr></thead>
+        <tbody>
+        {% for report in reports %}
+            <tr>
+                <td>{{ report.created_at }}</td>
+                <td>@{{ report.reporter.username }}</td>
+                <td><span class="badge text-bg-secondary">{{ report.get_target_type_display }}</span><br>{{ report.target_label }}</td>
+                <td>{{ report.get_reason_display }}</td>
+                <td>{{ report.details|default:"—" }}</td>
+                <td>
+                    {% if report.status == 'open' %}
+                    <form method="post" action="{% url 'site_admin_report_review' report.pk %}" class="d-grid gap-2">
+                        {% csrf_token %}
+                        <textarea class="form-control form-control-sm" name="resolution_note" maxlength="1000" rows="2" required placeholder="Resolution note"></textarea>
+                        <div class="d-flex gap-2"><button class="btn btn-sm btn-success" name="action" value="resolve">Resolve</button><button class="btn btn-sm btn-outline-secondary" name="action" value="dismiss">Dismiss</button></div>
+                    </form>
+                    {% else %}
+                        <div><strong>{{ report.get_status_display }}</strong></div>
+                        <div class="small text-muted">{{ report.reviewed_by }} · {{ report.reviewed_at }}</div>
+                        <div class="small">{{ report.resolution_note }}</div>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}<tr><td colspan="6" class="text-muted">No reports in this state.</td></tr>{% endfor %}
+        </tbody>
+    </table></div></div>
+</div>
+{% endblock %}

@@ -57,6 +57,7 @@
             {% if user.is_authenticated %}
                 <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-primary">Like</button></form>
                 <form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary">Dislike</button></form>
+                {% if user != video.author %}<a class="btn btn-outline-danger" href="{% url 'report_content' 'video' video.pk %}">Report video</a>{% endif %}
             {% endif %}
             {% if may_edit_video %}
                 <a class="btn btn-outline-secondary" href="{% url 'video_edit' video.pk %}">Edit video</a>
@@ -128,6 +129,7 @@
                 <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span>
                 {% if comment.question %}<span class="badge text-bg-primary">Question</span>{% endif %}
                 {% supporter_badge_for comment.author video as is_supporter %}{% if is_supporter %}<span class="badge text-bg-warning">Paid member</span>{% endif %}
+                {% if user.is_authenticated and user != comment.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' comment.pk %}">Report</a>{% endif %}
             </div>
             <p class="comment-body">{{ comment.comment }}</p>
             {% if user == comment.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a></div>{% endif %}
@@ -142,7 +144,7 @@
 
             {% for reply in comment.visible_replies %}
                 <article class="comment-reply">
-                    <div><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span></div>
+                    <div class="d-flex flex-wrap gap-2 align-items-center"><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span>{% if user.is_authenticated and user != reply.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' reply.pk %}">Report</a>{% endif %}</div>
                     <p class="comment-body">{{ reply.comment }}</p>
                     <div class="d-flex flex-wrap gap-2">
                         {% if user == reply.author %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>{% endif %}

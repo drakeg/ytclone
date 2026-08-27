@@ -13,6 +13,7 @@
                 <a class="btn btn-primary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
             {% elif user.is_authenticated %}
                 <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
+                <a class="btn btn-outline-danger" href="{% url 'report_content' 'channel' channel.pk %}">Report channel</a>
             {% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>{% endif %}
         </div>
     </header>

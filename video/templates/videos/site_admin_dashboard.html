@@ -6,7 +6,7 @@
 <div class="container py-4">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div><h1 class="mb-1">Site Administration</h1><p class="text-muted mb-0">Whole-site operations and reversible moderation for trusted staff.</p></div>
-        <a class="btn btn-outline-primary" href="{% url 'admin:index' %}">Open Django admin</a>
+        <div class="d-flex gap-2"><a class="btn btn-primary" href="{% url 'site_admin_report_queue' %}">Reports{% if open_report_count %} · {{ open_report_count }} open{% endif %}</a><a class="btn btn-outline-primary" href="{% url 'admin:index' %}">Open Django admin</a></div>
     </div>
 
     <div class="row g-3 mb-4">
@@ -14,7 +14,7 @@
         <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Channels</div><div class="fs-3 fw-semibold">{{ channel_count }}</div></div></div></div>
         <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Videos</div><div class="fs-3 fw-semibold">{{ video_count }}</div></div></div></div>
         <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Comments</div><div class="fs-3 fw-semibold">{{ comment_count }}</div></div></div></div>
-        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Hidden comments</div><div class="fs-3 fw-semibold">{{ hidden_comment_count }}</div></div></div></div>
+        <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Open reports</div><div class="fs-3 fw-semibold">{{ open_report_count }}</div></div></div></div>
         <div class="col-6 col-lg-2"><div class="card h-100"><div class="card-body"><div class="text-muted small">Paid members</div><div class="fs-3 fw-semibold">{{ active_paid_membership_count }}</div></div></div></div>
     </div>
 

@@ -4,6 +4,7 @@ from monetization.models import ChannelMembershipSubscription
 from video.community_models import CommunityPost, CommunityReply
 from video.models import Channel, Comment, Video
 from video.moderation_models import ModerationAuditEvent
+from video.reporting_models import ContentReport
 from video.services.moderation_actions import set_comment_hidden
 
 User = get_user_model()
@@ -13,6 +14,7 @@ def get_site_admin_overview():
     return {
         "user_count": User.objects.count(), "channel_count": Channel.objects.count(), "video_count": Video.objects.filter(deleted_at__isnull=True).count(),
         "comment_count": Comment.objects.count(), "hidden_comment_count": Comment.objects.filter(is_hidden=True).count(),
+        "open_report_count": ContentReport.objects.filter(status=ContentReport.Status.OPEN).count(),
         "active_paid_membership_count": ChannelMembershipSubscription.objects.filter(status=ChannelMembershipSubscription.Status.ACTIVE).count(),
         "recent_channels": Channel.objects.select_related("owner").order_by("name", "pk")[:50],
         "recent_comments": Comment.objects.select_related("author", "video", "video__channel").order_by("-pub_date", "-pk")[:25],

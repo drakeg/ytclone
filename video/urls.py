@@ -1,16 +1,19 @@
 from django.urls import path
 
-from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, subscription_views, views
+from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
     path("site-admin/", administration_views.site_admin_dashboard, name="site_admin_dashboard"),
+    path("site-admin/reports/", reporting_views.site_admin_report_queue, name="site_admin_report_queue"),
+    path("site-admin/reports/<int:pk>/review/", reporting_views.site_admin_report_review, name="site_admin_report_review"),
     path("site-admin/channels/<int:pk>/moderate/", administration_views.site_admin_channel_moderate, name="site_admin_channel_moderate"),
     path("site-admin/comments/<int:pk>/moderate/", administration_views.site_admin_comment_moderate, name="site_admin_comment_moderate"),
     path("site-admin/videos/<int:pk>/moderate/", administration_views.site_admin_video_moderate, name="site_admin_video_moderate"),
     path("site-admin/users/<int:pk>/moderate/", administration_views.site_admin_user_moderate, name="site_admin_user_moderate"),
     path("site-admin/community/posts/<int:pk>/moderate/", administration_views.site_admin_community_post_moderate, name="site_admin_community_post_moderate"),
     path("site-admin/community/replies/<int:pk>/moderate/", administration_views.site_admin_community_reply_moderate, name="site_admin_community_reply_moderate"),
+    path("reports/<str:target_type>/<int:target_id>/", reporting_views.report_content, name="report_content"),
     path("creator/audience/", administration_views.creator_audience, name="creator_audience"),
     path("creator/analytics/", views.creator_analytics, name="creator_analytics"),
     path("creator/comments/", views.creator_comment_list, name="creator_comment_list"),

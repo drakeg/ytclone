@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Report content · VideoShare{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 760px;">
+    <div class="mb-4">
+        <p class="eyebrow">Private moderation report</p>
+        <h1>Report {{ target.label }}</h1>
+        <p class="text-muted">Your report is visible only to trusted site staff. Reporting does not automatically remove content.</p>
+    </div>
+    <form method="post" class="form-panel">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="d-flex gap-2">
+            <button class="btn btn-danger" type="submit">Submit report</button>
+            <a class="btn btn-outline-secondary" href="{{ target.url }}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

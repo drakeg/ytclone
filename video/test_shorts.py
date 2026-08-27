@@ -118,7 +118,7 @@ class ShortsFoundationTests(TestCase):
         self.assertContains(response, "Short")
 
     def test_primary_navigation_links_to_shorts(self):
-        response = self.client.get(reverse("home"))
+        response = self.client.get(reverse("video_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("shorts_feed"))
 

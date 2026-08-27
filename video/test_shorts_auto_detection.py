@@ -57,6 +57,13 @@ class ShortsAutoDetectionTests(TestCase):
             "chapters": "",
         }
 
+    def save_form_like_upload_view(self, form):
+        video = form.save(commit=False)
+        video.author = self.creator
+        video.save()
+        form.save_m2m()
+        return video
+
     def save_with_probe(self, probe, *, content_format="auto"):
         with patch("video.forms.probe_uploaded_video", return_value=probe):
             form = VideoUploadForm(
@@ -65,7 +72,7 @@ class ShortsAutoDetectionTests(TestCase):
                 user=self.creator,
             )
             self.assertTrue(form.is_valid(), form.errors)
-            return form.save()
+            return self.save_form_like_upload_view(form)
 
     def test_new_upload_defaults_to_auto_detect(self):
         form = VideoUploadForm(user=self.creator)
@@ -112,7 +119,7 @@ class ShortsAutoDetectionTests(TestCase):
         ):
             form = VideoUploadForm(self.payload(), files=self.files(), user=self.creator)
             self.assertTrue(form.is_valid(), form.errors)
-            video = form.save()
+            video = self.save_form_like_upload_view(form)
         self.assertFalse(VideoShort.objects.filter(video=video).exists())
 
     def test_edit_without_replacement_preserves_existing_format(self):

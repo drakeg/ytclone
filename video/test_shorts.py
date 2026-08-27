@@ -2,7 +2,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.test import TestCase
 from django.urls import reverse
 
-from .forms import VideoEditForm
+from .forms import VideoEditForm, VideoUploadForm
 from .models import Channel, Video
 from .shorts_models import VideoShort
 
@@ -51,6 +51,14 @@ class ShortsFoundationTests(TestCase):
             "chapters": "",
         }
 
+    def test_upload_form_exposes_standard_video_and_short_formats(self):
+        form = VideoUploadForm(user=self.creator)
+        self.assertEqual(
+            list(form.fields["content_format"].choices),
+            [("video", "Standard video"), ("short", "Short")],
+        )
+        self.assertEqual(form.fields["content_format"].initial, "video")
+
     def test_edit_form_can_convert_video_to_short_and_back(self):
         form = VideoEditForm(
             self.edit_payload(self.video, "short"),
@@ -92,6 +100,14 @@ class ShortsFoundationTests(TestCase):
         self.assertNotContains(response, "Standard Long Video")
         self.assertNotContains(response, "Hidden Draft Short")
         self.assertTrue(Video.objects.visible_to(AnonymousUser()).filter(pk=self.short.pk).exists())
+
+    def test_homepage_has_dedicated_shorts_shelf_without_displacing_long_form(self):
+        response = self.client.get(reverse("video_list"))
+        self.assertEqual(response.status_code, 200)
+        self.assertQuerySetEqual(response.context["sections"].shorts_videos, [self.short])
+        self.assertQuerySetEqual(response.context["sections"].newest_videos, [self.video])
+        self.assertContains(response, "Vertical Short Example")
+        self.assertContains(response, "Standard Long Video")
 
     def test_channel_page_separates_shorts_and_standard_videos(self):
         response = self.client.get(reverse("channel_detail", args=[self.channel.pk]))

@@ -6,6 +6,7 @@ from .models import Video
 from .services.channels import can_edit_video
 from .services.short_clips import ShortClipError, create_short_from_video
 from .shorts_forms import ShortClipForm
+from .shorts_models import VideoShort
 
 
 def shorts_feed(request):
@@ -34,6 +35,7 @@ def create_short_from_long_form(request, pk):
             "description": f"Short from {source_video.title}",
             "start_seconds": 0,
             "end_seconds": 60,
+            "reframing_mode": VideoShort.ReframingMode.VERTICAL_CENTER,
         },
     )
     if request.method == "POST" and form.is_valid():
@@ -45,6 +47,7 @@ def create_short_from_long_form(request, pk):
                 description=form.cleaned_data["description"],
                 start_seconds=form.cleaned_data["start_seconds"],
                 end_seconds=form.cleaned_data["end_seconds"],
+                reframing_mode=form.cleaned_data["reframing_mode"],
             )
         except ShortClipError as error:
             form.add_error(None, str(error))

@@ -55,7 +55,8 @@ class ContentReportAdmin(admin.ModelAdmin):
     readonly_fields=("reporter","target_type","target_id","target_label","reason","details","created_at","reviewed_by","reviewed_at","resolution_note")
 @admin.register(VideoShort)
 class VideoShortAdmin(admin.ModelAdmin):
-    list_display=("video","source_video","source_start_seconds","source_end_seconds","created_at")
+    list_display=("video","source_video","source_start_seconds","source_end_seconds","reframing_mode","created_at")
+    list_filter=("reframing_mode",)
     search_fields=("video__title","source_video__title")
     autocomplete_fields=("video","source_video")
 

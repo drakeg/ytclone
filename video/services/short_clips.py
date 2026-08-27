@@ -23,7 +23,20 @@ def _copy_storage_file(field_file, destination):
         field_file.close()
 
 
-def _run_ffmpeg(source_path, output_path, *, start_seconds, end_seconds):
+def _vertical_filter(reframing_mode):
+    if reframing_mode == VideoShort.ReframingMode.VERTICAL_LEFT:
+        crop_x = "0"
+    elif reframing_mode == VideoShort.ReframingMode.VERTICAL_RIGHT:
+        crop_x = "iw-720"
+    else:
+        crop_x = "(iw-720)/2"
+    return (
+        "scale=720:1280:force_original_aspect_ratio=increase,"
+        f"crop=720:1280:{crop_x}:(ih-1280)/2,setsar=1"
+    )
+
+
+def _run_ffmpeg(source_path, output_path, *, start_seconds, end_seconds, reframing_mode):
     duration = end_seconds - start_seconds
     command = [
         "ffmpeg",
@@ -37,18 +50,24 @@ def _run_ffmpeg(source_path, output_path, *, start_seconds, end_seconds):
         source_path,
         "-t",
         str(duration),
-        "-c:v",
-        "libx264",
-        "-preset",
-        "veryfast",
-        "-crf",
-        "23",
-        "-c:a",
-        "aac",
-        "-movflags",
-        "+faststart",
-        output_path,
     ]
+    if reframing_mode != VideoShort.ReframingMode.ORIGINAL:
+        command.extend(["-vf", _vertical_filter(reframing_mode)])
+    command.extend(
+        [
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "23",
+            "-c:a",
+            "aac",
+            "-movflags",
+            "+faststart",
+            output_path,
+        ]
+    )
     try:
         subprocess.run(
             command,
@@ -68,13 +87,25 @@ def _run_ffmpeg(source_path, output_path, *, start_seconds, end_seconds):
         ) from error
 
 
-def create_short_from_video(*, source_video, creator, title, description, start_seconds, end_seconds):
+def create_short_from_video(
+    *,
+    source_video,
+    creator,
+    title,
+    description,
+    start_seconds,
+    end_seconds,
+    reframing_mode=VideoShort.ReframingMode.ORIGINAL,
+):
     if hasattr(source_video, "short_metadata"):
         raise ShortClipError("Create a Short from a standard video, not another Short.")
     if start_seconds < 0 or end_seconds <= start_seconds:
         raise ShortClipError("Choose a valid start and end time.")
     if end_seconds - start_seconds > 180:
         raise ShortClipError("Short clips must be 180 seconds or shorter.")
+    valid_reframing_modes = {choice for choice, unused_label in VideoShort.ReframingMode.choices}
+    if reframing_mode not in valid_reframing_modes:
+        raise ShortClipError("Choose a valid Short framing option.")
 
     source_suffix = Path(source_video.video_file.name).suffix or ".mp4"
     saved_video_name = None
@@ -88,6 +119,7 @@ def create_short_from_video(*, source_video, creator, title, description, start_
             output_temp.name,
             start_seconds=start_seconds,
             end_seconds=end_seconds,
+            reframing_mode=reframing_mode,
         )
         output_temp.flush()
 
@@ -122,6 +154,7 @@ def create_short_from_video(*, source_video, creator, title, description, start_
                     source_video=source_video,
                     source_start_seconds=start_seconds,
                     source_end_seconds=end_seconds,
+                    reframing_mode=reframing_mode,
                 )
                 short.tags.set(source_video.tags.all())
                 return short

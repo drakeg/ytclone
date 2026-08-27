@@ -1,9 +1,10 @@
 from django.urls import path
 
-from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, subscription_views, views
+from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, shorts_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
+    path("shorts/", shorts_views.shorts_feed, name="shorts_feed"),
     path("site-admin/", administration_views.site_admin_dashboard, name="site_admin_dashboard"),
     path("site-admin/reports/", reporting_views.site_admin_report_queue, name="site_admin_report_queue"),
     path("site-admin/reports/<int:pk>/review/", reporting_views.site_admin_report_review, name="site_admin_report_review"),

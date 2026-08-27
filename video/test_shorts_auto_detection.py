@@ -45,7 +45,7 @@ class ShortsAutoDetectionTests(TestCase):
     def payload(self, content_format="auto"):
         return {
             "title": "Detected upload",
-            "description": "",
+            "description": "Test upload used to verify automatic Short classification.",
             "category": "",
             "channel": str(self.channel.pk),
             "publication_status": Video.PublicationStatus.PUBLISHED,
@@ -118,7 +118,7 @@ class ShortsAutoDetectionTests(TestCase):
     def test_edit_without_replacement_preserves_existing_format(self):
         video = Video.objects.create(
             title="Existing Short",
-            description="",
+            description="Existing description",
             thumbnail="videos/thumbnails/existing.png",
             video_file="videos/files/existing.mp4",
             author=self.creator,
@@ -128,6 +128,7 @@ class ShortsAutoDetectionTests(TestCase):
         VideoShort.objects.create(video=video)
         payload = self.payload("auto")
         payload["title"] = video.title
+        payload["description"] = video.description
         form = VideoEditForm(payload, instance=video, user=self.creator)
         self.assertTrue(form.is_valid(), form.errors)
         form.save()

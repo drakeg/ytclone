@@ -10,9 +10,13 @@ class ShortClipForm(forms.Form):
     end_seconds = forms.IntegerField(min_value=1, help_text="End time in seconds. Maximum clip length is 180 seconds.")
     reframing_mode = forms.ChoiceField(
         choices=VideoShort.ReframingMode.choices,
+        required=False,
         initial=VideoShort.ReframingMode.VERTICAL_CENTER,
         help_text="Choose how the source frame should fit a Short. Vertical options render at 720×1280.",
     )
+
+    def clean_reframing_mode(self):
+        return self.cleaned_data.get("reframing_mode") or VideoShort.ReframingMode.ORIGINAL
 
     def clean(self):
         cleaned = super().clean()

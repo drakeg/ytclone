@@ -61,7 +61,11 @@ def _comment_target(user, target_id):
 
 def _community_post_target(user, target_id):
     post = CommunityPost.objects.select_related("channel").filter(pk=target_id).first()
-    if post is None or not can_view_community_post(user, post):
+    if (
+        post is None
+        or not available_channels(user).filter(pk=post.channel_id).exists()
+        or not can_view_community_post(user, post)
+    ):
         return None
     return ReportTarget(
         target_type=ContentReport.TargetType.COMMUNITY_POST,
@@ -77,7 +81,11 @@ def _community_reply_target(user, target_id):
         pk=target_id,
         moderation_state__isnull=True,
     ).first()
-    if reply is None or not can_view_community_post(user, reply.post):
+    if (
+        reply is None
+        or not available_channels(user).filter(pk=reply.post.channel_id).exists()
+        or not can_view_community_post(user, reply.post)
+    ):
         return None
     return ReportTarget(
         target_type=ContentReport.TargetType.COMMUNITY_REPLY,
@@ -147,6 +155,8 @@ def report_queue(status):
 
 
 def review_report(*, report, reviewer, action, resolution_note):
+    if report.status != ContentReport.Status.OPEN:
+        raise ValueError("This report has already been reviewed.")
     if action not in {"resolve", "dismiss"}:
         raise ValueError("Invalid report review action.")
     note = (resolution_note or "").strip()

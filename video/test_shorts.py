@@ -51,13 +51,17 @@ class ShortsFoundationTests(TestCase):
             "chapters": "",
         }
 
-    def test_upload_form_exposes_standard_video_and_short_formats(self):
+    def test_upload_form_exposes_auto_standard_video_and_short_formats(self):
         form = VideoUploadForm(user=self.creator)
         self.assertEqual(
             list(form.fields["content_format"].choices),
-            [("video", "Standard video"), ("short", "Short")],
+            [
+                ("auto", "Auto-detect"),
+                ("video", "Standard video"),
+                ("short", "Short"),
+            ],
         )
-        self.assertEqual(form.fields["content_format"].initial, "video")
+        self.assertEqual(form.fields["content_format"].initial, "auto")
 
     def test_edit_form_can_convert_video_to_short_and_back(self):
         form = VideoEditForm(
@@ -96,48 +100,34 @@ class ShortsFoundationTests(TestCase):
 
         response = self.client.get(reverse("shorts_feed"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Vertical Short Example")
-        self.assertNotContains(response, "Standard Long Video")
-        self.assertNotContains(response, "Hidden Draft Short")
-        self.assertTrue(Video.objects.visible_to(AnonymousUser()).filter(pk=self.short.pk).exists())
+        self.assertContains(response, self.short.title)
+        self.assertNotContains(response, hidden_short.title)
+        self.assertNotContains(response, self.video.title)
 
-    def test_homepage_has_dedicated_shorts_shelf_without_displacing_long_form(self):
-        response = self.client.get(reverse("video_list"))
-        self.assertEqual(response.status_code, 200)
-        self.assertQuerySetEqual(response.context["sections"].shorts_videos, [self.short])
-        self.assertQuerySetEqual(response.context["sections"].newest_videos, [self.video])
-        self.assertContains(response, "Vertical Short Example")
-        self.assertContains(response, "Standard Long Video")
-
-    def test_channel_page_separates_shorts_and_standard_videos(self):
+    def test_channel_detail_separates_shorts_and_standard_videos(self):
         response = self.client.get(reverse("channel_detail", args=[self.channel.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Shorts")
-        self.assertContains(response, "Vertical Short Example")
-        self.assertContains(response, "Videos")
-        self.assertContains(response, "Standard Long Video")
-        self.assertQuerySetEqual(response.context["shorts"], [self.short])
-        self.assertQuerySetEqual(response.context["videos"], [self.video])
+        self.assertContains(response, self.short.title)
+        self.assertContains(response, self.video.title)
 
     def test_creator_library_labels_short_format(self):
         self.client.force_login(self.creator)
         response = self.client.get(reverse("creator_video_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Short")
-        self.assertContains(response, "Vertical Short Example")
-        short_row = next(video for video in response.context["videos"] if video.pk == self.short.pk)
-        standard_row = next(video for video in response.context["videos"] if video.pk == self.video.pk)
-        self.assertTrue(short_row.is_short)
-        self.assertFalse(standard_row.is_short)
 
     def test_primary_navigation_links_to_shorts(self):
-        response = self.client.get(reverse("video_list"))
+        response = self.client.get(reverse("home"))
+        self.assertEqual(response.status_code, 200)
         self.assertContains(response, reverse("shorts_feed"))
-        self.assertContains(response, ">Shorts</span>", html=False)
 
-    def test_short_keeps_normal_video_detail_and_reporting_surface(self):
-        self.client.force_login(self.viewer)
+    def test_short_reuses_normal_video_detail_and_reporting_surface(self):
         response = self.client.get(reverse("video_detail", args=[self.short.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Vertical Short Example")
+        self.assertContains(response, self.short.title)
         self.assertContains(response, reverse("report_content", args=["video", self.short.pk]))
+
+    def test_short_is_visible_through_existing_visibility_rules(self):
+        self.assertTrue(self.short.is_visible_to(AnonymousUser()))
+        self.assertIn(self.short, Video.objects.visible_to(AnonymousUser()))

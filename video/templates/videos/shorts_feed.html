@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Shorts · VideoShare{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div><p class="eyebrow mb-1">Short-form</p><h1 class="mb-1">Shorts</h1><p class="text-muted mb-0">Quick videos from creators across VideoShare.</p></div>
+        {% if user.is_authenticated and is_creator %}<a class="btn btn-primary" href="{% url 'upload' %}">Upload a Short</a>{% endif %}
+    </div>
+
+    {% if shorts %}
+    <div class="d-grid gap-4 justify-content-center" aria-label="Shorts feed">
+        {% for video in shorts %}
+        <article class="card shadow-sm" style="width:min(100%, 430px); overflow:hidden;" id="short-{{ video.pk }}">
+            <div style="background:#000; aspect-ratio:9/16; display:flex; align-items:center; justify-content:center;">
+                <video src="{{ video.video_file.url }}" controls playsinline preload="metadata" style="width:100%; height:100%; object-fit:contain;" aria-label="{{ video.title }}"></video>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <h2 class="h5 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h2>
+                        {% if video.channel %}<a class="video-meta text-decoration-none" href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a>{% else %}<span class="video-meta">@{{ video.author.username }}</span>{% endif %}
+                    </div>
+                    <span class="badge text-bg-dark">Short</span>
+                </div>
+                {% if video.description %}<p class="mt-2 mb-2">{{ video.description|truncatechars:180 }}</p>{% endif %}
+                <div class="video-meta mb-3">{{ video.views }} view{{ video.views|pluralize }} · {{ video.pub_date|timesince }} ago</div>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Like · {{ video.likes.count }}</button></form>
+                    <form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Dislike</button></form>
+                    {% endif %}
+                    <a class="btn btn-sm btn-outline-secondary" href="{% url 'video_detail' video.pk %}#comments-heading">Comments &amp; Q&amp;A</a>
+                    {% if user.is_authenticated and user != video.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'video' video.pk %}">Report</a>{% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+        <div class="empty-state">No Shorts are available yet. {% if user.is_authenticated and is_creator %}<a href="{% url 'upload' %}">Upload the first one.</a>{% endif %}</div>
+    {% endif %}
+</div>
+{% endblock %}

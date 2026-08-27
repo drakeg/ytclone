@@ -22,6 +22,12 @@ from .models import (
     VideoWatchEvent,
     WatchHistory,
 )
+from .moderation_models import (
+    CommunityPostModerationState,
+    CommunityReplyModerationState,
+    ModerationAuditEvent,
+    VideoModerationState,
+)
 from .qa_models import VideoQuestion
 
 
@@ -139,6 +145,17 @@ class CommunityReplyAdmin(admin.ModelAdmin):
     search_fields = ("body", "author__username", "post__channel__name")
 
 
+@admin.register(ModerationAuditEvent)
+class ModerationAuditEventAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "actor", "action", "target_type", "target_id")
+    list_filter = ("action", "target_type")
+    search_fields = ("actor__username", "reason")
+    readonly_fields = [field.name for field in ModerationAuditEvent._meta.fields]
+
+
+admin.site.register(VideoModerationState)
+admin.site.register(CommunityPostModerationState)
+admin.site.register(CommunityReplyModerationState)
 admin.site.register(CommunityPollOption)
 admin.site.register(CommunityPollVote)
 admin.site.register(Tag)

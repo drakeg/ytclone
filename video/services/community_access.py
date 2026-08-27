@@ -16,6 +16,8 @@ def has_active_channel_membership(user, channel):
 
 
 def can_view_community_post(user, post):
+    if hasattr(post, "moderation_state") and post.channel.owner_id != getattr(user, "pk", None):
+        return False
     if post.audience == CommunityPost.Audience.EVERYONE:
         return True
     return has_active_channel_membership(user, post.channel)
@@ -23,6 +25,8 @@ def can_view_community_post(user, post):
 
 def visible_community_posts(user, channel):
     posts = CommunityPost.objects.filter(channel=channel)
+    if channel.owner_id != getattr(user, "pk", None):
+        posts = posts.filter(moderation_state__isnull=True)
     if channel.owner_id == getattr(user, "pk", None):
         return posts
     if has_active_channel_membership(user, channel):

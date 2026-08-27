@@ -33,7 +33,10 @@ def bulk_update_publication(user, video_ids, publication_status):
         raise ValueError("Invalid video selection.") from None
 
     return Video.objects.filter(
-        author=user, pk__in=normalized_ids, deleted_at__isnull=True
+        author=user,
+        pk__in=normalized_ids,
+        deleted_at__isnull=True,
+        moderation_state__isnull=True,
     ).update(
         publication_status=publication_status,
         publish_at=None,

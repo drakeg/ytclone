@@ -1,23 +1,80 @@
 {% extends 'base.html' %}
 {% block title %}Create Short · VideoShare{% endblock %}
 {% block content %}
-<div class="container py-4" style="max-width: 820px;">
+<div class="container py-4" style="max-width: 900px;">
     <div class="mb-4">
         <p class="eyebrow">Creator studio · Shorts</p>
         <h1>Create a Short from {{ source_video.title }}</h1>
-        <p class="text-muted">Choose a clip up to three minutes long. The generated Short is saved as a draft so you can review its title, description, thumbnail, tags, audience, and publication settings before publishing.</p>
+        <p class="text-muted">Choose a clip up to three minutes long. Use the visual controls below or enter exact seconds manually. The generated Short is saved as a draft for review before publication.</p>
     </div>
 
     <div class="card mb-4">
         <div class="card-body">
-            <video class="w-100" src="{{ source_video.video_file.url }}" controls preload="metadata"></video>
-            <p class="video-meta mt-2 mb-0">Tip: use the player's current-time display to find the start and end seconds you want.</p>
+            <video id="short-source-player" class="w-100" src="{{ source_video.video_file.url }}" controls preload="metadata"></video>
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <button id="set-short-start" class="btn btn-sm btn-outline-primary" type="button">Set start to current time</button>
+                <button id="set-short-end" class="btn btn-sm btn-outline-primary" type="button">Set end to current time</button>
+                <button id="preview-short-range" class="btn btn-sm btn-outline-secondary" type="button">Preview selected clip</button>
+            </div>
+            <p id="source-duration-status" class="video-meta mt-2 mb-0" aria-live="polite">Loading video duration…</p>
         </div>
     </div>
 
     <form class="form-panel" method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.title.id_for_label }}">Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+        <div class="mb-3">
+            <label class="form-label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <section id="visual-clip-editor" class="card mb-4" aria-labelledby="clip-range-heading">
+            <div class="card-body">
+                <div class="d-flex flex-wrap justify-content-between gap-3 align-items-start mb-3">
+                    <div>
+                        <p class="eyebrow mb-1">Visual clip selector</p>
+                        <h2 id="clip-range-heading" class="h5 mb-1">Choose the Short range</h2>
+                        <p class="video-meta mb-0">Drag either handle or use the player buttons above. Maximum length: 3:00.</p>
+                    </div>
+                    <div class="text-end">
+                        <div><strong id="clip-range-summary">0:00 → 1:00</strong></div>
+                        <div id="clip-duration-summary" class="video-meta" aria-live="polite">Selected duration: 1:00</div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="short-start-range">Start</label>
+                    <input id="short-start-range" class="form-range" type="range" min="0" max="60" step="1" value="{{ form.start_seconds.value|default:0 }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="short-end-range">End</label>
+                    <input id="short-end-range" class="form-range" type="range" min="1" max="60" step="1" value="{{ form.end_seconds.value|default:60 }}">
+                </div>
+            </div>
+        </section>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.start_seconds.id_for_label }}">Start seconds</label>
+                {{ form.start_seconds }}
+                {% if form.start_seconds.help_text %}<div class="form-text">{{ form.start_seconds.help_text }}</div>{% endif %}
+                {{ form.start_seconds.errors }}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="{{ form.end_seconds.id_for_label }}">End seconds</label>
+                {{ form.end_seconds }}
+                {% if form.end_seconds.help_text %}<div class="form-text">{{ form.end_seconds.help_text }}</div>{% endif %}
+                {{ form.end_seconds.errors }}
+            </div>
+        </div>
+
         <div class="alert alert-secondary">Creating the clip runs FFmpeg on the server. Keep this page open until the draft Short editor appears.</div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" type="submit">Create draft Short</button>
@@ -25,4 +82,134 @@
         </div>
     </form>
 </div>
+
+<script>
+(() => {
+    const player = document.getElementById('short-source-player');
+    const startRange = document.getElementById('short-start-range');
+    const endRange = document.getElementById('short-end-range');
+    const startInput = document.getElementById('id_start_seconds');
+    const endInput = document.getElementById('id_end_seconds');
+    const setStart = document.getElementById('set-short-start');
+    const setEnd = document.getElementById('set-short-end');
+    const preview = document.getElementById('preview-short-range');
+    const rangeSummary = document.getElementById('clip-range-summary');
+    const durationSummary = document.getElementById('clip-duration-summary');
+    const durationStatus = document.getElementById('source-duration-status');
+    const maxClipLength = 180;
+
+    if (!player || !startRange || !endRange || !startInput || !endInput) return;
+
+    const wholeSeconds = (value) => Math.max(0, Math.floor(Number(value) || 0));
+    const formatTime = (seconds) => {
+        const total = wholeSeconds(seconds);
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const secs = total % 60;
+        return hours
+            ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+            : `${minutes}:${String(secs).padStart(2, '0')}`;
+    };
+
+    const sourceDuration = () => Number.isFinite(player.duration) ? Math.max(1, Math.floor(player.duration)) : null;
+
+    const clampRange = (changed) => {
+        const duration = sourceDuration();
+        let start = wholeSeconds(startRange.value);
+        let end = wholeSeconds(endRange.value);
+
+        if (duration !== null) {
+            start = Math.min(start, Math.max(0, duration - 1));
+            end = Math.min(Math.max(1, end), duration);
+        }
+
+        if (end <= start) {
+            if (changed === 'start') {
+                end = start + 1;
+                if (duration !== null && end > duration) {
+                    end = duration;
+                    start = Math.max(0, end - 1);
+                }
+            } else {
+                start = Math.max(0, end - 1);
+            }
+        }
+
+        if (end - start > maxClipLength) {
+            if (changed === 'start') {
+                end = start + maxClipLength;
+                if (duration !== null) end = Math.min(end, duration);
+            } else {
+                start = Math.max(0, end - maxClipLength);
+            }
+        }
+
+        startRange.value = String(start);
+        endRange.value = String(end);
+        startInput.value = String(start);
+        endInput.value = String(end);
+        rangeSummary.textContent = `${formatTime(start)} → ${formatTime(end)}`;
+        durationSummary.textContent = `Selected duration: ${formatTime(end - start)}`;
+        return { start, end };
+    };
+
+    const syncFromNumericInputs = () => {
+        startRange.value = startInput.value || '0';
+        endRange.value = endInput.value || '1';
+        clampRange('manual');
+    };
+
+    player.addEventListener('loadedmetadata', () => {
+        const duration = sourceDuration();
+        if (duration === null) return;
+        startRange.max = String(Math.max(0, duration - 1));
+        endRange.max = String(duration);
+        durationStatus.textContent = `Source duration: ${formatTime(duration)}. Select up to 3:00.`;
+        clampRange('metadata');
+    });
+
+    startRange.addEventListener('input', () => clampRange('start'));
+    endRange.addEventListener('input', () => clampRange('end'));
+    startInput.addEventListener('input', syncFromNumericInputs);
+    endInput.addEventListener('input', syncFromNumericInputs);
+
+    setStart.addEventListener('click', () => {
+        startRange.value = String(wholeSeconds(player.currentTime));
+        clampRange('start');
+    });
+
+    setEnd.addEventListener('click', () => {
+        endRange.value = String(Math.max(1, wholeSeconds(player.currentTime)));
+        clampRange('end');
+    });
+
+    let previewing = false;
+    preview.addEventListener('click', async () => {
+        const selected = clampRange('preview');
+        player.currentTime = selected.start;
+        previewing = true;
+        try {
+            await player.play();
+        } catch (error) {
+            previewing = false;
+        }
+    });
+
+    player.addEventListener('timeupdate', () => {
+        if (!previewing) return;
+        const end = wholeSeconds(endRange.value);
+        if (player.currentTime >= end) {
+            player.pause();
+            player.currentTime = wholeSeconds(startRange.value);
+            previewing = false;
+        }
+    });
+
+    player.addEventListener('pause', () => {
+        if (player.currentTime < wholeSeconds(endRange.value)) previewing = false;
+    });
+
+    syncFromNumericInputs();
+})();
+</script>
 {% endblock %}

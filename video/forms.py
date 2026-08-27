@@ -30,6 +30,12 @@ class PlaylistForm(forms.ModelForm):
 
 
 class VideoUploadForm(forms.ModelForm):
+    content_format = forms.ChoiceField(
+        required=False,
+        choices=(("video", "Standard video"), ("short", "Short")),
+        initial="video",
+        help_text="Choose Short for short-form vertical-style content. This does not crop or transcode the file.",
+    )
     tags = forms.CharField(
         required=False,
         help_text="Optional. Separate tags with commas, for example: rv travel, camping, solar.",
@@ -80,9 +86,6 @@ class VideoUploadForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
-        # Audience was added after the original upload/edit API. Keep older form
-        # submissions compatible by treating an omitted value as the existing
-        # public behavior rather than rejecting the whole form.
         self.fields["audience"].required = False
         self.fields["audience"].initial = Video.Audience.EVERYONE
         self.fields["audience"].help_text = (
@@ -98,6 +101,9 @@ class VideoUploadForm(forms.ModelForm):
             self.fields["chapters"].initial = format_chapters(self.instance)
             self.fields["tags"].initial = ", ".join(
                 self.instance.tags.values_list("name", flat=True)
+            )
+            self.fields["content_format"].initial = (
+                "short" if hasattr(self.instance, "short_metadata") else "video"
             )
 
     def clean_tags(self):
@@ -164,6 +170,11 @@ class VideoUploadForm(forms.ModelForm):
 
     def save(self, commit=True):
         self.instance._pending_tag_names = self.cleaned_data.get("tags", [])
+        requested_format = self.cleaned_data.get("content_format")
+        if requested_format:
+            self.instance._pending_short_state = requested_format == "short"
+        elif not self.instance.pk:
+            self.instance._pending_short_state = False
         return super().save(commit=commit)
 
     def clean_thumbnail(self):

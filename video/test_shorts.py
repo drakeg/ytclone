@@ -123,6 +123,7 @@ class ShortsFoundationTests(TestCase):
         self.assertContains(response, reverse("shorts_feed"))
 
     def test_short_reuses_normal_video_detail_and_reporting_surface(self):
+        self.client.force_login(self.viewer)
         response = self.client.get(reverse("video_detail", args=[self.short.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.short.title)

@@ -62,7 +62,7 @@
                                 <td>{{ video.get_audience_display }}</td>
                                 <td>{{ video.publish_at|default:"—" }}</td>
                                 <td>{{ video.public_release_at|default:"—" }}</td>
-                                <td><a href="{% url 'video_edit' video.pk %}">Edit</a></td>
+                                <td class="d-flex flex-wrap gap-2"><a href="{% url 'video_edit' video.pk %}">Edit</a>{% if not video.is_short %}<a href="{% url 'create_short_from_long_form' video.pk %}">Create Short</a>{% endif %}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

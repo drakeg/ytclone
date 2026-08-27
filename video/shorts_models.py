@@ -4,6 +4,12 @@ from django.dispatch import receiver
 
 
 class VideoShort(models.Model):
+    class ReframingMode(models.TextChoices):
+        ORIGINAL = "original", "Keep original frame"
+        VERTICAL_LEFT = "vertical_left", "Vertical 9:16 — focus left"
+        VERTICAL_CENTER = "vertical_center", "Vertical 9:16 — focus center"
+        VERTICAL_RIGHT = "vertical_right", "Vertical 9:16 — focus right"
+
     video = models.OneToOneField(
         "video.Video",
         on_delete=models.CASCADE,
@@ -11,9 +17,8 @@ class VideoShort(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Reserved for the later create-from-long-form workflow. Keeping Shorts as
-    # normal Video rows lets all existing visibility/moderation/monetization rules
-    # continue to apply without a second content authorization system.
+    # Source linkage supports creator-generated Shorts without introducing a
+    # second content authorization system.
     source_video = models.ForeignKey(
         "video.Video",
         on_delete=models.SET_NULL,
@@ -23,6 +28,11 @@ class VideoShort(models.Model):
     )
     source_start_seconds = models.PositiveIntegerField(null=True, blank=True)
     source_end_seconds = models.PositiveIntegerField(null=True, blank=True)
+    reframing_mode = models.CharField(
+        max_length=20,
+        choices=ReframingMode.choices,
+        default=ReframingMode.ORIGINAL,
+    )
 
     def __str__(self):
         return f"Short: {self.video}"

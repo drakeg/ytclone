@@ -5,7 +5,7 @@
     <div class="mb-4">
         <p class="eyebrow">Creator studio · Shorts</p>
         <h1>Create a Short from {{ source_video.title }}</h1>
-        <p class="text-muted">Choose a clip up to three minutes long. Use the visual controls below or enter exact seconds manually. The generated Short is saved as a draft for review before publication.</p>
+        <p class="text-muted">Choose a clip up to three minutes long, then decide whether to keep the original frame or render a vertical 9:16 Short. The generated Short is saved as a draft for review before publication.</p>
     </div>
 
     <div class="card mb-4">
@@ -34,6 +34,28 @@
             {{ form.description }}
             {{ form.description.errors }}
         </div>
+
+        <section class="card mb-4" aria-labelledby="framing-heading">
+            <div class="card-body">
+                <p class="eyebrow mb-1">Short framing</p>
+                <h2 id="framing-heading" class="h5">Choose the output frame</h2>
+                <div class="row g-4 align-items-start">
+                    <div class="col-md-7">
+                        <label class="form-label" for="{{ form.reframing_mode.id_for_label }}">Framing mode</label>
+                        {{ form.reframing_mode }}
+                        {% if form.reframing_mode.help_text %}<div class="form-text">{{ form.reframing_mode.help_text }}</div>{% endif %}
+                        {{ form.reframing_mode.errors }}
+                        <p id="framing-description" class="video-meta mt-3 mb-0">Center focus keeps the middle of the source visible in a vertical 9:16 frame.</p>
+                    </div>
+                    <div class="col-md-5">
+                        <div id="vertical-preview-wrap" class="mx-auto bg-dark overflow-hidden rounded" style="width: 180px; aspect-ratio: 9 / 16;">
+                            <video id="vertical-framing-preview" src="{{ source_video.video_file.url }}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;object-position:center center;"></video>
+                        </div>
+                        <p class="video-meta text-center mt-2 mb-0">Approximate 9:16 crop preview</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <section id="visual-clip-editor" class="card mb-4" aria-labelledby="clip-range-heading">
             <div class="card-body">
@@ -75,7 +97,7 @@
             </div>
         </div>
 
-        <div class="alert alert-secondary">Creating the clip runs FFmpeg on the server. Keep this page open until the draft Short editor appears.</div>
+        <div class="alert alert-secondary">Creating the clip runs FFmpeg on the server. Vertical modes render a 720×1280 MP4. Keep this page open until the draft Short editor appears.</div>
         <div class="d-flex gap-2 flex-wrap">
             <button class="btn btn-primary" type="submit">Create draft Short</button>
             <a class="btn btn-outline-secondary" href="{% url 'video_detail' source_video.pk %}">Cancel</a>
@@ -86,6 +108,10 @@
 <script>
 (() => {
     const player = document.getElementById('short-source-player');
+    const cropPreview = document.getElementById('vertical-framing-preview');
+    const cropWrap = document.getElementById('vertical-preview-wrap');
+    const framingSelect = document.getElementById('id_reframing_mode');
+    const framingDescription = document.getElementById('framing-description');
     const startRange = document.getElementById('short-start-range');
     const endRange = document.getElementById('short-end-range');
     const startInput = document.getElementById('id_start_seconds');
@@ -99,6 +125,26 @@
     const maxClipLength = 180;
 
     if (!player || !startRange || !endRange || !startInput || !endInput) return;
+
+    const framingCopy = {
+        original: 'Keep the source video dimensions and framing unchanged.',
+        vertical_left: 'Render 9:16 and keep the left side of the source frame in view.',
+        vertical_center: 'Render 9:16 and keep the center of the source frame in view.',
+        vertical_right: 'Render 9:16 and keep the right side of the source frame in view.',
+    };
+    const framingPosition = {
+        vertical_left: 'left center',
+        vertical_center: 'center center',
+        vertical_right: 'right center',
+    };
+
+    const updateFramingPreview = () => {
+        if (!framingSelect || !cropPreview || !cropWrap) return;
+        const mode = framingSelect.value;
+        if (framingDescription) framingDescription.textContent = framingCopy[mode] || framingCopy.original;
+        cropWrap.hidden = mode === 'original';
+        if (mode !== 'original') cropPreview.style.objectPosition = framingPosition[mode] || 'center center';
+    };
 
     const wholeSeconds = (value) => Math.max(0, Math.floor(Number(value) || 0));
     const formatTime = (seconds) => {
@@ -122,7 +168,6 @@
             start = Math.min(start, Math.max(0, duration - 1));
             end = Math.min(Math.max(1, end), duration);
         }
-
         if (end <= start) {
             if (changed === 'start') {
                 end = start + 1;
@@ -134,7 +179,6 @@
                 start = Math.max(0, end - 1);
             }
         }
-
         if (end - start > maxClipLength) {
             if (changed === 'start') {
                 end = start + maxClipLength;
@@ -150,6 +194,7 @@
         endInput.value = String(end);
         rangeSummary.textContent = `${formatTime(start)} → ${formatTime(end)}`;
         durationSummary.textContent = `Selected duration: ${formatTime(end - start)}`;
+        if (cropPreview && Math.abs(cropPreview.currentTime - start) > 1) cropPreview.currentTime = start;
         return { start, end };
     };
 
@@ -167,17 +212,20 @@
         durationStatus.textContent = `Source duration: ${formatTime(duration)}. Select up to 3:00.`;
         clampRange('metadata');
     });
+    player.addEventListener('timeupdate', () => {
+        if (cropPreview && !cropPreview.seeking) cropPreview.currentTime = player.currentTime;
+    });
 
     startRange.addEventListener('input', () => clampRange('start'));
     endRange.addEventListener('input', () => clampRange('end'));
     startInput.addEventListener('input', syncFromNumericInputs);
     endInput.addEventListener('input', syncFromNumericInputs);
+    if (framingSelect) framingSelect.addEventListener('change', updateFramingPreview);
 
     setStart.addEventListener('click', () => {
         startRange.value = String(wholeSeconds(player.currentTime));
         clampRange('start');
     });
-
     setEnd.addEventListener('click', () => {
         endRange.value = String(Math.max(1, wholeSeconds(player.currentTime)));
         clampRange('end');
@@ -194,7 +242,6 @@
             previewing = false;
         }
     });
-
     player.addEventListener('timeupdate', () => {
         if (!previewing) return;
         const end = wholeSeconds(endRange.value);
@@ -204,11 +251,11 @@
             previewing = false;
         }
     });
-
     player.addEventListener('pause', () => {
         if (player.currentTime < wholeSeconds(endRange.value)) previewing = false;
     });
 
+    updateFramingPreview();
     syncFromNumericInputs();
 })();
 </script>

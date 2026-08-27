@@ -3,20 +3,28 @@ from monetization.models import ChannelMembershipSubscription
 from ..community_models import CommunityPost
 
 
+def _staff(user):
+    return bool(getattr(user, "is_authenticated", False) and getattr(user, "is_staff", False))
+
+
+def _suspended(channel):
+    return hasattr(channel, "moderation_state")
+
+
 def has_active_channel_membership(user, channel):
+    if _suspended(channel) and not _staff(user):
+        return False
     if not getattr(user, "is_authenticated", False):
         return False
     if channel.owner_id == user.pk:
         return True
-    return ChannelMembershipSubscription.objects.filter(
-        subscriber=user,
-        status=ChannelMembershipSubscription.Status.ACTIVE,
-        tier__monetization_account__channel=channel,
-    ).exists()
+    return ChannelMembershipSubscription.objects.filter(subscriber=user, status=ChannelMembershipSubscription.Status.ACTIVE, tier__monetization_account__channel=channel).exists()
 
 
 def can_view_community_post(user, post):
-    if hasattr(post, "moderation_state") and post.channel.owner_id != getattr(user, "pk", None):
+    if _suspended(post.channel) and not _staff(user):
+        return False
+    if hasattr(post, "moderation_state") and post.channel.owner_id != getattr(user, "pk", None) and not _staff(user):
         return False
     if post.audience == CommunityPost.Audience.EVERYONE:
         return True
@@ -25,9 +33,11 @@ def can_view_community_post(user, post):
 
 def visible_community_posts(user, channel):
     posts = CommunityPost.objects.filter(channel=channel)
-    if channel.owner_id != getattr(user, "pk", None):
+    if _suspended(channel) and not _staff(user):
+        return posts.none()
+    if channel.owner_id != getattr(user, "pk", None) and not _staff(user):
         posts = posts.filter(moderation_state__isnull=True)
-    if channel.owner_id == getattr(user, "pk", None):
+    if channel.owner_id == getattr(user, "pk", None) or _staff(user):
         return posts
     if has_active_channel_membership(user, channel):
         return posts
@@ -35,10 +45,6 @@ def visible_community_posts(user, channel):
 
 
 def supporter_badge_user_ids(channel):
-    return set(
-        ChannelMembershipSubscription.objects.filter(
-            tier__monetization_account__channel=channel,
-            status=ChannelMembershipSubscription.Status.ACTIVE,
-            show_supporter_badge=True,
-        ).values_list("subscriber_id", flat=True)
-    )
+    if _suspended(channel):
+        return set()
+    return set(ChannelMembershipSubscription.objects.filter(tier__monetization_account__channel=channel, status=ChannelMembershipSubscription.Status.ACTIVE, show_supporter_badge=True).values_list("subscriber_id", flat=True))

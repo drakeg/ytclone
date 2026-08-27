@@ -49,6 +49,17 @@
         {% endif %}
     {% endif %}
 
+    {% if sections.shorts_videos %}
+    <section class="discovery-section" aria-labelledby="shorts-heading">
+        <div class="section-heading"><div><p class="eyebrow">Quick watch</p><h2 id="shorts-heading">Shorts</h2></div><a href="{% url 'shorts_feed' %}">See all Shorts</a></div>
+        <div class="row g-3">
+            {% for video in sections.shorts_videos %}
+            <div class="col-6 col-md-3"><article class="card h-100"><a href="{% url 'video_detail' video.pk %}"><img class="card-img-top" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" style="aspect-ratio:9/16; object-fit:cover;"></a><div class="card-body"><span class="badge text-bg-dark mb-2">Short</span><h3 class="h6 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3><p class="video-meta mb-0">{% if video.channel %}{{ video.channel.name }}{% else %}@{{ video.author.username }}{% endif %}</p></div></article></div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
     <section class="discovery-section" aria-labelledby="newest-heading"><div class="section-heading"><h2 id="newest-heading">Newest videos</h2></div>{% include 'videos/_video_cards.html' with videos=sections.newest_videos %}</section>
     <section class="discovery-section" aria-labelledby="viewed-heading"><div class="section-heading"><h2 id="viewed-heading">Most viewed</h2></div>{% include 'videos/_video_cards.html' with videos=sections.most_viewed_videos %}</section>
     <section class="discovery-section" aria-labelledby="liked-heading"><div class="section-heading"><h2 id="liked-heading">Most liked</h2></div>{% include 'videos/_video_cards.html' with videos=sections.most_liked_videos %}</section>

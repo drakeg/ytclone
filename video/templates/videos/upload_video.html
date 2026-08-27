@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Upload · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Upload video</h1><p>Choose the channel, media, and visibility for your next release.</p></div></header>
+<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Upload video or Short</h1><p>Choose Standard video or Short, then select the channel, media, and visibility for your next release.</p></div></header>
 {% if form.channel.field.queryset %}
 <form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}
     <div id="video-drop-zone" class="card mb-4" style="border-style: dashed;">
@@ -144,7 +144,7 @@
 {% else %}
 <div class="form-panel">
     <h2 class="h4">Create a channel first</h2>
-    <p>Every uploaded video belongs to a channel. Create your first channel, then return here to upload.</p>
+    <p>Every uploaded video or Short belongs to a channel. Create your first channel, then return here to upload.</p>
     <a class="btn btn-primary" href="{% url 'channel_create' %}">Create channel</a>
 </div>
 {% endif %}

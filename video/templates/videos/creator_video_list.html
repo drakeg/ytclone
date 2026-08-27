@@ -5,11 +5,11 @@
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h1 class="mb-1">My Videos</h1>
-            <p class="text-muted mb-0">Review and manage publication states, audience, and release timing.</p>
+            <p class="text-muted mb-0">Review and manage videos, Shorts, publication states, audience, and release timing.</p>
         </div>
         <div class="d-flex gap-2">
             <a class="btn btn-outline-secondary" href="{% url 'creator_video_trash' %}">Trash</a>
-            <a class="btn btn-primary" href="{% url 'upload' %}">Upload video</a>
+            <a class="btn btn-primary" href="{% url 'upload' %}">Upload video or Short</a>
         </div>
     </div>
 
@@ -42,6 +42,7 @@
                         <tr>
                             <th scope="col"><span class="visually-hidden">Select</span></th>
                             <th scope="col">Video</th>
+                            <th scope="col">Format</th>
                             <th scope="col">Channel</th>
                             <th scope="col">Status</th>
                             <th scope="col">Audience</th>
@@ -55,6 +56,7 @@
                             <tr>
                                 <td><input class="form-check-input" type="checkbox" name="video_ids" value="{{ video.pk }}" aria-label="Select {{ video.title }}"></td>
                                 <td><a href="{% url 'video_detail' video.pk %}">{{ video.title }}</a>{% if video.is_early_access %}<div><span class="badge text-bg-primary">Early access</span></div>{% endif %}</td>
+                                <td>{% if video.is_short %}<span class="badge text-bg-dark">Short</span>{% else %}Video{% endif %}</td>
                                 <td>{{ video.channel|default:"No channel" }}</td>
                                 <td>{{ video.get_publication_status_display }}</td>
                                 <td>{{ video.get_audience_display }}</td>

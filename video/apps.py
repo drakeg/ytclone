@@ -13,4 +13,5 @@ class VideoConfig(AppConfig):
             moderation_models,
             qa_models,
             reporting_models,
+            shorts_models,
         )

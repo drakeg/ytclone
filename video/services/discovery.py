@@ -23,6 +23,7 @@ class DiscoverySections:
     newest_videos: QuerySet
     most_viewed_videos: QuerySet
     most_liked_videos: QuerySet
+    shorts_videos: QuerySet
     recently_watched_videos: QuerySet
     continue_watching_videos: QuerySet
     followed_channel_videos: QuerySet
@@ -92,7 +93,9 @@ def _personalized_sections(user, videos, limit):
 
 
 def get_discovery_sections(user, limit=DISCOVERY_SECTION_LIMIT):
-    videos = Video.objects.visible_to(user).select_related("author", "category", "channel")
+    all_videos = Video.objects.visible_to(user).select_related("author", "category", "channel")
+    videos = all_videos.filter(short_metadata__isnull=True)
+    shorts = all_videos.filter(short_metadata__isnull=False)
     recently_watched = Video.objects.none()
     continue_watching = Video.objects.none()
     followed_channel_videos = Video.objects.none()
@@ -129,6 +132,7 @@ def get_discovery_sections(user, limit=DISCOVERY_SECTION_LIMIT):
             videos.annotate(like_count=Count("likes", distinct=True))
             .order_by("-like_count", "-views", "-pub_date", "-pk")[:limit]
         ),
+        shorts_videos=shorts.order_by("-pub_date", "-pk")[:limit],
         recently_watched_videos=recently_watched,
         continue_watching_videos=continue_watching,
         followed_channel_videos=followed_channel_videos,

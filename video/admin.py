@@ -6,6 +6,7 @@ from .models import Category, Channel, ChannelMembership, ChannelTeamInvitation,
 from .moderation_models import ChannelModerationState, CommunityPostModerationState, CommunityReplyModerationState, ModerationAuditEvent, VideoModerationState
 from .qa_models import VideoQuestion
 from .reporting_models import ContentReport
+from .shorts_models import VideoShort
 
 
 @admin.register(Video)
@@ -52,5 +53,10 @@ class ContentReportAdmin(admin.ModelAdmin):
     list_filter=("status","target_type","reason")
     search_fields=("reporter__username","target_label","details","resolution_note")
     readonly_fields=("reporter","target_type","target_id","target_label","reason","details","created_at","reviewed_by","reviewed_at","resolution_note")
+@admin.register(VideoShort)
+class VideoShortAdmin(admin.ModelAdmin):
+    list_display=("video","source_video","source_start_seconds","source_end_seconds","created_at")
+    search_fields=("video__title","source_video__title")
+    autocomplete_fields=("video","source_video")
 
 admin.site.register(VideoModerationState); admin.site.register(ChannelModerationState); admin.site.register(CommunityPostModerationState); admin.site.register(CommunityReplyModerationState); admin.site.register(CommunityPollOption); admin.site.register(CommunityPollVote); admin.site.register(Tag); admin.site.register(Hashtag); admin.site.register(VideoQuestion)

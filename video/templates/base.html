@@ -60,6 +60,7 @@
         <aside class="side-rail" aria-label="Primary navigation">
             <nav class="side-nav">
                 <a href="{% url 'video_list' %}"{% if request.resolver_match.url_name == 'video_list' %} class="active" aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 11 9-8 9 8v10h-6v-6H9v6H3V11Z"/></svg><span>Discover</span></a>
+                <a href="{% url 'shorts_feed' %}"{% if request.resolver_match.url_name == 'shorts_feed' %} class="active" aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 17 8l-4 3 4 5-9 5 4-7-4-3 4-8H8Z"/></svg><span>Shorts</span></a>
                 <a href="{% url 'channel_list' %}"{% if request.resolver_match.url_name == 'channel_list' %} class="active" aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Channels</span></a>
                 <a href="{% url 'category_list' %}"{% if request.resolver_match.url_name == 'category_list' %} class="active" aria-current="page"{% endif %}><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg><span>Categories</span></a>
                 {% if user.is_authenticated %}

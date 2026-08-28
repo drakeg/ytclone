@@ -7,14 +7,20 @@ from django.views.decorators.http import require_POST
 from .forms import CommentForm
 from .models import Comment, Video
 from .services.channels import can_edit_video
-from .services.notifications import notify_comment
+from .services.notifications import notify_comment, notify_reply
 from .services.short_clips import ShortClipError, create_short_from_video, rerender_short_from_source
 from .shorts_forms import ShortClipForm
 from .shorts_models import VideoShort
 
 
 def shorts_feed(request):
-    visible_comments = Comment.objects.filter(parent__isnull=True, is_hidden=False).select_related("author").order_by("-pub_date", "-pk")
+    visible_replies = Comment.objects.filter(is_hidden=False).select_related("author").order_by("pub_date", "pk")
+    visible_comments = (
+        Comment.objects.filter(parent__isnull=True, is_hidden=False)
+        .select_related("author")
+        .prefetch_related(Prefetch("replies", queryset=visible_replies, to_attr="shorts_visible_replies"))
+        .order_by("-pub_date", "-pk")
+    )
     shorts = list(
         Video.objects.visible_to(request.user).filter(short_metadata__isnull=False)
         .select_related("author", "channel", "category")
@@ -28,6 +34,9 @@ def shorts_feed(request):
         short.viewer_is_subscribed = bool(short.channel_id and short.channel_id in subscribed_channel_ids)
         short.shorts_recent_comments = short.shorts_visible_comments[:3]
         short.shorts_comment_count = len(short.shorts_visible_comments)
+        for comment in short.shorts_recent_comments:
+            comment.shorts_recent_replies = comment.shorts_visible_replies[-2:]
+            comment.shorts_reply_count = len(comment.shorts_visible_replies)
     return render(request, "videos/shorts_feed.html", {"shorts": shorts})
 
 
@@ -42,7 +51,30 @@ def add_short_comment(request, pk):
         comment.author = request.user
         comment.save()
         notify_comment(comment)
-    return redirect(f"{request.build_absolute_uri('/videos/shorts/').replace(request.scheme + '://' + request.get_host(), '')}#short-{video.pk}")
+    return redirect(f"/videos/shorts/#short-{video.pk}")
+
+
+@login_required
+@require_POST
+def add_short_reply(request, pk):
+    parent = get_object_or_404(
+        Comment.objects.select_related("video", "video__author"),
+        pk=pk,
+        parent__isnull=True,
+        is_hidden=False,
+        video__short_metadata__isnull=False,
+        video__in=Video.objects.visible_to(request.user),
+    )
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        reply = form.save(commit=False)
+        reply.video = parent.video
+        reply.author = request.user
+        reply.parent = parent
+        reply.save()
+        notify_comment(reply)
+        notify_reply(reply)
+    return redirect(f"/videos/shorts/#short-{parent.video_id}")
 
 
 @login_required

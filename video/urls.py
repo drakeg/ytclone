@@ -6,6 +6,7 @@ urlpatterns = [
     path("", views.video_list, name="video_list"),
     path("shorts/", shorts_views.shorts_feed, name="shorts_feed"),
     path("shorts/<int:pk>/comments/", shorts_views.add_short_comment, name="add_short_comment"),
+    path("shorts/comments/<int:pk>/reply/", shorts_views.add_short_reply, name="add_short_reply"),
     path("videos/<int:pk>/create-short/", shorts_views.create_short_from_long_form, name="create_short_from_long_form"),
     path("videos/<int:pk>/rerender-short/", shorts_views.rerender_short, name="rerender_short"),
     path("site-admin/", administration_views.site_admin_dashboard, name="site_admin_dashboard"),

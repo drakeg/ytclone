@@ -5,6 +5,8 @@ from . import access_views, account_views, administration_views, category_views,
 urlpatterns = [
     path("", views.video_list, name="video_list"),
     path("shorts/", shorts_views.shorts_feed, name="shorts_feed"),
+    path("shorts/<int:pk>/like/", shorts_views.like_short, name="like_short"),
+    path("shorts/<int:pk>/dislike/", shorts_views.dislike_short, name="dislike_short"),
     path("shorts/<int:pk>/comments/", shorts_views.add_short_comment, name="add_short_comment"),
     path("shorts/comments/<int:pk>/reply/", shorts_views.add_short_reply, name="add_short_reply"),
     path("videos/<int:pk>/create-short/", shorts_views.create_short_from_long_form, name="create_short_from_long_form"),

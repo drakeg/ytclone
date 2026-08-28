@@ -54,8 +54,8 @@ class ShortsImmersiveFeedTests(TestCase):
         self.client.force_login(self.viewer)
         response = self.client.get(reverse("shorts_feed"))
         for video in self.shorts:
-            self.assertContains(response, reverse("like_video", args=[video.pk]))
-            self.assertContains(response, reverse("dislike_video", args=[video.pk]))
+            self.assertContains(response, reverse("like_short", args=[video.pk]))
+            self.assertContains(response, reverse("dislike_short", args=[video.pk]))
             self.assertContains(response, reverse("video_detail", args=[video.pk]) + "#comments-heading")
             self.assertContains(response, reverse("report_content", args=["video", video.pk]))
 

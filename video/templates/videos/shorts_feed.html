@@ -3,38 +3,38 @@
 {% block title %}Shorts · VideoShare{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
-        <div><p class="eyebrow mb-1">Short-form</p><h1 class="mb-1">Shorts</h1><p class="text-muted mb-0">Quick videos from creators across VideoShare.</p></div>
+<style>
+.shorts-shell{max-width:980px;margin:0 auto;padding:1rem}.shorts-feed{height:calc(100vh - 8rem);min-height:620px;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain;border-radius:1rem;background:#080808}.shorts-item{min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:grid;grid-template-columns:minmax(0,430px) minmax(220px,320px);gap:1rem;align-items:center;justify-content:center;padding:1rem}.shorts-video-wrap{position:relative;background:#000;aspect-ratio:9/16;max-height:calc(100vh - 10rem);border-radius:1rem;overflow:hidden}.shorts-video{width:100%;height:100%;object-fit:contain;background:#000}.shorts-mute{position:absolute;top:.75rem;right:.75rem;z-index:2}.shorts-meta{color:var(--bs-body-color);max-height:calc(100vh - 10rem);overflow:auto}.shorts-position{font-variant-numeric:tabular-nums}.shorts-help{font-size:.85rem}@media(max-width:767.98px){.shorts-shell{padding:0}.shorts-feed{height:calc(100vh - 4.5rem);min-height:0;border-radius:0}.shorts-item{grid-template-columns:1fr;align-content:center;padding:.5rem}.shorts-video-wrap{width:min(100%,430px);justify-self:center;max-height:72vh}.shorts-meta{width:min(100%,430px);justify-self:center;max-height:24vh}.shorts-help{display:none}}@media(prefers-reduced-motion:reduce){.shorts-feed{scroll-behavior:auto!important}}
+</style>
+
+<div class="shorts-shell">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3 px-2">
+        <div><p class="eyebrow mb-1">Short-form</p><h1 class="mb-1">Shorts</h1><p class="text-muted mb-0">Swipe, scroll, or use ↑ / ↓ to move between Shorts.</p></div>
         {% if user.is_authenticated and is_creator %}<a class="btn btn-primary" href="{% url 'upload' %}">Upload a Short</a>{% endif %}
     </div>
 
     {% if shorts %}
-    <div class="d-grid gap-4 justify-content-center" aria-label="Shorts feed">
+    <div id="shorts-feed" class="shorts-feed" aria-label="Shorts feed" tabindex="0" data-short-count="{{ shorts|length }}">
         {% for video in shorts %}
-        <article class="card shadow-sm" style="width:min(100%, 430px); overflow:hidden;" id="short-{{ video.pk }}">
-            <div style="background:#000; aspect-ratio:9/16; display:flex; align-items:center; justify-content:center;">
-                <video src="{{ video.video_file.url }}" controls playsinline preload="metadata" style="width:100%; height:100%; object-fit:contain;" aria-label="{{ video.title }}"></video>
+        <article class="shorts-item" id="short-{{ video.pk }}" data-short-index="{{ forloop.counter0 }}" aria-label="Short {{ forloop.counter }} of {{ shorts|length }}: {{ video.title }}">
+            <div class="shorts-video-wrap shadow">
+                <video class="shorts-video" src="{{ video.video_file.url }}" playsinline muted loop preload="metadata" aria-label="{{ video.title }}"></video>
+                <button class="btn btn-sm btn-dark shorts-mute" type="button" data-short-mute aria-label="Unmute {{ video.title }}">Unmute</button>
             </div>
-            <div class="card-body">
+            <div class="shorts-meta card shadow-sm"><div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div>
-                        <h2 class="h5 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h2>
-                        {% if video.channel %}<a class="video-meta text-decoration-none" href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a>{% else %}<span class="video-meta">@{{ video.author.username }}</span>{% endif %}
-                    </div>
-                    <span class="badge text-bg-dark">Short</span>
+                    <div><h2 class="h5 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h2>{% if video.channel %}<a class="video-meta text-decoration-none" href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a>{% else %}<span class="video-meta">@{{ video.author.username }}</span>{% endif %}</div>
+                    <span class="badge text-bg-dark shorts-position">{{ forloop.counter }}/{{ shorts|length }}</span>
                 </div>
                 {% if video.description %}<p class="mt-2 mb-2">{{ video.description|truncatechars:180 }}</p>{% endif %}
                 <div class="video-meta mb-3">{{ video.views }} view{{ video.views|pluralize }} · {{ video.pub_date|timesince }} ago</div>
                 <div class="d-flex flex-wrap gap-2">
-                    {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Like · {{ video.likes.count }}</button></form>
-                    <form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Dislike</button></form>
-                    {% endif %}
+                    {% if user.is_authenticated %}<form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">Like · {{ video.likes.count }}</button></form><form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Dislike</button></form>{% endif %}
                     <a class="btn btn-sm btn-outline-secondary" href="{% url 'video_detail' video.pk %}#comments-heading">Comments &amp; Q&amp;A</a>
                     {% if user.is_authenticated and user != video.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'video' video.pk %}">Report</a>{% endif %}
                 </div>
-            </div>
+                <p class="shorts-help video-meta mt-3 mb-0">Keyboard: ↑/↓ or Page Up/Page Down · Active Short autoplays muted.</p>
+            </div></div>
         </article>
         {% endfor %}
     </div>
@@ -42,4 +42,52 @@
         <div class="empty-state">No Shorts are available yet. {% if user.is_authenticated and is_creator %}<a href="{% url 'upload' %}">Upload the first one.</a>{% endif %}</div>
     {% endif %}
 </div>
+
+<script>
+(() => {
+    const feed = document.getElementById('shorts-feed');
+    if (!feed) return;
+    const items = [...feed.querySelectorAll('.shorts-item')];
+    const videos = items.map(item => item.querySelector('.shorts-video'));
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let activeIndex = 0;
+
+    const pauseOthers = active => videos.forEach(video => { if (video && video !== active) video.pause(); });
+    const activate = index => {
+        activeIndex = Math.max(0, Math.min(index, items.length - 1));
+        const video = videos[activeIndex];
+        pauseOthers(video);
+        if (video) video.play().catch(() => {});
+    };
+    const moveTo = index => {
+        const next = Math.max(0, Math.min(index, items.length - 1));
+        items[next].scrollIntoView({block:'start', behavior:prefersReducedMotion?'auto':'smooth'});
+        activate(next);
+    };
+
+    const observer = new IntersectionObserver(entries => {
+        let best = null;
+        entries.forEach(entry => { if (entry.isIntersecting && (!best || entry.intersectionRatio > best.intersectionRatio)) best = entry; });
+        if (best && best.intersectionRatio >= 0.6) activate(Number(best.target.dataset.shortIndex));
+    }, {root:feed, threshold:[0.6,0.75,0.9]});
+    items.forEach(item => observer.observe(item));
+
+    feed.addEventListener('keydown', event => {
+        if (event.target.closest('button,a,input,textarea,select')) return;
+        if (event.key === 'ArrowDown' || event.key === 'PageDown') { event.preventDefault(); moveTo(activeIndex + 1); }
+        else if (event.key === 'ArrowUp' || event.key === 'PageUp') { event.preventDefault(); moveTo(activeIndex - 1); }
+    });
+
+    feed.querySelectorAll('[data-short-mute]').forEach((button, index) => button.addEventListener('click', () => {
+        const video = videos[index];
+        video.muted = !video.muted;
+        button.textContent = video.muted ? 'Unmute' : 'Mute';
+        button.setAttribute('aria-label', `${video.muted ? 'Unmute' : 'Mute'} ${video.getAttribute('aria-label') || 'Short'}`);
+        if (!video.paused) video.play().catch(() => {});
+    }));
+
+    document.addEventListener('visibilitychange', () => { if (document.hidden) videos.forEach(video => video && video.pause()); else activate(activeIndex); });
+    activate(0);
+})();
+</script>
 {% endblock %}

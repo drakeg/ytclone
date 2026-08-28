@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
-from django.http import HttpResponseBadRequest, HttpResponseForbidden
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -49,6 +49,19 @@ def _visible_short_for_user(user, pk):
     )
 
 
+def _wants_json(request):
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+
+def _reaction_payload(video, user):
+    return {
+        "liked": video.likes.filter(pk=user.pk).exists(),
+        "disliked": video.dislikes.filter(pk=user.pk).exists(),
+        "like_count": video.likes.count(),
+        "dislike_count": video.dislikes.count(),
+    }
+
+
 @login_required
 @require_POST
 def like_short(request, pk):
@@ -59,6 +72,8 @@ def like_short(request, pk):
         video.dislikes.remove(request.user)
         video.likes.add(request.user)
         notify_reaction(video=video, actor=request.user, kind=Notification.Kind.LIKE)
+    if _wants_json(request):
+        return JsonResponse(_reaction_payload(video, request.user))
     return redirect(f"/videos/shorts/#short-{video.pk}")
 
 
@@ -72,6 +87,8 @@ def dislike_short(request, pk):
         video.likes.remove(request.user)
         video.dislikes.add(request.user)
         notify_reaction(video=video, actor=request.user, kind=Notification.Kind.DISLIKE)
+    if _wants_json(request):
+        return JsonResponse(_reaction_payload(video, request.user))
     return redirect(f"/videos/shorts/#short-{video.pk}")
 
 

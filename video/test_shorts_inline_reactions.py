@@ -72,5 +72,5 @@ class ShortsInlineReactionTests(TestCase):
         response = self.client.get(reverse("shorts_feed"))
         self.assertContains(response, reverse("like_short", args=[self.short.pk]))
         self.assertContains(response, reverse("dislike_short", args=[self.short.pk]))
-        self.assertContains(response, 'aria-pressed="true">Like · 1</button>')
-        self.assertContains(response, 'aria-pressed="false">Dislike · 0</button>')
+        self.assertContains(response, 'aria-pressed="true" data-short-like>Like · <span data-like-count>1</span></button>')
+        self.assertContains(response, 'aria-pressed="false" data-short-dislike>Dislike · <span data-dislike-count>0</span></button>')

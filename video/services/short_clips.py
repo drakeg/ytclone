@@ -44,7 +44,14 @@ def _overlay_y(position):
     return "h-text_h-h*0.10"
 
 
-def _validate_clip(start_seconds, end_seconds, reframing_mode, overlay_text="", overlay_position=VideoShort.OverlayPosition.BOTTOM):
+def _validate_clip(
+    start_seconds,
+    end_seconds,
+    reframing_mode,
+    overlay_text="",
+    overlay_position=VideoShort.OverlayPosition.BOTTOM,
+    thumbnail_frame_seconds=None,
+):
     if start_seconds < 0 or end_seconds <= start_seconds:
         raise ShortClipError("Choose a valid start and end time.")
     if end_seconds - start_seconds > 180:
@@ -57,6 +64,8 @@ def _validate_clip(start_seconds, end_seconds, reframing_mode, overlay_text="", 
     valid_overlay_positions = {choice for choice, unused_label in VideoShort.OverlayPosition.choices}
     if overlay_position not in valid_overlay_positions:
         raise ShortClipError("Choose a valid text overlay position.")
+    if thumbnail_frame_seconds is not None and not (start_seconds <= thumbnail_frame_seconds <= end_seconds):
+        raise ShortClipError("Thumbnail frame must be inside the selected Short range.")
 
 
 def _run_ffmpeg(
@@ -113,15 +122,53 @@ def _run_ffmpeg(
             text_file.close()
 
 
+def _run_thumbnail_ffmpeg(source_path, output_path, *, frame_seconds):
+    command = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-ss", str(frame_seconds), "-i", source_path,
+        "-frames:v", "1", "-q:v", "2", output_path,
+    ]
+    try:
+        subprocess.run(command, check=True, capture_output=True, text=True, timeout=60)
+    except FileNotFoundError as error:
+        raise ShortClipError("FFmpeg is not installed on this server.") from error
+    except subprocess.TimeoutExpired as error:
+        raise ShortClipError("Thumbnail generation took too long and was stopped.") from error
+    except subprocess.CalledProcessError as error:
+        detail = (error.stderr or "").strip()
+        raise ShortClipError(
+            f"FFmpeg could not create the Short thumbnail{': ' + detail[:300] if detail else '.'}"
+        ) from error
+
+
+def _prepare_thumbnail_temp(source_video, source_temp_path, thumbnail_frame_seconds):
+    thumbnail_temp = tempfile.NamedTemporaryFile(suffix=".jpg")
+    if thumbnail_frame_seconds is None:
+        _copy_storage_file(source_video.thumbnail, thumbnail_temp)
+    else:
+        _run_thumbnail_ffmpeg(
+            source_temp_path,
+            thumbnail_temp.name,
+            frame_seconds=thumbnail_frame_seconds,
+        )
+    thumbnail_temp.flush()
+    thumbnail_temp.seek(0)
+    return thumbnail_temp
+
+
 def create_short_from_video(
     *, source_video, creator, title, description, start_seconds, end_seconds,
     reframing_mode=VideoShort.ReframingMode.ORIGINAL,
     overlay_text="", overlay_position=VideoShort.OverlayPosition.BOTTOM,
+    thumbnail_frame_seconds=None,
 ):
     if hasattr(source_video, "short_metadata"):
         raise ShortClipError("Create a Short from a standard video, not another Short.")
     overlay_text = (overlay_text or "").strip()
-    _validate_clip(start_seconds, end_seconds, reframing_mode, overlay_text, overlay_position)
+    _validate_clip(
+        start_seconds, end_seconds, reframing_mode, overlay_text, overlay_position,
+        thumbnail_frame_seconds,
+    )
 
     source_suffix = Path(source_video.video_file.name).suffix or ".mp4"
     saved_video_name = None
@@ -137,7 +184,7 @@ def create_short_from_video(
             overlay_text=overlay_text, overlay_position=overlay_position,
         )
         output_temp.flush()
-
+        thumbnail_temp = _prepare_thumbnail_temp(source_video, source_temp.name, thumbnail_frame_seconds)
         try:
             with transaction.atomic():
                 short = Video(
@@ -150,18 +197,15 @@ def create_short_from_video(
                 short.video_file.save(generated_name, File(output_temp), save=False)
                 saved_video_name = short.video_file.name
 
-                with tempfile.NamedTemporaryFile(suffix=Path(source_video.thumbnail.name).suffix or ".jpg") as thumbnail_temp:
-                    _copy_storage_file(source_video.thumbnail, thumbnail_temp)
-                    thumbnail_temp.flush()
-                    thumbnail_temp.seek(0)
-                    thumbnail_name = f"derived-short-{uuid.uuid4().hex}{Path(source_video.thumbnail.name).suffix or '.jpg'}"
-                    short.thumbnail.save(thumbnail_name, File(thumbnail_temp), save=False)
-                    saved_thumbnail_name = short.thumbnail.name
+                thumbnail_name = f"derived-short-{uuid.uuid4().hex}.jpg"
+                short.thumbnail.save(thumbnail_name, File(thumbnail_temp), save=False)
+                saved_thumbnail_name = short.thumbnail.name
 
                 short.save()
                 VideoShort.objects.create(
                     video=short, source_video=source_video,
                     source_start_seconds=start_seconds, source_end_seconds=end_seconds,
+                    thumbnail_frame_seconds=thumbnail_frame_seconds,
                     reframing_mode=reframing_mode,
                     overlay_text=overlay_text, overlay_position=overlay_position,
                 )
@@ -173,11 +217,14 @@ def create_short_from_video(
             if saved_thumbnail_name:
                 source_video.thumbnail.storage.delete(saved_thumbnail_name)
             raise
+        finally:
+            thumbnail_temp.close()
 
 
 def rerender_short_from_source(
     *, short, start_seconds, end_seconds, reframing_mode,
     overlay_text="", overlay_position=VideoShort.OverlayPosition.BOTTOM,
+    thumbnail_frame_seconds=None,
 ):
     try:
         metadata = short.short_metadata
@@ -187,12 +234,18 @@ def rerender_short_from_source(
         raise ShortClipError("This Short was not generated from a source video.")
 
     overlay_text = (overlay_text or "").strip()
-    _validate_clip(start_seconds, end_seconds, reframing_mode, overlay_text, overlay_position)
+    _validate_clip(
+        start_seconds, end_seconds, reframing_mode, overlay_text, overlay_position,
+        thumbnail_frame_seconds,
+    )
     source_video = metadata.source_video
     source_suffix = Path(source_video.video_file.name).suffix or ".mp4"
-    storage = short.video_file.storage
+    video_storage = short.video_file.storage
+    thumbnail_storage = short.thumbnail.storage
     old_video_name = short.video_file.name
+    old_thumbnail_name = short.thumbnail.name
     new_video_name = None
+    new_thumbnail_name = None
 
     with tempfile.NamedTemporaryFile(suffix=source_suffix) as source_temp, tempfile.NamedTemporaryFile(suffix=".mp4") as output_temp:
         _copy_storage_file(source_video.video_file, source_temp)
@@ -204,28 +257,40 @@ def rerender_short_from_source(
             overlay_text=overlay_text, overlay_position=overlay_position,
         )
         output_temp.flush()
-
+        thumbnail_temp = _prepare_thumbnail_temp(source_video, source_temp.name, thumbnail_frame_seconds)
         try:
             with transaction.atomic():
                 output_temp.seek(0)
                 generated_name = f"derived-short-{uuid.uuid4().hex}.mp4"
                 short.video_file.save(generated_name, File(output_temp), save=False)
                 new_video_name = short.video_file.name
-                short.save(update_fields=["video_file"])
+
+                thumbnail_name = f"derived-short-{uuid.uuid4().hex}.jpg"
+                short.thumbnail.save(thumbnail_name, File(thumbnail_temp), save=False)
+                new_thumbnail_name = short.thumbnail.name
+
+                short.save(update_fields=["video_file", "thumbnail"])
                 metadata.source_start_seconds = start_seconds
                 metadata.source_end_seconds = end_seconds
+                metadata.thumbnail_frame_seconds = thumbnail_frame_seconds
                 metadata.reframing_mode = reframing_mode
                 metadata.overlay_text = overlay_text
                 metadata.overlay_position = overlay_position
                 metadata.save(update_fields=[
-                    "source_start_seconds", "source_end_seconds", "reframing_mode",
-                    "overlay_text", "overlay_position",
+                    "source_start_seconds", "source_end_seconds", "thumbnail_frame_seconds",
+                    "reframing_mode", "overlay_text", "overlay_position",
                 ])
         except Exception:
             if new_video_name:
-                storage.delete(new_video_name)
+                video_storage.delete(new_video_name)
+            if new_thumbnail_name:
+                thumbnail_storage.delete(new_thumbnail_name)
             raise
+        finally:
+            thumbnail_temp.close()
 
     if old_video_name and old_video_name != new_video_name:
-        storage.delete(old_video_name)
+        video_storage.delete(old_video_name)
+    if old_thumbnail_name and old_thumbnail_name != new_thumbnail_name:
+        thumbnail_storage.delete(old_thumbnail_name)
     return short

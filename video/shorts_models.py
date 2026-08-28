@@ -22,8 +22,6 @@ class VideoShort(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Source linkage supports creator-generated Shorts without introducing a
-    # second content authorization system.
     source_video = models.ForeignKey(
         "video.Video",
         on_delete=models.SET_NULL,
@@ -33,6 +31,7 @@ class VideoShort(models.Model):
     )
     source_start_seconds = models.PositiveIntegerField(null=True, blank=True)
     source_end_seconds = models.PositiveIntegerField(null=True, blank=True)
+    thumbnail_frame_seconds = models.PositiveIntegerField(null=True, blank=True)
     reframing_mode = models.CharField(
         max_length=20,
         choices=ReframingMode.choices,

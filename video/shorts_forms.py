@@ -8,6 +8,11 @@ class ShortClipForm(forms.Form):
     description = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 4}))
     start_seconds = forms.IntegerField(min_value=0, help_text="Start time in seconds.")
     end_seconds = forms.IntegerField(min_value=1, help_text="End time in seconds. Maximum clip length is 180 seconds.")
+    thumbnail_frame_seconds = forms.IntegerField(
+        min_value=0,
+        required=False,
+        help_text="Optional source timestamp to use as the generated Short thumbnail.",
+    )
     reframing_mode = forms.ChoiceField(
         choices=VideoShort.ReframingMode.choices,
         required=False,
@@ -39,10 +44,13 @@ class ShortClipForm(forms.Form):
         cleaned = super().clean()
         start = cleaned.get("start_seconds")
         end = cleaned.get("end_seconds")
+        thumbnail_frame = cleaned.get("thumbnail_frame_seconds")
         if start is None or end is None:
             return cleaned
         if end <= start:
             self.add_error("end_seconds", "End time must be after the start time.")
         elif end - start > 180:
             self.add_error("end_seconds", "Short clips must be 180 seconds or shorter.")
+        if thumbnail_frame is not None and not (start <= thumbnail_frame <= end):
+            self.add_error("thumbnail_frame_seconds", "Thumbnail frame must be inside the selected Short range.")
         return cleaned

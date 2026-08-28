@@ -49,7 +49,8 @@ class ShortsAjaxReactionTests(TestCase):
 
     def test_feed_contains_ajax_reaction_hooks_and_error_surface(self):
         response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "data-short-reaction-form", count=2)
+        self.assertContains(response, 'data-short-reaction-form data-reaction="like"')
+        self.assertContains(response, 'data-short-reaction-form data-reaction="dislike"')
         self.assertContains(response, "data-short-like")
         self.assertContains(response, "data-short-dislike")
         self.assertContains(response, "X-Requested-With")

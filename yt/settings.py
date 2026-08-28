@@ -33,6 +33,7 @@ if not SECRET_KEY:
 DEBUG = env_bool("DJANGO_DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+CSRF_FAILURE_VIEW = "video.security_views.csrf_failure"
 
 INSTALLED_APPS = [
     "django.contrib.admin",

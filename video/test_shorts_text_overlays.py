@@ -133,4 +133,4 @@ class ShortsTextOverlayTests(TestCase):
         response = self.client.get(reverse("rerender_short", args=[short.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Saved text")
-        self.assertEqual(response.context["form"].fields["overlay_position"].initial, VideoShort.OverlayPosition.TOP)
+        self.assertEqual(response.context["form"].initial["overlay_position"], VideoShort.OverlayPosition.TOP)

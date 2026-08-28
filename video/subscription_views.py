@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -16,9 +16,19 @@ def subscribe(request, pk):
         return HttpResponseForbidden("You cannot subscribe to your own channel.")
     if channel.subscribers.filter(pk=request.user.pk).exists():
         channel.subscribers.remove(request.user)
+        subscribed = False
     else:
         channel.subscribers.add(request.user)
         notify_subscription(channel=channel, actor=request.user)
+        subscribed = True
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "subscribed": subscribed,
+                "subscriber_count": channel.subscribers.count(),
+            }
+        )
 
     next_url = request.POST.get("next")
     if next_url and url_has_allowed_host_and_scheme(

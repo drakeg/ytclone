@@ -10,13 +10,18 @@ from .shorts_models import VideoShort
 
 
 def shorts_feed(request):
-    shorts = (
+    shorts = list(
         Video.objects.visible_to(request.user)
         .filter(short_metadata__isnull=False)
         .select_related("author", "channel", "category")
         .prefetch_related("likes", "dislikes", "tags", "hashtags")
         .order_by("-pub_date", "-pk")[:50]
     )
+    subscribed_channel_ids = set()
+    if request.user.is_authenticated:
+        subscribed_channel_ids = set(request.user.subscriptions.values_list("pk", flat=True))
+    for short in shorts:
+        short.viewer_is_subscribed = bool(short.channel_id and short.channel_id in subscribed_channel_ids)
     return render(request, "videos/shorts_feed.html", {"shorts": shorts})
 
 

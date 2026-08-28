@@ -77,6 +77,16 @@ def _short_comment_payload(comment):
     }
 
 
+def _short_reply_payload(reply):
+    return {
+        "id": reply.pk,
+        "parent_id": reply.parent_id,
+        "author": reply.author.username,
+        "comment": reply.comment,
+        "reply_count": Comment.objects.filter(parent=reply.parent, is_hidden=False).count(),
+    }
+
+
 @login_required
 @require_POST
 def like_short(request, pk):
@@ -145,6 +155,10 @@ def add_short_reply(request, pk):
         reply.save()
         notify_comment(reply)
         notify_reply(reply)
+        if _wants_json(request):
+            return JsonResponse(_short_reply_payload(reply), status=201)
+    elif _wants_json(request):
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     return redirect(f"/videos/shorts/#short-{parent.video_id}")
 
 

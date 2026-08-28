@@ -36,6 +36,8 @@ def create_short_from_long_form(request, pk):
             "start_seconds": 0,
             "end_seconds": 60,
             "reframing_mode": VideoShort.ReframingMode.VERTICAL_CENTER,
+            "overlay_text": "",
+            "overlay_position": VideoShort.OverlayPosition.BOTTOM,
         },
     )
     if request.method == "POST" and form.is_valid():
@@ -48,6 +50,8 @@ def create_short_from_long_form(request, pk):
                 start_seconds=form.cleaned_data["start_seconds"],
                 end_seconds=form.cleaned_data["end_seconds"],
                 reframing_mode=form.cleaned_data["reframing_mode"],
+                overlay_text=form.cleaned_data["overlay_text"],
+                overlay_position=form.cleaned_data["overlay_position"],
             )
         except ShortClipError as error:
             form.add_error(None, str(error))
@@ -78,6 +82,8 @@ def rerender_short(request, pk):
             "start_seconds": metadata.source_start_seconds,
             "end_seconds": metadata.source_end_seconds,
             "reframing_mode": metadata.reframing_mode,
+            "overlay_text": metadata.overlay_text,
+            "overlay_position": metadata.overlay_position,
         },
     )
     form.fields["title"].disabled = True
@@ -90,6 +96,8 @@ def rerender_short(request, pk):
                 start_seconds=form.cleaned_data["start_seconds"],
                 end_seconds=form.cleaned_data["end_seconds"],
                 reframing_mode=form.cleaned_data["reframing_mode"],
+                overlay_text=form.cleaned_data["overlay_text"],
+                overlay_position=form.cleaned_data["overlay_position"],
             )
         except ShortClipError as error:
             form.add_error(None, str(error))

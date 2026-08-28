@@ -4,7 +4,7 @@
 
 {% block content %}
 <style>
-.shorts-shell{max-width:980px;margin:0 auto;padding:1rem}.shorts-feed{height:calc(100vh - 8rem);min-height:620px;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain;border-radius:1rem;background:#080808}.shorts-item{min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:grid;grid-template-columns:minmax(0,430px) minmax(220px,320px);gap:1rem;align-items:center;justify-content:center;padding:1rem}.shorts-video-wrap{position:relative;background:#000;aspect-ratio:9/16;max-height:calc(100vh - 10rem);border-radius:1rem;overflow:hidden}.shorts-video{width:100%;height:100%;object-fit:contain;background:#000}.shorts-mute{position:absolute;top:.75rem;right:.75rem;z-index:2}.shorts-meta{color:var(--bs-body-color);max-height:calc(100vh - 10rem);overflow:auto}.shorts-position{font-variant-numeric:tabular-nums}.shorts-help{font-size:.85rem}@media(max-width:767.98px){.shorts-shell{padding:0}.shorts-feed{height:calc(100vh - 4.5rem);min-height:0;border-radius:0}.shorts-item{grid-template-columns:1fr;align-content:center;padding:.5rem}.shorts-video-wrap{width:min(100%,430px);justify-self:center;max-height:72vh}.shorts-meta{width:min(100%,430px);justify-self:center;max-height:24vh}.shorts-help{display:none}}@media(prefers-reduced-motion:reduce){.shorts-feed{scroll-behavior:auto!important}}
+.shorts-shell{max-width:980px;margin:0 auto;padding:1rem}.shorts-feed{height:calc(100vh - 8rem);min-height:620px;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior-y:contain;border-radius:1rem;background:#080808}.shorts-item{min-height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:grid;grid-template-columns:minmax(0,430px) minmax(220px,320px);gap:1rem;align-items:center;justify-content:center;padding:1rem}.shorts-video-wrap{position:relative;background:#000;aspect-ratio:9/16;max-height:calc(100vh - 10rem);border-radius:1rem;overflow:hidden}.shorts-video{width:100%;height:100%;object-fit:contain;background:#000}.shorts-mute{position:absolute;top:.75rem;right:.75rem;z-index:2}.shorts-meta{color:var(--bs-body-color);max-height:calc(100vh - 10rem);overflow:auto}.shorts-position{font-variant-numeric:tabular-nums}.shorts-help{font-size:.85rem}.shorts-channel-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}.shorts-channel-row form{margin:0}@media(max-width:767.98px){.shorts-shell{padding:0}.shorts-feed{height:calc(100vh - 4.5rem);min-height:0;border-radius:0}.shorts-item{grid-template-columns:1fr;align-content:center;padding:.5rem}.shorts-video-wrap{width:min(100%,430px);justify-self:center;max-height:72vh}.shorts-meta{width:min(100%,430px);justify-self:center;max-height:24vh}.shorts-help{display:none}}@media(prefers-reduced-motion:reduce){.shorts-feed{scroll-behavior:auto!important}}
 </style>
 
 <div class="shorts-shell">
@@ -23,7 +23,17 @@
             </div>
             <div class="shorts-meta card shadow-sm"><div class="card-body">
                 <div class="d-flex justify-content-between align-items-start gap-3">
-                    <div><h2 class="h5 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h2>{% if video.channel %}<a class="video-meta text-decoration-none" href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a>{% else %}<span class="video-meta">@{{ video.author.username }}</span>{% endif %}</div>
+                    <div>
+                        <h2 class="h5 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h2>
+                        {% if video.channel %}
+                        <div class="shorts-channel-row">
+                            <a class="video-meta text-decoration-none" href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a>
+                            {% if user.is_authenticated and user != video.channel.owner %}
+                            <form method="post" action="{% url 'subscribe' video.channel.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{% url 'shorts_feed' %}#short-{{ video.pk }}"><button class="btn btn-sm {% if video.viewer_is_subscribed %}btn-outline-secondary{% else %}btn-primary{% endif %}" type="submit" data-short-subscribe>{% if video.viewer_is_subscribed %}Subscribed{% else %}Subscribe{% endif %}</button></form>
+                            {% endif %}
+                        </div>
+                        {% else %}<span class="video-meta">@{{ video.author.username }}</span>{% endif %}
+                    </div>
                     <span class="badge text-bg-dark shorts-position">{{ forloop.counter }}/{{ shorts|length }}</span>
                 </div>
                 {% if video.description %}<p class="mt-2 mb-2">{{ video.description|truncatechars:180 }}</p>{% endif %}

@@ -14,9 +14,26 @@ class ShortClipForm(forms.Form):
         initial=VideoShort.ReframingMode.VERTICAL_CENTER,
         help_text="Choose how the source frame should fit a Short. Vertical options render at 720×1280.",
     )
+    overlay_text = forms.CharField(
+        required=False,
+        max_length=120,
+        help_text="Optional text burned into the Short. Maximum 120 characters.",
+    )
+    overlay_position = forms.ChoiceField(
+        choices=VideoShort.OverlayPosition.choices,
+        required=False,
+        initial=VideoShort.OverlayPosition.BOTTOM,
+        help_text="Choose where the optional text appears.",
+    )
 
     def clean_reframing_mode(self):
         return self.cleaned_data.get("reframing_mode") or VideoShort.ReframingMode.ORIGINAL
+
+    def clean_overlay_text(self):
+        return (self.cleaned_data.get("overlay_text") or "").strip()
+
+    def clean_overlay_position(self):
+        return self.cleaned_data.get("overlay_position") or VideoShort.OverlayPosition.BOTTOM
 
     def clean(self):
         cleaned = super().clean()

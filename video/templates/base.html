@@ -98,5 +98,6 @@
         </main>
     </div>
 
+    {% if request.resolver_match.url_name == 'shorts_feed' %}<script src="{% static 'shorts_reply_ajax.js' %}" defer></script>{% endif %}
 </body>
 </html>

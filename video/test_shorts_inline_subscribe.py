@@ -38,7 +38,9 @@ class ShortsInlineSubscribeTests(TestCase):
     def test_creator_does_not_see_self_subscribe_control(self):
         self.client.force_login(self.creator)
         response = self.client.get(reverse("shorts_feed"))
-        self.assertNotContains(response, 'data-short-subscribe')
+        self.assertNotContains(response, '<form method="post" action="/videos/channels/')
+        self.assertNotContains(response, '<button class="btn btn-sm btn-primary" type="submit" data-short-subscribe')
+        self.assertNotContains(response, '<button class="btn btn-sm btn-outline-secondary" type="submit" data-short-subscribe')
 
     def test_subscription_toggle_can_return_to_short_feed_anchor(self):
         self.client.force_login(self.viewer)

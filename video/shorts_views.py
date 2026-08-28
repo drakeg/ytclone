@@ -24,7 +24,7 @@ def shorts_feed(request):
     )
     shorts = list(
         Video.objects.visible_to(request.user).filter(short_metadata__isnull=False)
-        .select_related("author", "channel", "category")
+        .select_related("author", "channel", "channel__owner", "category")
         .prefetch_related("likes", "dislikes", "tags", "hashtags", Prefetch("comment_set", queryset=visible_comments, to_attr="shorts_visible_comments"))
         .order_by("-pub_date", "-pk")[:50]
     )

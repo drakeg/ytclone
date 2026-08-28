@@ -10,6 +10,11 @@ class VideoShort(models.Model):
         VERTICAL_CENTER = "vertical_center", "Vertical 9:16 — focus center"
         VERTICAL_RIGHT = "vertical_right", "Vertical 9:16 — focus right"
 
+    class OverlayPosition(models.TextChoices):
+        TOP = "top", "Top"
+        CENTER = "center", "Center"
+        BOTTOM = "bottom", "Bottom"
+
     video = models.OneToOneField(
         "video.Video",
         on_delete=models.CASCADE,
@@ -32,6 +37,12 @@ class VideoShort(models.Model):
         max_length=20,
         choices=ReframingMode.choices,
         default=ReframingMode.ORIGINAL,
+    )
+    overlay_text = models.CharField(max_length=120, blank=True, default="")
+    overlay_position = models.CharField(
+        max_length=10,
+        choices=OverlayPosition.choices,
+        default=OverlayPosition.BOTTOM,
     )
 
     def __str__(self):

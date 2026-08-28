@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Video
+from .models import Comment, Video
 from .services.channels import can_edit_video
 from .services.short_clips import ShortClipError, create_short_from_video, rerender_short_from_source
 from .shorts_forms import ShortClipForm
@@ -10,11 +11,22 @@ from .shorts_models import VideoShort
 
 
 def shorts_feed(request):
+    visible_comments = (
+        Comment.objects.filter(parent__isnull=True, is_hidden=False)
+        .select_related("author")
+        .order_by("-pub_date", "-pk")
+    )
     shorts = list(
         Video.objects.visible_to(request.user)
         .filter(short_metadata__isnull=False)
         .select_related("author", "channel", "category")
-        .prefetch_related("likes", "dislikes", "tags", "hashtags")
+        .prefetch_related(
+            "likes",
+            "dislikes",
+            "tags",
+            "hashtags",
+            Prefetch("comment_set", queryset=visible_comments, to_attr="shorts_visible_comments"),
+        )
         .order_by("-pub_date", "-pk")[:50]
     )
     subscribed_channel_ids = set()
@@ -22,6 +34,8 @@ def shorts_feed(request):
         subscribed_channel_ids = set(request.user.subscriptions.values_list("pk", flat=True))
     for short in shorts:
         short.viewer_is_subscribed = bool(short.channel_id and short.channel_id in subscribed_channel_ids)
+        short.shorts_recent_comments = short.shorts_visible_comments[:3]
+        short.shorts_comment_count = len(short.shorts_visible_comments)
     return render(request, "videos/shorts_feed.html", {"shorts": shorts})
 
 

@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Prefetch
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm
@@ -62,6 +63,20 @@ def _reaction_payload(video, user):
     }
 
 
+def _short_comment_payload(comment):
+    return {
+        "id": comment.pk,
+        "author": comment.author.username,
+        "comment": comment.comment,
+        "reply_url": reverse("add_short_reply", args=[comment.pk]),
+        "comment_count": Comment.objects.filter(
+            video=comment.video,
+            parent__isnull=True,
+            is_hidden=False,
+        ).count(),
+    }
+
+
 @login_required
 @require_POST
 def like_short(request, pk):
@@ -103,6 +118,10 @@ def add_short_comment(request, pk):
         comment.author = request.user
         comment.save()
         notify_comment(comment)
+        if _wants_json(request):
+            return JsonResponse(_short_comment_payload(comment), status=201)
+    elif _wants_json(request):
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
     return redirect(f"/videos/shorts/#short-{video.pk}")
 
 

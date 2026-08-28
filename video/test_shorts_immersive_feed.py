@@ -39,8 +39,8 @@ class ShortsImmersiveFeedTests(TestCase):
         response = self.client.get(reverse("shorts_feed"))
         self.assertContains(response, 'class="shorts-video"', count=2)
         self.assertContains(response, "playsinline muted loop", count=2)
-        self.assertContains(response, "data-short-mute", count=2)
-        self.assertContains(response, "Unmute", count=2)
+        self.assertContains(response, 'class="btn btn-sm btn-dark shorts-mute"', count=2)
+        self.assertContains(response, ">Unmute</button>", count=2)
 
     def test_feed_includes_keyboard_and_visibility_lifecycle_logic(self):
         response = self.client.get(reverse("shorts_feed"))

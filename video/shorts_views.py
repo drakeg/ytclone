@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch, Q
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,18 +14,40 @@ from .shorts_forms import ShortClipForm
 from .shorts_models import VideoShort
 
 
+SHORTS_VISIBLE_COMMENT_LIMIT = 3
+SHORTS_VISIBLE_REPLY_LIMIT = 2
+
+
 def shorts_feed(request):
-    visible_replies = Comment.objects.filter(is_hidden=False).select_related("author").order_by("pub_date", "pk")
+    visible_replies = (
+        Comment.objects.filter(is_hidden=False)
+        .select_related("author")
+        .order_by("-pub_date", "-pk")[:SHORTS_VISIBLE_REPLY_LIMIT]
+    )
     visible_comments = (
         Comment.objects.filter(parent__isnull=True, is_hidden=False)
         .select_related("author")
-        .prefetch_related(Prefetch("replies", queryset=visible_replies, to_attr="shorts_visible_replies"))
-        .order_by("-pub_date", "-pk")
+        .annotate(shorts_reply_count=Count("replies", filter=Q(replies__is_hidden=False)))
+        .prefetch_related(Prefetch("replies", queryset=visible_replies, to_attr="shorts_recent_replies"))
+        .order_by("-pub_date", "-pk")[:SHORTS_VISIBLE_COMMENT_LIMIT]
     )
     shorts = list(
         Video.objects.visible_to(request.user).filter(short_metadata__isnull=False)
         .select_related("author", "channel", "channel__owner", "category")
-        .prefetch_related("likes", "dislikes", "tags", "hashtags", Prefetch("comment_set", queryset=visible_comments, to_attr="shorts_visible_comments"))
+        .annotate(
+            shorts_comment_count=Count(
+                "comment",
+                filter=Q(comment__parent__isnull=True, comment__is_hidden=False),
+                distinct=True,
+            )
+        )
+        .prefetch_related(
+            "likes",
+            "dislikes",
+            "tags",
+            "hashtags",
+            Prefetch("comment_set", queryset=visible_comments, to_attr="shorts_recent_comments"),
+        )
         .order_by("-pub_date", "-pk")[:50]
     )
     subscribed_channel_ids = set()
@@ -35,11 +57,8 @@ def shorts_feed(request):
         short.viewer_is_subscribed = bool(short.channel_id and short.channel_id in subscribed_channel_ids)
         short.viewer_liked = bool(request.user.is_authenticated and request.user in short.likes.all())
         short.viewer_disliked = bool(request.user.is_authenticated and request.user in short.dislikes.all())
-        short.shorts_recent_comments = short.shorts_visible_comments[:3]
-        short.shorts_comment_count = len(short.shorts_visible_comments)
         for comment in short.shorts_recent_comments:
-            comment.shorts_recent_replies = comment.shorts_visible_replies[-2:]
-            comment.shorts_reply_count = len(comment.shorts_visible_replies)
+            comment.shorts_recent_replies = list(reversed(comment.shorts_recent_replies))
     return render(request, "videos/shorts_feed.html", {"shorts": shorts})
 
 

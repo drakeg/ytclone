@@ -27,10 +27,10 @@ class ShortsReactionSerializationTests(TestCase):
 
     def test_shorts_feed_loads_serialized_reaction_handler(self):
         response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "shorts_reaction_ajax.js")
+        self.assertContains(response, "video/shorts_reaction_ajax.js")
 
     def test_reaction_handler_serializes_each_short(self):
-        script_path = Path(__file__).resolve().parent / "static" / "shorts_reaction_ajax.js"
+        script_path = Path(__file__).resolve().parent / "static" / "video" / "shorts_reaction_ajax.js"
         script = script_path.read_text(encoding="utf-8")
 
         self.assertIn("new WeakSet()", script)
@@ -42,14 +42,14 @@ class ShortsReactionSerializationTests(TestCase):
         self.assertIn("event.stopImmediatePropagation()", script)
 
     def test_handler_disables_both_reaction_forms_for_the_short(self):
-        script_path = Path(__file__).resolve().parent / "static" / "shorts_reaction_ajax.js"
+        script_path = Path(__file__).resolve().parent / "static" / "video" / "shorts_reaction_ajax.js"
         script = script_path.read_text(encoding="utf-8")
 
         self.assertIn("item.querySelectorAll('[data-short-reaction-form] button[type=\"submit\"]')", script)
         self.assertIn("button.disabled = disabled", script)
 
     def test_handler_keeps_server_authoritative_state(self):
-        script_path = Path(__file__).resolve().parent / "static" / "shorts_reaction_ajax.js"
+        script_path = Path(__file__).resolve().parent / "static" / "video" / "shorts_reaction_ajax.js"
         script = script_path.read_text(encoding="utf-8")
 
         self.assertIn('"X-Requested-With": "XMLHttpRequest"', script)

@@ -14,9 +14,18 @@
         button.removeAttribute("aria-pressed");
     };
 
-    feed.querySelectorAll(".shorts-video").forEach((video) => {
-        syncPlaybackButton(video);
-        video.addEventListener("play", () => syncPlaybackButton(video));
-        video.addEventListener("pause", () => syncPlaybackButton(video));
+    const syncAllPlaybackButtons = () => {
+        feed.querySelectorAll(".shorts-video").forEach(syncPlaybackButton);
+    };
+
+    syncAllPlaybackButtons();
+    feed.addEventListener("play", (event) => {
+        if (event.target.matches?.(".shorts-video")) syncPlaybackButton(event.target);
+    }, true);
+    feed.addEventListener("pause", (event) => {
+        if (event.target.matches?.(".shorts-video")) syncPlaybackButton(event.target);
+    }, true);
+    document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) syncAllPlaybackButtons();
     });
 })();

@@ -141,8 +141,16 @@ def _run_thumbnail_ffmpeg(source_path, output_path, *, frame_seconds):
         ) from error
 
 
+def _thumbnail_suffix(source_video, thumbnail_frame_seconds):
+    if thumbnail_frame_seconds is not None:
+        return ".jpg"
+    return Path(source_video.thumbnail.name).suffix or ".jpg"
+
+
 def _prepare_thumbnail_temp(source_video, source_temp_path, thumbnail_frame_seconds):
-    thumbnail_temp = tempfile.NamedTemporaryFile(suffix=".jpg")
+    thumbnail_temp = tempfile.NamedTemporaryFile(
+        suffix=_thumbnail_suffix(source_video, thumbnail_frame_seconds)
+    )
     if thumbnail_frame_seconds is None:
         _copy_storage_file(source_video.thumbnail, thumbnail_temp)
     else:
@@ -154,6 +162,11 @@ def _prepare_thumbnail_temp(source_video, source_temp_path, thumbnail_frame_seco
     thumbnail_temp.flush()
     thumbnail_temp.seek(0)
     return thumbnail_temp
+
+
+def _generated_thumbnail_name(thumbnail_temp):
+    suffix = Path(thumbnail_temp.name).suffix or ".jpg"
+    return f"derived-short-{uuid.uuid4().hex}{suffix}"
 
 
 def create_short_from_video(
@@ -197,7 +210,7 @@ def create_short_from_video(
                 short.video_file.save(generated_name, File(output_temp), save=False)
                 saved_video_name = short.video_file.name
 
-                thumbnail_name = f"derived-short-{uuid.uuid4().hex}.jpg"
+                thumbnail_name = _generated_thumbnail_name(thumbnail_temp)
                 short.thumbnail.save(thumbnail_name, File(thumbnail_temp), save=False)
                 saved_thumbnail_name = short.thumbnail.name
 
@@ -265,7 +278,7 @@ def rerender_short_from_source(
                 short.video_file.save(generated_name, File(output_temp), save=False)
                 new_video_name = short.video_file.name
 
-                thumbnail_name = f"derived-short-{uuid.uuid4().hex}.jpg"
+                thumbnail_name = _generated_thumbnail_name(thumbnail_temp)
                 short.thumbnail.save(thumbnail_name, File(thumbnail_temp), save=False)
                 new_thumbnail_name = short.thumbnail.name
 

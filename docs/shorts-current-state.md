@@ -1,0 +1,93 @@
+# Shorts Current State
+
+This document is the current architecture handoff for the Shorts feature after the immersive-feed and progressive-enhancement sprints. It complements the individual sprint records without requiring contributors to reconstruct the feature from a long sequence of pull requests.
+
+## Viewer experience
+
+- `/videos/shorts/` is the dedicated immersive Shorts feed.
+- The feed uses vertical scroll snapping and keeps one Short focused at a time.
+- The active Short auto-plays; off-screen Shorts pause.
+- Arrow Up/Down and Page Up/Page Down move between Shorts.
+- Space toggles playback when focus is not inside an interactive control.
+- Sound preference follows the viewer across Shorts in the current page session.
+- Native touch scrolling remains available on mobile.
+- Reduced-motion preferences disable smooth feed movement.
+- Sharing uses Web Share when available and clipboard fallbacks otherwise.
+
+## Inline social interactions
+
+The immersive feed supports progressive enhancement. JavaScript-capable browsers keep playback and feed position while server-rendered form fallbacks remain functional.
+
+- Like and dislike update through AJAX and use the server response as authoritative state.
+- Subscribe and unsubscribe update through AJAX and retain the safe `next` fallback.
+- Top-level comments post through AJAX, appear immediately, and update the visible comment count.
+- Replies post through AJAX, appear immediately, and update the parent reply count.
+- Dynamically inserted comments receive functional reply forms.
+- Failed comment/reply submissions retain typed text and expose an inline error.
+- CSRF protection remains enabled for every POST path.
+
+## Server boundaries
+
+- `video/shorts_views.py` owns Shorts feed, reaction, comment, reply, create-from-source, and re-render endpoints.
+- `video/subscription_views.py` owns subscription mutation and its AJAX response contract.
+- `video/services/short_clips.py` owns local FFmpeg clip generation, reframing, overlays, and source-frame thumbnail generation.
+- `video/static/shorts_reply_ajax.js` owns progressive enhancement for reply forms, including dynamically inserted forms.
+- `video/templates/videos/shorts_feed.html` owns the immersive feed markup and the remaining feed interaction JavaScript.
+- Standard HTML POST redirects resolve the named `shorts_feed` route and preserve the current Short anchor.
+
+## Query behavior
+
+The feed intentionally preloads the data required by its template:
+
+- video author
+- channel and channel owner
+- category
+- likes and dislikes
+- tags and hashtags
+- visible top-level comments and visible replies
+
+`channel__owner` is explicitly selected because the template checks whether the current viewer owns the channel before rendering Subscribe. A query-scaling regression test protects against restoring the previous per-Short owner lookup.
+
+## Creator workflow
+
+- Shorts are first-class `Video` rows with `VideoShort` metadata.
+- Upload can identify qualifying portrait/square videos as Shorts.
+- Creators can derive a Short from a standard source video with local FFmpeg.
+- Derived Shorts retain source linkage and clip timestamps.
+- Creators can select left, center, or right vertical reframing.
+- Creators can add text overlays and choose overlay placement.
+- Creators can select a source frame for the thumbnail.
+- Derived Shorts can be re-rendered from the source while retaining their identity.
+
+## Security and fallback behavior
+
+- Visibility rules are applied before Shorts reactions, comments, and replies are accepted.
+- Standard videos cannot use Shorts-only mutation endpoints.
+- Replies are limited to visible top-level comments; nested replies are rejected.
+- Subscription redirects validate same-origin destinations.
+- Stale CSRF submissions use the application's friendly CSRF recovery path rather than Django's technical 403 page.
+- No Shorts endpoint uses `csrf_exempt`.
+
+## Known follow-up debt
+
+These are maintenance candidates, not delivered behavior:
+
+1. **Reaction request serialization** — Like and Dislike currently disable only the submitted button while an AJAX request is in flight. Serialize reaction mutations per Short or disable both controls until the authoritative response returns.
+2. **Comment/reply prefetch scaling** — the feed prefetches all visible top-level comments and replies for the bounded feed and then slices recent items in Python. Replace this with bounded database-side prefetching when feed scale justifies it.
+3. **Shorts JavaScript extraction** — most feed behavior still lives in the template. Move it into focused static modules to reduce template risk and make browser behavior easier to test independently.
+4. **Thumbnail extension fidelity** — when a derived Short reuses a source thumbnail rather than generating a frame, verify that the saved filename extension matches the copied image format instead of assuming JPEG.
+5. **Overlay font portability** — FFmpeg overlay rendering currently relies on the DejaVu font path installed by the Docker image. Make font discovery/configuration portable before treating non-Docker rendering on macOS/Windows as supported.
+6. **Playback button semantics** — review `aria-pressed` on the play/pause control and prefer state semantics that are unambiguous to assistive technology.
+
+## Verification baseline
+
+Shorts changes should continue to run the repository's normal checks:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test --parallel 4
+docker compose run --build --rm test
+```
+
+Focused tests for the affected Shorts behavior should be run before the full suite. No AWS, paid service, live payment, or recurring-spend activation is required for the current Shorts implementation.

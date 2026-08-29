@@ -68,6 +68,7 @@ class ShortsThumbnailFrameTests(TestCase):
             thumbnail_frame_seconds=12,
         )
         self.assertEqual(Path(short.thumbnail.path).read_bytes(), b"selected-frame")
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".jpg")
         self.assertEqual(short.short_metadata.thumbnail_frame_seconds, 12)
         self.assertEqual(thumbnail_render.call_args.kwargs["frame_seconds"], 12)
 
@@ -82,7 +83,26 @@ class ShortsThumbnailFrameTests(TestCase):
             end_seconds=20,
         )
         self.assertEqual(Path(short.thumbnail.path).read_bytes(), b"source-thumb")
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".jpg")
         self.assertIsNone(short.short_metadata.thumbnail_frame_seconds)
+
+    @patch("video.services.short_clips._run_ffmpeg", side_effect=fake_video_render.__func__)
+    def test_fallback_thumbnail_preserves_non_jpeg_source_suffix(self, unused_video_render):
+        self.source.thumbnail.save(
+            "source.png",
+            SimpleUploadedFile("source.png", b"png-thumb", content_type="image/png"),
+            save=True,
+        )
+        short = create_short_from_video(
+            source_video=self.source,
+            creator=self.creator,
+            title="PNG Fallback Short",
+            description="Description",
+            start_seconds=0,
+            end_seconds=20,
+        )
+        self.assertEqual(Path(short.thumbnail.path).read_bytes(), b"png-thumb")
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".png")
 
     @patch("video.services.short_clips._run_thumbnail_ffmpeg", side_effect=fake_thumbnail_render.__func__)
     @patch("video.services.short_clips._run_ffmpeg", side_effect=fake_video_render.__func__)
@@ -107,7 +127,35 @@ class ShortsThumbnailFrameTests(TestCase):
         self.assertNotEqual(short.thumbnail.name, old_thumbnail)
         self.assertFalse(short.thumbnail.storage.exists(old_thumbnail))
         self.assertEqual(Path(short.thumbnail.path).read_bytes(), b"selected-frame")
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".jpg")
         self.assertEqual(short.short_metadata.thumbnail_frame_seconds, 10)
+
+    @patch("video.services.short_clips._run_ffmpeg", side_effect=fake_video_render.__func__)
+    def test_rerender_fallback_preserves_source_thumbnail_suffix(self, unused_video_render):
+        self.source.thumbnail.save(
+            "source.webp",
+            SimpleUploadedFile("source.webp", b"webp-thumb", content_type="image/webp"),
+            save=True,
+        )
+        short = create_short_from_video(
+            source_video=self.source,
+            creator=self.creator,
+            title="Existing WebP Short",
+            description="Description",
+            start_seconds=0,
+            end_seconds=20,
+        )
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".webp")
+        rerender_short_from_source(
+            short=short,
+            start_seconds=2,
+            end_seconds=18,
+            reframing_mode=VideoShort.ReframingMode.VERTICAL_CENTER,
+            thumbnail_frame_seconds=None,
+        )
+        short.refresh_from_db()
+        self.assertEqual(Path(short.thumbnail.path).read_bytes(), b"webp-thumb")
+        self.assertEqual(Path(short.thumbnail.name).suffix, ".webp")
 
     @patch("video.services.short_clips._run_thumbnail_ffmpeg", side_effect=ShortClipError("thumbnail failed"))
     @patch("video.services.short_clips._run_ffmpeg", side_effect=fake_video_render.__func__)

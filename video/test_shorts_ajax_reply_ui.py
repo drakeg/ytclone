@@ -29,7 +29,7 @@ class ShortsAjaxReplyUiTests(TestCase):
     def test_shorts_feed_loads_reply_ajax_script(self):
         response = self.client.get(reverse("shorts_feed"))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "shorts_reply_ajax.js")
+        self.assertContains(response, "video/shorts_reply_ajax.js")
         self.assertContains(response, 'class="shorts-reply-form mt-2"')
 
     def test_non_shorts_page_does_not_load_reply_ajax_script(self):
@@ -37,7 +37,7 @@ class ShortsAjaxReplyUiTests(TestCase):
         self.assertNotContains(response, "shorts_reply_ajax.js")
 
     def test_reply_script_uses_ajax_and_server_confirmed_data(self):
-        script = Path("video/static/shorts_reply_ajax.js").read_text()
+        script = Path("video/static/video/shorts_reply_ajax.js").read_text()
         self.assertIn("'.shorts-reply-form'", script)
         self.assertIn("'X-Requested-With': 'XMLHttpRequest'", script)
         self.assertIn("const data = await response.json()", script)
@@ -45,7 +45,7 @@ class ShortsAjaxReplyUiTests(TestCase):
         self.assertIn("data.reply_count", script)
 
     def test_reply_script_preserves_text_on_failure_and_clears_after_success(self):
-        script = Path("video/static/shorts_reply_ajax.js").read_text()
+        script = Path("video/static/video/shorts_reply_ajax.js").read_text()
         self.assertIn("if (textarea) textarea.value = ''", script)
         self.assertIn("error.hidden = false", script)
         self.assertNotIn("textarea.value = ''", script.split("catch (_)", 1)[1])

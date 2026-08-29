@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -14,17 +14,47 @@ from .shorts_forms import ShortClipForm
 from .shorts_models import VideoShort
 
 
+SHORTS_VISIBLE_COMMENT_LIMIT = 3
+SHORTS_VISIBLE_REPLY_LIMIT = 2
+
+
 def shorts_feed(request):
+    recent_comment_ids = list(
+        Comment.objects.filter(
+            video__in=Video.objects.visible_to(request.user).filter(short_metadata__isnull=False),
+            parent__isnull=True,
+            is_hidden=False,
+        )
+        .order_by("video_id", "-pub_date", "-pk")
+        .values_list("pk", flat=True)
+    )
+    bounded_comment_ids = []
+    comments_per_video = {}
+    for comment_id in recent_comment_ids:
+        comment = Comment.objects.only("video_id").get(pk=comment_id)
+        count = comments_per_video.get(comment.video_id, 0)
+        if count < SHORTS_VISIBLE_COMMENT_LIMIT:
+            bounded_comment_ids.append(comment_id)
+            comments_per_video[comment.video_id] = count + 1
+
     visible_replies = Comment.objects.filter(is_hidden=False).select_related("author").order_by("pub_date", "pk")
     visible_comments = (
-        Comment.objects.filter(parent__isnull=True, is_hidden=False)
+        Comment.objects.filter(pk__in=bounded_comment_ids)
         .select_related("author")
+        .annotate(shorts_reply_count=Count("replies", filter=__import__("django.db.models", fromlist=["Q"]).Q(replies__is_hidden=False)))
         .prefetch_related(Prefetch("replies", queryset=visible_replies, to_attr="shorts_visible_replies"))
         .order_by("-pub_date", "-pk")
     )
     shorts = list(
         Video.objects.visible_to(request.user).filter(short_metadata__isnull=False)
         .select_related("author", "channel", "channel__owner", "category")
+        .annotate(
+            shorts_comment_count=Count(
+                "comment",
+                filter=__import__("django.db.models", fromlist=["Q"]).Q(comment__parent__isnull=True, comment__is_hidden=False),
+                distinct=True,
+            )
+        )
         .prefetch_related("likes", "dislikes", "tags", "hashtags", Prefetch("comment_set", queryset=visible_comments, to_attr="shorts_visible_comments"))
         .order_by("-pub_date", "-pk")[:50]
     )
@@ -35,11 +65,9 @@ def shorts_feed(request):
         short.viewer_is_subscribed = bool(short.channel_id and short.channel_id in subscribed_channel_ids)
         short.viewer_liked = bool(request.user.is_authenticated and request.user in short.likes.all())
         short.viewer_disliked = bool(request.user.is_authenticated and request.user in short.dislikes.all())
-        short.shorts_recent_comments = short.shorts_visible_comments[:3]
-        short.shorts_comment_count = len(short.shorts_visible_comments)
+        short.shorts_recent_comments = short.shorts_visible_comments
         for comment in short.shorts_recent_comments:
-            comment.shorts_recent_replies = comment.shorts_visible_replies[-2:]
-            comment.shorts_reply_count = len(comment.shorts_visible_replies)
+            comment.shorts_recent_replies = comment.shorts_visible_replies[-SHORTS_VISIBLE_REPLY_LIMIT:]
     return render(request, "videos/shorts_feed.html", {"shorts": shorts})
 
 
@@ -201,7 +229,7 @@ def rerender_short(request, pk):
     form.fields["description"].disabled = True
     if request.method == "POST" and form.is_valid():
         try:
-            rerender_short_from_source(short=short, start_seconds=form.cleaned_data["start_seconds"], end_seconds=form.cleaned_data["end_seconds"], thumbnail_frame_seconds=form.cleaned_data["thumbnail_frame_seconds"], reframing_mode=form.cleaned_data["reframing_mode"], overlay_text=form.cleaned_data["overlay_text"], overlay_position=form.cleaned_data["overlay_position"])
+            rerender_short_from_source(short=short, start_seconds=form.cleaned_data["start_seconds"], end_seconds=form.cleaned_data["end_seconds"], thumbnail_frame_seconds=form.cleaned_data["thumbnail_frame_frame_seconds"] if "thumbnail_frame_frame_seconds" in form.cleaned_data else form.cleaned_data["thumbnail_frame_seconds"], reframing_mode=form.cleaned_data["reframing_mode"], overlay_text=form.cleaned_data["overlay_text"], overlay_position=form.cleaned_data["overlay_position"])
         except ShortClipError as error:
             form.add_error(None, str(error))
         else:

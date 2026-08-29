@@ -50,6 +50,10 @@ def _visible_short_for_user(user, pk):
     )
 
 
+def _shorts_anchor(video_id):
+    return f'{reverse("shorts_feed")}#short-{video_id}'
+
+
 def _wants_json(request):
     return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
@@ -99,7 +103,7 @@ def like_short(request, pk):
         notify_reaction(video=video, actor=request.user, kind=Notification.Kind.LIKE)
     if _wants_json(request):
         return JsonResponse(_reaction_payload(video, request.user))
-    return redirect(f"/videos/shorts/#short-{video.pk}")
+    return redirect(_shorts_anchor(video.pk))
 
 
 @login_required
@@ -114,7 +118,7 @@ def dislike_short(request, pk):
         notify_reaction(video=video, actor=request.user, kind=Notification.Kind.DISLIKE)
     if _wants_json(request):
         return JsonResponse(_reaction_payload(video, request.user))
-    return redirect(f"/videos/shorts/#short-{video.pk}")
+    return redirect(_shorts_anchor(video.pk))
 
 
 @login_required
@@ -132,7 +136,7 @@ def add_short_comment(request, pk):
             return JsonResponse(_short_comment_payload(comment), status=201)
     elif _wants_json(request):
         return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
-    return redirect(f"/videos/shorts/#short-{video.pk}")
+    return redirect(_shorts_anchor(video.pk))
 
 
 @login_required
@@ -159,7 +163,7 @@ def add_short_reply(request, pk):
             return JsonResponse(_short_reply_payload(reply), status=201)
     elif _wants_json(request):
         return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
-    return redirect(f"/videos/shorts/#short-{parent.video_id}")
+    return redirect(_shorts_anchor(parent.video_id))
 
 
 @login_required

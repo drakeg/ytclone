@@ -35,8 +35,17 @@ class ShortsPlaybackAccessibilityTests(TestCase):
         self.assertIn('const action = video.paused ? "Play" : "Pause";', script)
         self.assertIn('button.setAttribute("aria-label", `${action} ${title}`);', script)
         self.assertIn('button.removeAttribute("aria-pressed");', script)
-        self.assertIn('video.addEventListener("play"', script)
-        self.assertIn('video.addEventListener("pause"', script)
+        self.assertIn('feed.addEventListener("play"', script)
+        self.assertIn('feed.addEventListener("pause"', script)
+        self.assertIn("true);", script)
+
+    def test_script_resynchronizes_after_tab_visibility_changes(self):
+        with open("video/static/video/shorts_playback_accessibility.js", encoding="utf-8") as script_file:
+            script = script_file.read()
+
+        self.assertIn("const syncAllPlaybackButtons", script)
+        self.assertIn('document.addEventListener("visibilitychange"', script)
+        self.assertIn("if (!document.hidden) syncAllPlaybackButtons();", script)
 
     def test_mute_control_keeps_pressed_state_contract(self):
         response = self.client.get(reverse("shorts_feed"))

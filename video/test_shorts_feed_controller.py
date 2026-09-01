@@ -27,9 +27,11 @@ class ShortsFeedControllerTests(TestCase):
         self.assertContains(response, "video/shorts_reaction_ajax.js")
         self.assertContains(response, "video/shorts_playback_accessibility.js")
         self.assertContains(response, "video/shorts_share.js")
+        self.assertContains(response, "video/shorts_subscription_ajax.js")
 
         response = self.client.get(reverse("video_list"))
         self.assertNotContains(response, "video/shorts_feed.js")
+        self.assertNotContains(response, "video/shorts_subscription_ajax.js")
 
     def test_template_contains_no_inline_executable_javascript(self):
         template = Path("video/templates/videos/shorts_feed.html").read_text(encoding="utf-8")
@@ -51,10 +53,9 @@ class ShortsFeedControllerTests(TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, script)
 
-    def test_controller_preserves_unowned_social_progressive_enhancement_hooks(self):
+    def test_controller_preserves_unowned_comment_progressive_enhancement_hooks(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
         for token in (
-            "data-short-subscribe-form",
             "data-short-comment-form",
             "X-Requested-With",
             "XMLHttpRequest",
@@ -83,6 +84,17 @@ class ShortsFeedControllerTests(TestCase):
         self.assertIn("data-short-share", share_script)
         self.assertIn("navigator.share", share_script)
         self.assertIn("copyShareUrl", share_script)
+
+    def test_feed_controller_does_not_duplicate_specialized_subscription_handler(self):
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertNotIn("data-short-subscribe-form", script)
+        self.assertNotIn("submitSubscription", script)
+        self.assertNotIn("syncSubscription", script)
+
+        subscription_script = Path("video/static/video/shorts_subscription_ajax.js").read_text(encoding="utf-8")
+        self.assertIn("data-short-subscribe-form", subscription_script)
+        self.assertIn("submitSubscription", subscription_script)
+        self.assertIn("syncSubscription", subscription_script)
 
     def test_reaction_forms_remain_server_rendered_fallbacks(self):
         viewer = User.objects.create_user(username="reaction-viewer", password="password123")

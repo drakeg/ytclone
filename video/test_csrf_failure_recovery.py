@@ -8,6 +8,27 @@ class CsrfFailureRecoveryTests(TestCase):
     def setUp(self):
         self.client = Client(enforce_csrf_checks=True)
 
+    def test_ajax_stale_form_returns_structured_json_403(self):
+        response = self.client.post(
+            "/videos/shorts/1/like/",
+            {},
+            HTTP_X_CSRFTOKEN="stale-token",
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            HTTP_ACCEPT="application/json",
+            HTTP_REFERER="http://testserver/videos/shorts/#short-1",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.json(),
+            {
+                "error": "csrf_failed",
+                "message": "That form expired for security reasons. Please try again.",
+            },
+        )
+        self.assertEqual(response.headers["Content-Type"], "application/json")
+        self.assertNotIn("Location", response.headers)
+
     def test_stale_login_form_redirects_to_fresh_login_and_preserves_next(self):
         response = self.client.post(
             reverse("login"),

@@ -1,13 +1,26 @@
 from urllib.parse import urlencode
 
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 
+CSRF_FAILURE_MESSAGE = "That form expired for security reasons. Please try again."
+
+
 def csrf_failure(request, reason=""):
     """Recover from stale/invalid CSRF submissions without exposing Django's 403 page."""
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return JsonResponse(
+            {
+                "error": "csrf_failed",
+                "message": CSRF_FAILURE_MESSAGE,
+            },
+            status=403,
+        )
+
     referer = request.META.get("HTTP_REFERER", "")
     safe_referer = referer if url_has_allowed_host_and_scheme(
         referer,
@@ -15,10 +28,7 @@ def csrf_failure(request, reason=""):
         require_https=request.is_secure(),
     ) else ""
 
-    messages.warning(
-        request,
-        "That form expired for security reasons. Please try again.",
-    )
+    messages.warning(request, CSRF_FAILURE_MESSAGE)
 
     # Login rotates Django's CSRF token. A stale login form is the most common
     # place users encounter this, so issue a fresh login page and preserve the

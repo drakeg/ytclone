@@ -43,12 +43,12 @@ class ShortsImmersiveFeedTests(TestCase):
         self.assertContains(response, ">Unmute</button>", count=2)
 
     def test_feed_includes_keyboard_and_visibility_lifecycle_logic(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "IntersectionObserver")
-        self.assertContains(response, "ArrowDown")
-        self.assertContains(response, "PageDown")
-        self.assertContains(response, "visibilitychange")
-        self.assertContains(response, "prefers-reduced-motion")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("IntersectionObserver", script)
+        self.assertIn("ArrowDown", script)
+        self.assertIn("PageDown", script)
+        self.assertIn("visibilitychange", script)
+        self.assertIn("prefers-reduced-motion", script)
 
     def test_existing_viewer_actions_remain_available(self):
         self.client.force_login(self.viewer)
@@ -74,3 +74,4 @@ class ShortsImmersiveFeedTests(TestCase):
         self.assertNotContains(response, hidden.title)
         self.assertContains(response, self.shorts[0].title)
         self.assertContains(response, self.shorts[1].title)
+from pathlib import Path

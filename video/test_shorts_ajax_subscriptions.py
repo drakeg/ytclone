@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -30,13 +32,22 @@ class ShortsAjaxSubscriptionUiTests(TestCase):
         self.assertContains(response, "data-short-subscribe")
         self.assertContains(response, 'aria-pressed="false"')
         self.assertContains(response, "Could not update subscription.")
+        self.assertContains(response, "video/shorts_subscription_ajax.js")
 
-    def test_feed_wires_subscription_forms_to_ajax_handler(self):
+    def test_dedicated_controller_wires_subscription_forms_to_ajax(self):
+        script = Path("video/static/video/shorts_subscription_ajax.js").read_text(encoding="utf-8")
+        self.assertIn('"[data-short-subscribe-form]"', script)
+        self.assertIn('"X-Requested-With": "XMLHttpRequest"', script)
+        self.assertIn("syncSubscription(form, await response.json())", script)
+        self.assertIn('feed.addEventListener("submit"', script)
+        self.assertIn("new FormData(form)", script)
+
+    def test_general_feed_controller_no_longer_owns_subscriptions(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("submitSubscription(form)", script)
-        self.assertIn("syncSubscription(form,await response.json())", script)
-        self.assertIn("'X-Requested-With':'XMLHttpRequest'", script)
-        self.assertIn("subscribeForms.forEach", script)
+        self.assertNotIn("data-short-subscribe-form", script)
+        self.assertNotIn("submitSubscription", script)
+        self.assertNotIn("syncSubscription", script)
+        self.assertNotIn("subscribeForms", script)
 
     def test_subscribed_state_renders_before_javascript_runs(self):
         self.channel.subscribers.add(self.viewer)
@@ -50,4 +61,3 @@ class ShortsAjaxSubscriptionUiTests(TestCase):
         expected_next = f'{reverse("shorts_feed")}#short-{self.video.pk}'
         self.assertContains(response, f'name="next" value="{expected_next}"')
         self.assertContains(response, f'action="{reverse("subscribe", args=[self.channel.pk])}"')
-from pathlib import Path

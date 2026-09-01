@@ -1,5 +1,4 @@
 import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 from django.test import SimpleTestCase
@@ -10,7 +9,7 @@ from .shorts_models import VideoShort
 
 class ShortsOverlayFontTests(SimpleTestCase):
     @patch("video.services.short_clips.subprocess.run")
-    def test_overlay_uses_fontconfig_name_instead_of_linux_absolute_path(self, run):
+    def test_overlay_uses_escaped_fontconfig_style_pattern(self, run):
         with tempfile.NamedTemporaryFile(suffix=".mp4") as source, tempfile.NamedTemporaryFile(suffix=".mp4") as output:
             _run_ffmpeg(
                 source.name,
@@ -24,7 +23,8 @@ class ShortsOverlayFontTests(SimpleTestCase):
 
         command = run.call_args.args[0]
         filter_value = command[command.index("-vf") + 1]
-        self.assertIn("drawtext=font='DejaVu Sans':fontstyle=Bold:", filter_value)
+        self.assertIn("drawtext=font='DejaVu Sans\\:style=Bold':", filter_value)
+        self.assertNotIn("fontstyle=", filter_value)
         self.assertNotIn("fontfile=/usr/share/fonts", filter_value)
         self.assertIn("textfile=", filter_value)
 

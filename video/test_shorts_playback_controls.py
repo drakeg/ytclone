@@ -31,24 +31,25 @@ class ShortsPlaybackControlsTests(TestCase):
         self.assertContains(response, 'aria-pressed="false"')
 
     def test_feed_supports_video_click_and_space_playback_toggle(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "v.addEventListener('click',()=>togglePlay(i))")
-        self.assertContains(response, "e.code==='Space'")
-        self.assertContains(response, "togglePlay(activeIndex)")
-        self.assertContains(response, "v.addEventListener('play',()=>syncPlay(i))")
-        self.assertContains(response, "v.addEventListener('pause',()=>syncPlay(i))")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("v.addEventListener('click',()=>togglePlay(i))", script)
+        self.assertIn("e.code==='Space'", script)
+        self.assertIn("togglePlay(activeIndex)", script)
+        self.assertIn("v.addEventListener('play',()=>syncPlay(i))", script)
+        self.assertIn("v.addEventListener('pause',()=>syncPlay(i))", script)
 
     def test_sound_preference_is_shared_across_feed_videos(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "soundEnabled=false")
-        self.assertContains(response, "v.muted=!soundEnabled")
-        self.assertContains(response, "soundEnabled=!soundEnabled")
-        self.assertContains(response, "syncSound()")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("soundEnabled=false", script)
+        self.assertIn("v.muted=!soundEnabled", script)
+        self.assertIn("soundEnabled=!soundEnabled", script)
+        self.assertIn("syncSound()", script)
 
     def test_existing_feed_navigation_and_lifecycle_controls_remain(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "IntersectionObserver")
-        self.assertContains(response, "ArrowDown")
-        self.assertContains(response, "PageDown")
-        self.assertContains(response, "visibilitychange")
-        self.assertContains(response, "prefers-reduced-motion")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("IntersectionObserver", script)
+        self.assertIn("ArrowDown", script)
+        self.assertIn("PageDown", script)
+        self.assertIn("visibilitychange", script)
+        self.assertIn("prefers-reduced-motion", script)
+from pathlib import Path

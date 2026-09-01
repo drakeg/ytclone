@@ -32,11 +32,11 @@ class ShortsAjaxSubscriptionUiTests(TestCase):
         self.assertContains(response, "Could not update subscription.")
 
     def test_feed_wires_subscription_forms_to_ajax_handler(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "submitSubscription(form)")
-        self.assertContains(response, "syncSubscription(form,await response.json())")
-        self.assertContains(response, "'X-Requested-With':'XMLHttpRequest'")
-        self.assertContains(response, "subscribeForms.forEach")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("submitSubscription(form)", script)
+        self.assertIn("syncSubscription(form,await response.json())", script)
+        self.assertIn("'X-Requested-With':'XMLHttpRequest'", script)
+        self.assertIn("subscribeForms.forEach", script)
 
     def test_subscribed_state_renders_before_javascript_runs(self):
         self.channel.subscribers.add(self.viewer)
@@ -50,3 +50,4 @@ class ShortsAjaxSubscriptionUiTests(TestCase):
         expected_next = f'{reverse("shorts_feed")}#short-{self.video.pk}'
         self.assertContains(response, f'name="next" value="{expected_next}"')
         self.assertContains(response, f'action="{reverse("subscribe", args=[self.channel.pk])}"')
+from pathlib import Path

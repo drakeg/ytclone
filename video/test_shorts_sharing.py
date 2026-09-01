@@ -30,20 +30,21 @@ class ShortsSharingTests(TestCase):
         self.assertContains(response, 'aria-label="Share Share This Short"')
 
     def test_feed_uses_web_share_when_available(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "if(navigator.share)")
-        self.assertContains(response, "await navigator.share({title,url})")
-        self.assertContains(response, "new URL(button.dataset.shareUrl,window.location.origin).href")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("if(navigator.share)", script)
+        self.assertIn("await navigator.share({title,url})", script)
+        self.assertIn("new URL(button.dataset.shareUrl,window.location.origin).href", script)
 
     def test_feed_has_clipboard_and_legacy_copy_fallbacks(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "navigator.clipboard&&navigator.clipboard.writeText")
-        self.assertContains(response, "await navigator.clipboard.writeText(url)")
-        self.assertContains(response, "document.execCommand('copy')")
-        self.assertContains(response, "button.textContent=copied?'Copied':'Copy failed'")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("navigator.clipboard&&navigator.clipboard.writeText", script)
+        self.assertIn("await navigator.clipboard.writeText(url)", script)
+        self.assertIn("document.execCommand('copy')", script)
+        self.assertIn("button.textContent=copied?'Copied':'Copy failed'", script)
 
     def test_share_errors_do_not_break_feed(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "error.name==='AbortError'")
-        self.assertContains(response, "button.textContent='Share failed'")
-        self.assertContains(response, "shareButtons.forEach")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("error.name==='AbortError'", script)
+        self.assertIn("button.textContent='Share failed'", script)
+        self.assertIn("shareButtons.forEach", script)
+from pathlib import Path

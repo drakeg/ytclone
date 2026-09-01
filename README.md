@@ -14,6 +14,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Grouped search across videos, channels, and visible playlists
 - Video search sorting by relevance, date, views, and likes
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
+- Personalized discovery with creator affinities, tags, and hashtags
 - Private playback progress with Continue Watching and automatic resume
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private creator watch-time analytics with per-video duration, completion, and retention aggregates
@@ -37,6 +38,9 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Test-mode creator monetization with tips, channel memberships, refunds, and accounting
 - Members-only video access with cancellation and payment-lifecycle handling
 - Channel community posts, polls, and highlighted creator Q&A
+- Member community audiences, early-access releases, supporter badges, and video Q&A
+- Site-administrator moderation, channel sanctions, audit history, and content reports
+- First-class Shorts with automatic detection, local clip editing, overlays, thumbnails, and an immersive social feed
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
@@ -191,7 +195,7 @@ Activate the virtual environment and install dependencies as described above, th
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run
-python manage.py test
+python manage.py test --parallel 4
 ```
 
 A successful migration-drift check prints `No changes detected`. If it reports model changes, create and review the required migration before closing the sprint.
@@ -231,6 +235,7 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 - `docs/roadmap.md` — completed work, current sprint status, delivery checklist, and next candidates
 - `docs/development-handoff.md` — repository continuity guide for a new development session or assistant
+- `docs/shorts-current-state.md` — current Shorts architecture, behavior, safeguards, and maintenance candidates
 - `docs/unlisted-sharing.md` — revocable direct links and privacy boundaries
 - `docs/publication-management.md` — creator filters, bulk visibility safeguards, and tests
 - `docs/video-trash.md` — recovery, retention, permanent deletion, and media-cleanup boundaries
@@ -260,7 +265,9 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 
 ## Current direction
 
-Private video bookmarks are the latest completed sprint. Before starting more
-work, update local `main`, review the roadmap and handoff, and select one focused
-next sprint using the documentation-first delivery process. Higher-cost AWS
-services will be introduced only when usage justifies them.
+The latest development phase delivered administration and moderation, scheduled
+notifications, richer discovery and memberships, and the first-class Shorts
+workflow. Current work is reducing Shorts template risk through focused static
+controllers. Continue selecting one bounded sprint at a time through the
+documentation-first process. Higher-cost AWS services will be introduced only
+when usage justifies them.

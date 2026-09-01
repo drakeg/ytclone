@@ -32,21 +32,23 @@ class ShortsAjaxCommentUiTests(TestCase):
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
 
     def test_feed_wires_comment_form_to_ajax_contract(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "submitComment(form)")
-        self.assertContains(response, "renderComment(form,data)")
-        self.assertContains(response, "'X-Requested-With':'XMLHttpRequest'")
-        self.assertContains(response, "'Accept':'application/json'")
-        self.assertContains(response, "commentForms.forEach")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("submitComment(form)", script)
+        self.assertIn("renderComment(form,data)", script)
+        self.assertIn("'X-Requested-With':'XMLHttpRequest'", script)
+        self.assertIn("'Accept':'application/json'", script)
+        self.assertIn("commentForms.forEach", script)
 
     def test_comment_rendering_uses_text_content_not_server_html(self):
-        response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "author.textContent='@'+data.author")
-        self.assertContains(response, "body.textContent=data.comment")
-        self.assertNotContains(response, "innerHTML=data.comment")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("author.textContent='@'+data.author", script)
+        self.assertIn("body.textContent=data.comment", script)
+        self.assertNotIn("innerHTML=data.comment", script)
 
     def test_comment_ui_updates_count_and_exposes_failure_status(self):
         response = self.client.get(reverse("shorts_feed"))
-        self.assertContains(response, "count.textContent=data.comment_count")
         self.assertContains(response, "Could not post comment.")
-        self.assertContains(response, "if(!response.ok)throw new Error")
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("count.textContent=data.comment_count", script)
+        self.assertIn("if(!response.ok)throw new Error", script)
+from pathlib import Path

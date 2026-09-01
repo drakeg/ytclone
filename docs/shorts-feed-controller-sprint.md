@@ -78,6 +78,4 @@ their rendered-markup assertions.
 - 44 affected Shorts tests passed
 - All 536 tests passed directly with `--parallel 4`
 - `docker compose config --quiet` passed
-- `docker compose run --build --rm test` remains the required local container
-  command, but could not run here because no Docker daemon or Docker Desktop
-  application was available
+- All 536 tests passed through `docker compose run --build --rm test`

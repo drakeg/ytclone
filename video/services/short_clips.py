@@ -45,10 +45,11 @@ def _overlay_y(position):
 
 
 def _overlay_font_filter():
-    # Let FFmpeg/fontconfig resolve a broadly available sans-serif bold font.
-    # This works in the Docker image and avoids a Linux-only absolute font path
-    # when developers run the renderer directly on macOS or Windows.
-    return "font='DejaVu Sans':fontstyle=Bold:"
+    # FFmpeg drawtext accepts a fontconfig pattern through the font option when
+    # fontconfig support is enabled. Escape the pattern colon for the filter
+    # parser so the requested bold style is part of the font pattern rather
+    # than being interpreted as another drawtext option.
+    return "font='DejaVu Sans\\:style=Bold':"
 
 
 def _validate_clip(

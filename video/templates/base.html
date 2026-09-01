@@ -98,6 +98,6 @@
         </main>
     </div>
 
-    {% if request.resolver_match.url_name == 'shorts_feed' %}<script src="{% static 'video/shorts_feed.js' %}" defer></script><script src="{% static 'video/shorts_reply_ajax.js' %}" defer></script><script src="{% static 'video/shorts_reaction_ajax.js' %}" defer></script><script src="{% static 'video/shorts_playback_accessibility.js' %}" defer></script><script src="{% static 'video/shorts_share.js' %}" defer></script>{% endif %}
+    {% if request.resolver_match.url_name == 'shorts_feed' %}<script src="{% static 'video/shorts_feed.js' %}" defer></script><script src="{% static 'video/shorts_reply_ajax.js' %}" defer></script><script src="{% static 'video/shorts_reaction_ajax.js' %}" defer></script><script src="{% static 'video/shorts_playback_accessibility.js' %}" defer></script><script src="{% static 'video/shorts_share.js' %}" defer></script><script src="{% static 'video/shorts_subscription_ajax.js' %}" defer></script>{% endif %}
 </body>
 </html>

@@ -32,9 +32,10 @@ The immersive feed supports progressive enhancement. JavaScript-capable browsers
 - `video/subscription_views.py` owns subscription mutation and its AJAX response contract.
 - `video/services/short_clips.py` owns local FFmpeg clip generation, reframing, overlays, and source-frame thumbnail generation.
 - `video/static/video/shorts_feed.js` owns feed initialization, navigation,
-  autoplay, sound, visibility lifecycle, and legacy progressive-enhancement handlers.
+  autoplay, sound, visibility lifecycle, subscription/comment enhancement, and the
+  remaining legacy sharing fallback.
 - `video/static/video/shorts_reply_ajax.js` owns progressive enhancement for reply forms, including dynamically inserted forms.
-- `video/static/video/shorts_reaction_ajax.js` serializes reaction changes per Short.
+- `video/static/video/shorts_reaction_ajax.js` is the sole JavaScript owner of Shorts Like/Dislike AJAX behavior and serializes reaction changes per Short.
 - `video/static/video/shorts_playback_accessibility.js` keeps command-button labels synchronized.
 - `video/static/video/shorts_share.js` owns native sharing and clipboard fallbacks.
 - `video/templates/videos/shorts_feed.html` owns server-rendered feed markup and responsive inline CSS, but no executable JavaScript.
@@ -77,17 +78,16 @@ The feed intentionally preloads the data required by its template:
 
 These are maintenance candidates, not delivered behavior:
 
-1. **Comment/reply prefetch scaling** — the feed prefetches all visible top-level comments and replies for the bounded feed and then slices recent items in Python. Replace this with bounded database-side prefetching when feed scale justifies it.
-2. **Controller decomposition** — `shorts_feed.js` is now outside the template but
-   still contains legacy handlers shadowed by specialized reaction and sharing
-   controllers. Remove those duplicates in focused, behavior-preserving slices.
-3. **Static CSS extraction** — the responsive Shorts stylesheet remains inline in
+1. **Controller decomposition** — `shorts_feed.js` still contains the legacy sharing
+   handler shadowed by the specialized sharing controller. Remove that duplicate in
+   a separate behavior-preserving slice, then evaluate subscription/comment ownership.
+2. **Static CSS extraction** — the responsive Shorts stylesheet remains inline in
    the template. Move it to the app namespace when stylesheet caching and template
    readability justify another focused cleanup.
-4. **Real FFmpeg smoke coverage** — command-construction tests previously missed an
+3. **Real FFmpeg smoke coverage** — command-construction tests previously missed an
    invalid `drawtext` option. Add an optional real-binary smoke test in an
    environment where FFmpeg/fontconfig availability can be guaranteed.
-5. **CSRF-aware client recovery** — AJAX CSRF failures now return structured JSON;
+4. **CSRF-aware client recovery** — AJAX CSRF failures now return structured JSON;
    individual controllers still show generic errors rather than the server's
    retry guidance.
 

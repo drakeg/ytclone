@@ -29,6 +29,38 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Current sprint: Shorts Feed Controller Extraction
+
+Goal: move the remaining inline Shorts feed JavaScript into a namespaced static
+controller without changing playback, navigation, sound, social interactions,
+sharing, or non-JavaScript fallbacks.
+
+Acceptance criteria:
+
+- The Shorts template contains no inline executable JavaScript.
+- A `video/shorts_feed.js` controller owns the existing feed initialization,
+  navigation, autoplay, sound, subscription, reaction, comment, and fallback behavior.
+- The controller loads only on the Shorts feed and after the feed markup is available.
+- Existing extracted reply, reaction-serialization, playback-accessibility, and
+  sharing controllers continue to own their specialized enhancements without duplicate requests.
+- Standard HTML form fallbacks and all server authorization/visibility behavior remain unchanged.
+- Focused regression coverage protects the static path, page scope, initialization,
+  and absence of inline executable JavaScript.
+
+Out of scope: UI redesign, behavior changes, CSS extraction, backend changes,
+query changes, schema or migrations, dependencies, external services, AWS,
+paid services, workers, queues, and Terraform.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_shorts_feed_controller
+python manage.py test --parallel 4
+docker compose run --build --rm test
+```
+
 ## Completed sprint: Private Video Bookmarks
 
 Goal: let signed-in viewers privately save labeled playback moments and return to

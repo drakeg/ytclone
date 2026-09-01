@@ -77,9 +77,8 @@ Verification:
 - Django system checks passed and the migration-drift check reported no changes
 - All 44 affected Shorts tests passed
 - All 536 tests passed directly with four parallel workers
-- Docker Compose configuration parsed successfully; the documented container
-  command could not run because no Docker daemon or Docker Desktop application
-  was available in the delivery environment
+- Docker Compose configuration parsed successfully, and all 536 tests passed
+  through `docker compose run --build --rm test`
 - No schema, migration, backend, dependency, AWS, paid-service, or Terraform change
 
 ## Completed sprint: Private Video Bookmarks

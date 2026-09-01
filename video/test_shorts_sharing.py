@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -21,6 +23,9 @@ class ShortsSharingTests(TestCase):
         )
         VideoShort.objects.create(video=self.video)
 
+    def _share_script(self):
+        return Path("video/static/video/shorts_share.js").read_text(encoding="utf-8")
+
     def test_feed_renders_share_control_with_canonical_video_url(self):
         response = self.client.get(reverse("shorts_feed"))
         self.assertEqual(response.status_code, 200)
@@ -30,21 +35,20 @@ class ShortsSharingTests(TestCase):
         self.assertContains(response, 'aria-label="Share Share This Short"')
 
     def test_feed_uses_web_share_when_available(self):
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("if(navigator.share)", script)
-        self.assertIn("await navigator.share({title,url})", script)
-        self.assertIn("new URL(button.dataset.shareUrl,window.location.origin).href", script)
+        script = self._share_script()
+        self.assertIn("if (navigator.share)", script)
+        self.assertIn("await navigator.share({title, url})", script)
+        self.assertIn("new URL(button.dataset.shareUrl, window.location.origin).href", script)
 
     def test_feed_has_clipboard_and_legacy_copy_fallbacks(self):
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("navigator.clipboard&&navigator.clipboard.writeText", script)
+        script = self._share_script()
+        self.assertIn("navigator.clipboard?.writeText", script)
         self.assertIn("await navigator.clipboard.writeText(url)", script)
-        self.assertIn("document.execCommand('copy')", script)
-        self.assertIn("button.textContent=copied?'Copied':'Copy failed'", script)
+        self.assertIn('document.execCommand("copy")', script)
+        self.assertIn('button.textContent = copied ? "Copied" : "Copy failed"', script)
 
     def test_share_errors_do_not_break_feed(self):
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("error.name==='AbortError'", script)
-        self.assertIn("button.textContent='Share failed'", script)
-        self.assertIn("shareButtons.forEach", script)
-from pathlib import Path
+        script = self._share_script()
+        self.assertIn('error?.name === "AbortError"', script)
+        self.assertIn('button.textContent = "Share failed"', script)
+        self.assertIn('event.stopImmediatePropagation()', script)

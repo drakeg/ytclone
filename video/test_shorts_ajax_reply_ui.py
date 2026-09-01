@@ -37,15 +37,18 @@ class ShortsAjaxReplyUiTests(TestCase):
         self.assertNotContains(response, "shorts_reply_ajax.js")
 
     def test_reply_script_uses_ajax_and_server_confirmed_data(self):
-        script = Path("video/static/video/shorts_reply_ajax.js").read_text()
+        script = Path("video/static/video/shorts_reply_ajax.js").read_text(encoding="utf-8")
         self.assertIn("'.shorts-reply-form'", script)
-        self.assertIn("'X-Requested-With': 'XMLHttpRequest'", script)
+        self.assertIn("X-Requested-With", script)
+        self.assertIn("XMLHttpRequest", script)
+        self.assertIn("Accept", script)
+        self.assertIn("application/json", script)
         self.assertIn("const data = await response.json()", script)
         self.assertIn("body.textContent = data.comment", script)
         self.assertIn("data.reply_count", script)
 
     def test_reply_script_preserves_text_on_failure_and_clears_after_success(self):
-        script = Path("video/static/video/shorts_reply_ajax.js").read_text()
+        script = Path("video/static/video/shorts_reply_ajax.js").read_text(encoding="utf-8")
         self.assertIn("if (textarea) textarea.value = ''", script)
         self.assertIn("error.hidden = false", script)
         self.assertNotIn("textarea.value = ''", script.split("catch (_)", 1)[1])

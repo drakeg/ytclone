@@ -56,3 +56,28 @@ docker compose run --build --rm test
 - CSS extraction
 - Backend response or authorization changes
 - Database, infrastructure, or paid-service changes
+
+## Delivered result
+
+The original minified controller body was moved byte-for-byte into
+`video/static/video/shorts_feed.js`, then loaded with `defer` only on the named
+Shorts feed route. The template retains its server-rendered markup and CSS but
+contains no executable script. Existing behavior-specific controllers remain
+loaded after the main feed controller.
+
+Four focused tests protect route scoping, the no-inline-script boundary,
+initialization/playback hooks, and social progressive-enhancement hooks. Existing
+tests that inspect client behavior now read the static controller while retaining
+their rendered-markup assertions.
+
+## Verification result
+
+- Django checks passed
+- Migration-drift check: `No changes detected`
+- 4 focused controller tests passed
+- 44 affected Shorts tests passed
+- All 536 tests passed directly with `--parallel 4`
+- `docker compose config --quiet` passed
+- `docker compose run --build --rm test` remains the required local container
+  command, but could not run here because no Docker daemon or Docker Desktop
+  application was available

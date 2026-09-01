@@ -31,8 +31,13 @@ The immersive feed supports progressive enhancement. JavaScript-capable browsers
 - `video/shorts_views.py` owns Shorts feed, reaction, comment, reply, create-from-source, and re-render endpoints.
 - `video/subscription_views.py` owns subscription mutation and its AJAX response contract.
 - `video/services/short_clips.py` owns local FFmpeg clip generation, reframing, overlays, and source-frame thumbnail generation.
-- `video/static/shorts_reply_ajax.js` owns progressive enhancement for reply forms, including dynamically inserted forms.
-- `video/templates/videos/shorts_feed.html` owns the immersive feed markup and the remaining feed interaction JavaScript.
+- `video/static/video/shorts_feed.js` owns feed initialization, navigation,
+  autoplay, sound, visibility lifecycle, and legacy progressive-enhancement handlers.
+- `video/static/video/shorts_reply_ajax.js` owns progressive enhancement for reply forms, including dynamically inserted forms.
+- `video/static/video/shorts_reaction_ajax.js` serializes reaction changes per Short.
+- `video/static/video/shorts_playback_accessibility.js` keeps command-button labels synchronized.
+- `video/static/video/shorts_share.js` owns native sharing and clipboard fallbacks.
+- `video/templates/videos/shorts_feed.html` owns server-rendered feed markup and responsive inline CSS, but no executable JavaScript.
 - Standard HTML POST redirects resolve the named `shorts_feed` route and preserve the current Short anchor.
 
 ## Query behavior
@@ -72,12 +77,19 @@ The feed intentionally preloads the data required by its template:
 
 These are maintenance candidates, not delivered behavior:
 
-1. **Reaction request serialization** — Like and Dislike currently disable only the submitted button while an AJAX request is in flight. Serialize reaction mutations per Short or disable both controls until the authoritative response returns.
-2. **Comment/reply prefetch scaling** — the feed prefetches all visible top-level comments and replies for the bounded feed and then slices recent items in Python. Replace this with bounded database-side prefetching when feed scale justifies it.
-3. **Shorts JavaScript extraction** — most feed behavior still lives in the template. Move it into focused static modules to reduce template risk and make browser behavior easier to test independently.
-4. **Thumbnail extension fidelity** — when a derived Short reuses a source thumbnail rather than generating a frame, verify that the saved filename extension matches the copied image format instead of assuming JPEG.
-5. **Overlay font portability** — FFmpeg overlay rendering currently relies on the DejaVu font path installed by the Docker image. Make font discovery/configuration portable before treating non-Docker rendering on macOS/Windows as supported.
-6. **Playback button semantics** — review `aria-pressed` on the play/pause control and prefer state semantics that are unambiguous to assistive technology.
+1. **Comment/reply prefetch scaling** — the feed prefetches all visible top-level comments and replies for the bounded feed and then slices recent items in Python. Replace this with bounded database-side prefetching when feed scale justifies it.
+2. **Controller decomposition** — `shorts_feed.js` is now outside the template but
+   still contains legacy handlers shadowed by specialized reaction and sharing
+   controllers. Remove those duplicates in focused, behavior-preserving slices.
+3. **Static CSS extraction** — the responsive Shorts stylesheet remains inline in
+   the template. Move it to the app namespace when stylesheet caching and template
+   readability justify another focused cleanup.
+4. **Real FFmpeg smoke coverage** — command-construction tests previously missed an
+   invalid `drawtext` option. Add an optional real-binary smoke test in an
+   environment where FFmpeg/fontconfig availability can be guaranteed.
+5. **CSRF-aware client recovery** — AJAX CSRF failures now return structured JSON;
+   individual controllers still show generic errors rather than the server's
+   retry guidance.
 
 ## Verification baseline
 

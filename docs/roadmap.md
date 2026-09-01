@@ -29,7 +29,7 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
-## Current sprint: Shorts Feed Controller Extraction
+## Completed sprint: Shorts Feed Controller Extraction
 
 Goal: move the remaining inline Shorts feed JavaScript into a namespaced static
 controller without changing playback, navigation, sound, social interactions,
@@ -60,6 +60,27 @@ python manage.py test video.test_shorts_feed_controller
 python manage.py test --parallel 4
 docker compose run --build --rm test
 ```
+
+Delivered:
+
+- A literal move of the remaining inline controller to `video/static/video/shorts_feed.js`
+- Route-scoped deferred loading through the existing static namespace
+- No inline executable JavaScript in the Shorts template
+- Preserved feed, playback, sound, navigation, visibility, subscription,
+  reaction, comment, and sharing behavior
+- Continued ownership by the specialized reply, serialized-reaction,
+  playback-accessibility, and sharing controllers
+- Four new focused regressions plus updated source-location assertions in affected tests
+
+Verification:
+
+- Django system checks passed and the migration-drift check reported no changes
+- All 44 affected Shorts tests passed
+- All 536 tests passed directly with four parallel workers
+- Docker Compose configuration parsed successfully; the documented container
+  command could not run because no Docker daemon or Docker Desktop application
+  was available in the delivery environment
+- No schema, migration, backend, dependency, AWS, paid-service, or Terraform change
 
 ## Completed sprint: Private Video Bookmarks
 

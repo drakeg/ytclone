@@ -4,14 +4,14 @@ This document lets a new development session or assistant continue the project
 without depending on prior chat history. Repository files and current GitHub
 state are authoritative when they differ from this dated snapshot.
 
-## Handoff snapshot — August 22, 2026
+## Handoff snapshot — September 1, 2026
 
 - Repository: `drakeg/ytclone`
 - Default branch: `main`
-- Latest merged work at handoff: [#104 — Add private video bookmarks](https://github.com/drakeg/ytclone/pull/104)
-- Handoff documentation branch: `docs/chatgpt-handoff`
-- Latest migration on that branch: `video/0023_video_bookmarks`
-- Verified test count on that branch: 316
+- Latest merged work reviewed at handoff: [#157 — Fix Shorts overlay fontconfig style syntax](https://github.com/drakeg/ytclone/pull/157)
+- Current continuation branch: `cleanup/shorts-feed-controller`
+- Latest migration on `main`: `video/0035_videoshort_thumbnail_frame_seconds`
+- Verified test count on the continuation branch: 536
 
 Before making changes, inspect GitHub rather than assuming this snapshot is still
 current. Update local `main` and branch from it. Never reconstruct
@@ -30,6 +30,10 @@ Important code locations:
 - `video/models.py` — videos, channels, playlists, viewing data, notifications,
   team invitations, chapters, and bookmarks
 - `video/views.py` plus focused `*_views.py` modules — request handling
+- `video/shorts_views.py`, `video/shorts_models.py`, and
+  `video/services/short_clips.py` — Shorts feed and local creator tooling
+- `video/administration_views.py`, `video/moderation_models.py`, and
+  `video/reporting_models.py` — site moderation and reporting
 - `video/services/` — business rules, authorization-sensitive operations, and
   query composition
 - `video/templates/` and `video/static/` — server-rendered interface and browser behavior
@@ -125,7 +129,7 @@ cp .env.example .env
 python manage.py migrate
 python manage.py check
 python manage.py makemigrations --check --dry-run
-python manage.py test
+python manage.py test --parallel 4
 ```
 
 Add a focused test-module command for every sprint before the full suite. When a
@@ -161,19 +165,28 @@ docker compose exec -e DJANGO_ADMIN_USERNAME=your_username web python manage.py 
 - `0021_team_invitation_notifications` — invitation notification linkage and activity
 - `0022_video_chapters` — creator-managed player chapters
 - `0023_video_bookmarks` — viewer-private labeled playback moments
+- `0024_video_tags_hashtags` — searchable tags and hashtags
+- `0025_communitypost_audience` — member-scoped community posts
+- `0026_videoquestion` — video Q&A
+- `0027_video_public_release_at` — member early access
+- `0028_video_upload_notifications_sent_at` — idempotent scheduled notifications
+- `0029_moderation_states_audit` and `0030_channelmoderationstate` — moderation state and audit history
+- `0031_contentreport` — site content reports
+- `0032_videoshort` through `0035_videoshort_thumbnail_frame_seconds` — Shorts metadata, reframing, overlays, and thumbnails
 
 Migration files are required source code. Any model change must include and test
 its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Pull request #104 was merged at handoff. Synchronize the repository and re-read
-`docs/roadmap.md`; it is the authoritative backlog. Good low-cost candidates
-already deferred in the documentation include:
+Work through PR #157 was merged at this review. Synchronize the repository and
+re-read `docs/roadmap.md` and `docs/shorts-current-state.md`; they are the
+authoritative backlog. Good low-cost candidates include:
 
-- reliable orphaned local/S3 media cleanup with an auditable maintenance workflow
 - optional channel-team invitation email delivery and scheduled reminders
-- scheduled-upload notification delivery
+- bounded database-side Shorts discussion prefetching when feed scale requires it
+- removal of legacy handlers now shadowed by specialized Shorts controllers
+- optional real-FFmpeg rendering smoke coverage in a guaranteed environment
 - low-cost AWS application hosting and deployment when operating cost is justified
 
 Select only one concern. Prefer a user-visible improvement that needs no paid
@@ -185,7 +198,7 @@ silently expand scope.
 
 ```text
 Work with the drakeg/ytclone repository. First inspect current main, open pull
-requests (especially #104), README.md, docs/development-handoff.md, and
+requests, README.md, docs/development-handoff.md, docs/shorts-current-state.md, and
 docs/roadmap.md. Do not assume the handoff snapshot is current. Preserve existing
 changes and follow the documented sprint process: sprint-start docs must be the
 first commit, implementation and tests must stay focused, and sprint-close docs

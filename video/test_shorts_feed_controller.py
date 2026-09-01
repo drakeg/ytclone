@@ -51,10 +51,9 @@ class ShortsFeedControllerTests(TestCase):
             with self.subTest(token=token):
                 self.assertIn(token, script)
 
-    def test_controller_preserves_social_progressive_enhancement_hooks(self):
+    def test_controller_preserves_unowned_social_progressive_enhancement_hooks(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
         for token in (
-            "data-short-reaction-form",
             "data-short-subscribe-form",
             "data-short-comment-form",
             "data-short-share",
@@ -64,3 +63,21 @@ class ShortsFeedControllerTests(TestCase):
         ):
             with self.subTest(token=token):
                 self.assertIn(token, script)
+
+    def test_feed_controller_does_not_duplicate_specialized_reaction_handler(self):
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertNotIn("data-short-reaction-form", script)
+        self.assertNotIn("submitReaction", script)
+        self.assertNotIn("syncReaction", script)
+
+        reaction_script = Path("video/static/video/shorts_reaction_ajax.js").read_text(encoding="utf-8")
+        self.assertIn("data-short-reaction-form", reaction_script)
+        self.assertIn("inFlightItems", reaction_script)
+
+    def test_reaction_forms_remain_server_rendered_fallbacks(self):
+        viewer = User.objects.create_user(username="reaction-viewer", password="password123")
+        self.client.force_login(viewer)
+        response = self.client.get(reverse("shorts_feed"))
+        self.assertContains(response, "data-short-reaction-form", count=2)
+        self.assertContains(response, reverse("like_short", args=[self.short.pk]))
+        self.assertContains(response, reverse("dislike_short", args=[self.short.pk]))

@@ -56,7 +56,6 @@ class ShortsFeedControllerTests(TestCase):
         for token in (
             "data-short-subscribe-form",
             "data-short-comment-form",
-            "data-short-share",
             "X-Requested-With",
             "XMLHttpRequest",
             "new FormData(form)",
@@ -73,6 +72,17 @@ class ShortsFeedControllerTests(TestCase):
         reaction_script = Path("video/static/video/shorts_reaction_ajax.js").read_text(encoding="utf-8")
         self.assertIn("data-short-reaction-form", reaction_script)
         self.assertIn("inFlightItems", reaction_script)
+
+    def test_feed_controller_does_not_duplicate_specialized_share_handler(self):
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertNotIn("data-short-share", script)
+        self.assertNotIn("copyShareUrl", script)
+        self.assertNotIn("navigator.share", script)
+
+        share_script = Path("video/static/video/shorts_share.js").read_text(encoding="utf-8")
+        self.assertIn("data-short-share", share_script)
+        self.assertIn("navigator.share", share_script)
+        self.assertIn("copyShareUrl", share_script)
 
     def test_reaction_forms_remain_server_rendered_fallbacks(self):
         viewer = User.objects.create_user(username="reaction-viewer", password="password123")

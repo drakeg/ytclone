@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -32,8 +34,9 @@ class ShortsImmersiveFeedTests(TestCase):
         self.assertContains(response, 'data-short-count="2"')
         self.assertContains(response, 'data-short-index="0"')
         self.assertContains(response, 'data-short-index="1"')
-        self.assertContains(response, "scroll-snap-type:y mandatory")
-        self.assertContains(response, "scroll-snap-align:start")
+        css = Path("video/static/video/shorts.css").read_text(encoding="utf-8")
+        self.assertIn("scroll-snap-type:y mandatory", css)
+        self.assertIn("scroll-snap-align:start", css)
 
     def test_feed_video_surfaces_default_muted_for_autoplay(self):
         response = self.client.get(reverse("shorts_feed"))
@@ -74,4 +77,3 @@ class ShortsImmersiveFeedTests(TestCase):
         self.assertNotContains(response, hidden.title)
         self.assertContains(response, self.shorts[0].title)
         self.assertContains(response, self.shorts[1].title)
-from pathlib import Path

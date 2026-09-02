@@ -14,18 +14,27 @@ class ShortsFeedControllerTests(TestCase):
         self.short = Video.objects.create(title="Controller Short", description="Short", thumbnail="videos/short.jpg", video_file="videos/short.mp4", author=self.creator)
         VideoShort.objects.create(video=self.short)
 
-    def test_namespaced_controller_loads_only_on_shorts_feed(self):
+    def test_namespaced_assets_load_only_on_shorts_feed(self):
         response = self.client.get(reverse("shorts_feed"))
-        for asset in ("video/shorts_feed.js", "video/shorts_reply_ajax.js", "video/shorts_reaction_ajax.js", "video/shorts_playback_accessibility.js", "video/shorts_share.js", "video/shorts_subscription_ajax.js"):
+        for asset in ("video/shorts.css", "video/shorts_feed.js", "video/shorts_reply_ajax.js", "video/shorts_reaction_ajax.js", "video/shorts_playback_accessibility.js", "video/shorts_share.js", "video/shorts_subscription_ajax.js"):
             self.assertContains(response, asset)
         response = self.client.get(reverse("video_list"))
+        self.assertNotContains(response, "video/shorts.css")
         self.assertNotContains(response, "video/shorts_feed.js")
         self.assertNotContains(response, "video/shorts_subscription_ajax.js")
 
-    def test_template_contains_no_inline_executable_javascript(self):
+    def test_template_contains_no_inline_executable_javascript_or_stylesheet(self):
         template = Path("video/templates/videos/shorts_feed.html").read_text(encoding="utf-8")
         self.assertNotIn("<script", template)
         self.assertNotIn("IntersectionObserver", template)
+        self.assertNotIn("<style", template)
+        self.assertNotIn("@media(max-width:767.98px)", template)
+
+    def test_static_stylesheet_preserves_responsive_and_reduced_motion_rules(self):
+        stylesheet = Path("video/static/video/shorts.css").read_text(encoding="utf-8")
+        for token in (".shorts-shell", ".shorts-feed", ".shorts-video-wrap", ".shorts-comments", "@media(max-width:767.98px)", "@media(prefers-reduced-motion:reduce)"):
+            with self.subTest(token=token):
+                self.assertIn(token, stylesheet)
 
     def test_controller_preserves_feed_initialization_and_playback_hooks(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")

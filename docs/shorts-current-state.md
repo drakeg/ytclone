@@ -26,18 +26,19 @@ The immersive feed supports progressive enhancement. JavaScript-capable browsers
 - Failed comment/reply submissions retain typed text and expose an inline error.
 - CSRF protection remains enabled for every POST path.
 
-## Server boundaries
+## Server and browser boundaries
 
 - `video/shorts_views.py` owns Shorts feed, reaction, comment, reply, create-from-source, and re-render endpoints.
 - `video/subscription_views.py` owns subscription mutation and its AJAX response contract.
 - `video/services/short_clips.py` owns local FFmpeg clip generation, reframing, overlays, and source-frame thumbnail generation.
-- `video/static/video/shorts_feed.js` owns feed initialization, navigation, autoplay, sound, visibility lifecycle, and top-level comment enhancement.
-- `video/static/video/shorts_reply_ajax.js` owns progressive enhancement for reply forms, including dynamically inserted forms.
+- `video/static/video/shorts.css` owns the immersive feed layout, responsive rules, and reduced-motion presentation and loads only on the Shorts feed route.
+- `video/static/video/shorts_feed.js` owns feed initialization, navigation, autoplay, sound, visibility lifecycle, and visible Play/Pause text/styling.
+- `video/static/video/shorts_reply_ajax.js` owns progressive enhancement for both top-level comments and replies, including dynamically inserted reply forms.
 - `video/static/video/shorts_reaction_ajax.js` is the sole JavaScript owner of Shorts Like/Dislike AJAX behavior and serializes reaction changes per Short.
-- `video/static/video/shorts_playback_accessibility.js` keeps command-button labels synchronized.
+- `video/static/video/shorts_playback_accessibility.js` is the sole owner of dynamic playback ARIA state and keeps command-button labels synchronized.
 - `video/static/video/shorts_share.js` is the sole JavaScript owner of native sharing and clipboard fallbacks.
 - `video/static/video/shorts_subscription_ajax.js` is the sole JavaScript owner of subscribe/unsubscribe progressive enhancement.
-- `video/templates/videos/shorts_feed.html` owns server-rendered feed markup and responsive inline CSS, but no executable JavaScript.
+- `video/templates/videos/shorts_feed.html` owns server-rendered feed markup but contains neither executable JavaScript nor inline Shorts CSS.
 - Standard HTML POST redirects resolve the named `shorts_feed` route and preserve the current Short anchor.
 
 ## Query behavior
@@ -70,17 +71,16 @@ The feed intentionally preloads the data required by its template:
 - Standard videos cannot use Shorts-only mutation endpoints.
 - Replies are limited to visible top-level comments; nested replies are rejected.
 - Subscription redirects validate same-origin destinations.
-- Stale CSRF submissions use the application's friendly CSRF recovery path rather than Django's technical 403 page.
+- Stale AJAX CSRF failures return structured JSON while normal stale-form submissions use the application's friendly recovery path.
 - No Shorts endpoint uses `csrf_exempt`.
 
 ## Known follow-up debt
 
 These are maintenance candidates, not delivered behavior:
 
-1. **Controller decomposition** — `shorts_feed.js` still owns top-level comment enhancement. Move that responsibility into a focused controller while preserving server-rendered fallbacks and dynamic reply interoperability.
-2. **Static CSS extraction** — the responsive Shorts stylesheet remains inline in the template. Move it to the app namespace when stylesheet caching and template readability justify another focused cleanup.
-3. **Real FFmpeg smoke coverage** — command-construction tests previously missed an invalid `drawtext` option. Add an optional real-binary smoke test in an environment where FFmpeg/fontconfig availability can be guaranteed.
-4. **CSRF-aware client recovery** — AJAX CSRF failures now return structured JSON; individual controllers still show generic errors rather than the server's retry guidance.
+1. **Real FFmpeg smoke coverage** — command-construction tests previously missed an invalid `drawtext` option. Add an optional real-binary smoke test in an environment where FFmpeg/fontconfig availability can be guaranteed.
+2. **CSRF-aware client recovery** — AJAX CSRF failures return structured JSON, but individual controllers still show generic errors rather than the server's retry guidance.
+3. **Feed playback listener consolidation** — the feed controller still attaches playback/click listeners per video for visible button state while the accessibility helper already uses delegated playback events. Consider a focused delegation cleanup only if it can preserve playback behavior and controller ownership.
 
 ## Verification baseline
 

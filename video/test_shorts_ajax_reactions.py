@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -54,7 +56,6 @@ class ShortsAjaxReactionTests(TestCase):
         self.assertContains(response, "data-short-like")
         self.assertContains(response, "data-short-dislike")
         self.assertContains(response, "data-short-reaction-error")
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        script = Path("video/static/video/shorts_reaction_ajax.js").read_text(encoding="utf-8")
         self.assertIn("X-Requested-With", script)
         self.assertIn("XMLHttpRequest", script)
-from pathlib import Path

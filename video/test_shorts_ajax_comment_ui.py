@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -23,6 +25,9 @@ class ShortsAjaxCommentUiTests(TestCase):
         VideoShort.objects.create(video=self.video)
         self.client.force_login(self.viewer)
 
+    def _discussion_script(self):
+        return Path("video/static/video/shorts_reply_ajax.js").read_text(encoding="utf-8")
+
     def test_comment_form_keeps_progressive_enhancement_fallback(self):
         response = self.client.get(reverse("shorts_feed"))
         self.assertEqual(response.status_code, 200)
@@ -31,24 +36,23 @@ class ShortsAjaxCommentUiTests(TestCase):
         self.assertContains(response, reverse("add_short_comment", args=[self.video.pk]))
         self.assertContains(response, 'name="csrfmiddlewaretoken"')
 
-    def test_feed_wires_comment_form_to_ajax_contract(self):
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("submitComment(form)", script)
-        self.assertIn("renderComment(form,data)", script)
+    def test_discussion_controller_wires_comment_form_to_ajax_contract(self):
+        script = self._discussion_script()
+        self.assertIn("submitComment(commentForm)", script)
+        self.assertIn("renderComment(form, data)", script)
         self.assertIn("'X-Requested-With':'XMLHttpRequest'", script)
         self.assertIn("'Accept':'application/json'", script)
-        self.assertIn("commentForms.forEach", script)
+        self.assertIn("[data-short-comment-form]", script)
 
     def test_comment_rendering_uses_text_content_not_server_html(self):
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("author.textContent='@'+data.author", script)
-        self.assertIn("body.textContent=data.comment", script)
-        self.assertNotIn("innerHTML=data.comment", script)
+        script = self._discussion_script()
+        self.assertIn("author.textContent = `@${data.author}`", script)
+        self.assertIn("body.textContent = data.comment", script)
+        self.assertNotIn("innerHTML", script)
 
     def test_comment_ui_updates_count_and_exposes_failure_status(self):
         response = self.client.get(reverse("shorts_feed"))
         self.assertContains(response, "Could not post comment.")
-        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("count.textContent=data.comment_count", script)
-        self.assertIn("if(!response.ok)throw new Error", script)
-from pathlib import Path
+        script = self._discussion_script()
+        self.assertIn("count.textContent = data.comment_count", script)
+        self.assertIn("if (!response.ok) throw new Error", script)

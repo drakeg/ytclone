@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, shorts_views, subscription_views, views
+from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, search_views, shorts_views, subscription_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -41,7 +41,7 @@ urlpatterns = [
     path("channels/<int:pk>/analytics/", views.channel_analytics, name="channel_analytics"), path("channels/<int:pk>/team/", views.channel_team, name="channel_team"), path("channels/<int:pk>/team/<int:membership_pk>/remove/", views.channel_team_remove, name="channel_team_remove"), path("channels/<int:pk>/team/invitations/<int:invitation_pk>/revoke/", views.channel_team_invitation_revoke, name="channel_team_invitation_revoke"),
     path("team-invitations/", views.channel_team_invitations, name="channel_team_invitations"), path("team-invitations/<uuid:token>/<str:decision>/", views.channel_team_invitation_respond, name="channel_team_invitation_respond"), path("channels/<int:pk>/subscribe/", subscription_views.subscribe, name="subscribe"),
     path("categories/", views.category_list, name="category_list"), path("categories/create/", category_views.category_create, name="category_create"), path("categories/create/inline/", category_views.category_create_inline, name="category_create_inline"), path("categories/<int:pk>/", views.category_detail, name="category_detail"), path("hashtags/<str:name>/", metadata_views.hashtag_detail, name="hashtag_detail"),
-    path("search/", views.search, name="search"), path("filter/", views.filter_videos, name="filter"), path("profile/<str:username>/", views.user_profile, name="user_profile"), path("profile/<str:username>/edit/", views.edit_profile, name="edit_profile"), path("upload/", views.upload_video, name="upload"),
+    path("search/", views.search, name="search"), path("search/suggestions/", search_views.suggestions, name="search_suggestions"), path("filter/", views.filter_videos, name="filter"), path("profile/<str:username>/", views.user_profile, name="user_profile"), path("profile/<str:username>/edit/", views.edit_profile, name="edit_profile"), path("upload/", views.upload_video, name="upload"),
     path("playlists/", views.playlist_list, name="playlist_list"), path("playlists/create/", views.playlist_create, name="playlist_create"), path("playlists/<int:pk>/", views.playlist_detail, name="playlist_detail"), path("playlists/<int:pk>/edit/", views.playlist_edit, name="playlist_edit"), path("playlists/<int:pk>/delete/", views.playlist_delete, name="playlist_delete"), path("playlists/<int:pk>/videos/<int:video_pk>/add/", views.playlist_add_video, name="playlist_add_video"), path("playlists/<int:pk>/items/<int:item_pk>/remove/", views.playlist_remove_video, name="playlist_remove_video"),
     path("history/", views.watch_history, name="watch_history"), path("history/clear/", views.watch_history_clear, name="watch_history_clear"), path("history/<int:pk>/remove/", views.watch_history_remove, name="watch_history_remove"),
 ]

@@ -16,6 +16,16 @@
     return error;
   };
 
+  const responseErrorMessage = async (response, fallback) => {
+    if (response.status !== 403) return fallback;
+    try {
+      const data = await response.clone().json();
+      return data?.error === 'csrf_failed' && data?.message ? data.message : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  };
+
   const updateReplyCount = (comment, count) => {
     let label = comment.querySelector('[data-short-reply-count]');
     if (!label) {
@@ -56,11 +66,16 @@
     const button = form.querySelector('button[type="submit"]');
     const textarea = form.querySelector('textarea[name="comment"]');
     const error = ensureError(form);
+    const fallback = 'Could not post reply.';
+    error.textContent = fallback;
     error.hidden = true;
     if (button) button.disabled = true;
     try {
       const response = await fetch(form.action, {method:'POST', body:new FormData(form), headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}});
-      if (!response.ok) throw new Error('reply request failed');
+      if (!response.ok) {
+        error.textContent = await responseErrorMessage(response, fallback);
+        throw new Error('reply request failed');
+      }
       const data = await response.json();
       renderReply(form, data);
       if (textarea) textarea.value = '';
@@ -99,12 +114,16 @@
     const error = form.querySelector('[data-short-comment-error]');
     const button = form.querySelector('button[type="submit"]');
     const textarea = form.querySelector('textarea[name="comment"]');
-    if (error) error.style.display = 'none';
+    const fallback = 'Could not post comment.';
+    if (error) { error.textContent = fallback; error.style.display = 'none'; }
     if (button) button.disabled = true;
     try {
       const response = await fetch(form.action, {method:'POST', body:new FormData(form), headers:{'X-Requested-With':'XMLHttpRequest','Accept':'application/json'}});
+      if (!response.ok) {
+        if (error) error.textContent = await responseErrorMessage(response, fallback);
+        throw new Error('comment request failed');
+      }
       const data = await response.json();
-      if (!response.ok) throw new Error(data?.errors ? 'validation' : 'comment request failed');
       renderComment(form, data); form.reset(); textarea?.focus();
     } catch (_) { if (error) error.style.display = 'inline'; }
     finally { if (button) button.disabled = false; }

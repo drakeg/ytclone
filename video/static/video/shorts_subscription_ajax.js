@@ -2,6 +2,16 @@
   const feed = document.getElementById("shorts-feed");
   if (!feed) return;
 
+  const responseErrorMessage = async (response, fallback) => {
+    if (response.status !== 403) return fallback;
+    try {
+      const data = await response.clone().json();
+      return data?.error === "csrf_failed" && data?.message ? data.message : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  };
+
   const syncSubscription = (form, data) => {
     const button = form.querySelector("[data-short-subscribe]");
     if (!button) return;
@@ -16,8 +26,9 @@
     const row = form.closest(".shorts-channel-row");
     const error = row?.querySelector("[data-short-subscribe-error]");
     const button = form.querySelector("[data-short-subscribe]");
+    const fallback = "Could not update subscription.";
 
-    if (error) error.style.display = "none";
+    if (error) { error.textContent = fallback; error.style.display = "none"; }
     if (button) button.disabled = true;
 
     try {
@@ -29,7 +40,10 @@
           Accept: "application/json",
         },
       });
-      if (!response.ok) throw new Error("subscription request failed");
+      if (!response.ok) {
+        if (error) error.textContent = await responseErrorMessage(response, fallback);
+        throw new Error("subscription request failed");
+      }
       syncSubscription(form, await response.json());
     } catch (_) {
       if (error) error.style.display = "inline";

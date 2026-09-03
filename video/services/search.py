@@ -55,3 +55,40 @@ def search_content(query: str, sort: str, user=AnonymousUser()) -> SearchResults
     if not normalized_query:
         return SearchResults(query="", sort=normalized_sort, videos=Video.objects.none(), channels=Channel.objects.none(), playlists=Playlist.objects.none())
     return SearchResults(query=normalized_query, sort=normalized_sort, videos=_video_results(normalized_query, normalized_sort, user), channels=_channel_results(normalized_query, user), playlists=_playlist_results(normalized_query, user))
+
+
+def search_suggestions(query: str, user=AnonymousUser(), limit: int = 8) -> list[str]:
+    normalized_query = query.strip()
+    if len(normalized_query) < 2 or limit < 1:
+        return []
+
+    visibility = Q(visibility=Playlist.Visibility.PUBLIC)
+    if getattr(user, "is_authenticated", False):
+        visibility |= Q(owner=user, visibility=Playlist.Visibility.UNLISTED)
+
+    candidates = [
+        *Video.objects.visible_to(user)
+        .filter(title__icontains=normalized_query)
+        .order_by("-views", "title")
+        .values_list("title", flat=True)[:limit],
+        *available_channels(user)
+        .filter(name__icontains=normalized_query)
+        .order_by("name")
+        .values_list("name", flat=True)[:limit],
+        *Playlist.objects.filter(visibility)
+        .filter(name__icontains=normalized_query)
+        .order_by("-updated_at", "name")
+        .values_list("name", flat=True)[:limit],
+    ]
+
+    suggestions = []
+    seen = set()
+    for value in candidates:
+        key = value.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        suggestions.append(value)
+        if len(suggestions) == limit:
+            break
+    return suggestions

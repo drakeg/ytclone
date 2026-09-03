@@ -2,9 +2,9 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-
-from django.test import SimpleTestCase, skipUnlessDBFeature
 from unittest import skipUnless
+
+from django.test import SimpleTestCase
 
 from .services.short_clips import _run_ffmpeg, _run_thumbnail_ffmpeg
 from .shorts_models import VideoShort

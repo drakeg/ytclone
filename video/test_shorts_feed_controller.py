@@ -51,6 +51,19 @@ class ShortsFeedControllerTests(TestCase):
         for token in ("data-short-comment-form", ".shorts-reply-form", "submitComment", "submitReply", "renderComment", "renderReply", "X-Requested-With", "new FormData(form)"):
             with self.subTest(token=token): self.assertIn(token, script)
 
+    def test_shorts_ajax_controllers_surface_csrf_recovery_guidance(self):
+        for path in (
+            "video/static/video/shorts_reply_ajax.js",
+            "video/static/video/shorts_reaction_ajax.js",
+            "video/static/video/shorts_subscription_ajax.js",
+        ):
+            script = Path(path).read_text(encoding="utf-8")
+            with self.subTest(path=path):
+                self.assertIn("response.status", script)
+                self.assertIn("csrf_failed", script)
+                self.assertIn("data?.message", script)
+                self.assertIn("response.clone().json()", script)
+
     def test_feed_controller_does_not_duplicate_specialized_reaction_handler(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
         self.assertNotIn("data-short-reaction-form", script)

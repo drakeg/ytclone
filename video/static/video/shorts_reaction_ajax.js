@@ -4,6 +4,16 @@
 
   const inFlightItems = new WeakSet();
 
+  const responseErrorMessage = async (response, fallback) => {
+    if (response.status !== 403) return fallback;
+    try {
+      const data = await response.clone().json();
+      return data?.error === "csrf_failed" && data?.message ? data.message : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  };
+
   const setReactionButtonsDisabled = (item, disabled) => {
     item.querySelectorAll('[data-short-reaction-form] button[type="submit"]').forEach((button) => {
       button.disabled = disabled;
@@ -41,7 +51,8 @@
       if (!item || inFlightItems.has(item)) return;
 
       const error = item.querySelector("[data-short-reaction-error]");
-      if (error) error.style.display = "none";
+      const fallback = "Could not update reaction.";
+      if (error) { error.textContent = fallback; error.style.display = "none"; }
 
       inFlightItems.add(item);
       setReactionButtonsDisabled(item, true);
@@ -55,7 +66,10 @@
             Accept: "application/json",
           },
         });
-        if (!response.ok) throw new Error("reaction request failed");
+        if (!response.ok) {
+          if (error) error.textContent = await responseErrorMessage(response, fallback);
+          throw new Error("reaction request failed");
+        }
         syncReaction(item, await response.json());
       } catch (_) {
         if (error) error.style.display = "block";

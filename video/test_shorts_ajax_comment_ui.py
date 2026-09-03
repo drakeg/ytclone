@@ -55,4 +55,6 @@ class ShortsAjaxCommentUiTests(TestCase):
         self.assertContains(response, "Could not post comment.")
         script = self._discussion_script()
         self.assertIn("count.textContent = data.comment_count", script)
-        self.assertIn("if (!response.ok) throw new Error", script)
+        self.assertIn("if (!response.ok)", script)
+        self.assertIn("responseErrorMessage(response, fallback)", script)
+        self.assertIn("throw new Error('comment request failed')", script)

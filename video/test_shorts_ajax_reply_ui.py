@@ -49,6 +49,8 @@ class ShortsAjaxReplyUiTests(TestCase):
 
     def test_reply_script_preserves_text_on_failure_and_clears_after_success(self):
         script = Path("video/static/video/shorts_reply_ajax.js").read_text(encoding="utf-8")
-        self.assertIn("if (textarea) textarea.value = ''", script)
-        self.assertIn("error.hidden = false", script)
-        self.assertNotIn("textarea.value = ''", script.split("catch (_)", 1)[1])
+        submit_reply = script.split("const submitReply", 1)[1].split("const renderComment", 1)[0]
+        success_path, failure_path = submit_reply.split("} catch (_)", 1)
+        self.assertIn("if (textarea) textarea.value = ''", success_path)
+        self.assertIn("error.hidden = false", failure_path)
+        self.assertNotIn("textarea.value = ''", failure_path)

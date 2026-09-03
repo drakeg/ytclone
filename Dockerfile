@@ -13,8 +13,7 @@ RUN apt-get update \
     && adduser --system --ingroup app app
 
 COPY requirements.txt .
-RUN python -m pip install --no-cache-dir --upgrade pip \
-    && python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 RUN mkdir -p /app/media /app/staticfiles \

@@ -24,6 +24,7 @@ The immersive feed supports progressive enhancement. JavaScript-capable browsers
 - Replies post through AJAX, appear immediately, and update the parent reply count.
 - Dynamically inserted comments receive functional reply forms.
 - Failed comment/reply submissions retain typed text and expose an inline error.
+- Structured stale-CSRF responses surface the server retry guidance while unrelated failures retain generic controller errors.
 - CSRF protection remains enabled for every POST path.
 
 ## Server and browser boundaries
@@ -64,6 +65,7 @@ The feed intentionally preloads the data required by its template:
 - Creators can add text overlays and choose overlay placement.
 - Creators can select a source frame for the thumbnail.
 - Derived Shorts can be re-rendered from the source while retaining their identity.
+- Docker-backed tests exercise real FFmpeg clip, overlay/fontconfig, and thumbnail generation with a tiny synthetic local source.
 
 ## Security and fallback behavior
 
@@ -71,16 +73,14 @@ The feed intentionally preloads the data required by its template:
 - Standard videos cannot use Shorts-only mutation endpoints.
 - Replies are limited to visible top-level comments; nested replies are rejected.
 - Subscription redirects validate same-origin destinations.
-- Stale AJAX CSRF failures return structured JSON while normal stale-form submissions use the application's friendly recovery path.
+- Stale AJAX CSRF failures return structured JSON and the enhanced controllers surface the server retry message; normal stale-form submissions use the application's friendly recovery path.
 - No Shorts endpoint uses `csrf_exempt`.
 
 ## Known follow-up debt
 
 These are maintenance candidates, not delivered behavior:
 
-1. **Real FFmpeg smoke coverage** — command-construction tests previously missed an invalid `drawtext` option. Add an optional real-binary smoke test in an environment where FFmpeg/fontconfig availability can be guaranteed.
-2. **CSRF-aware client recovery** — AJAX CSRF failures return structured JSON, but individual controllers still show generic errors rather than the server's retry guidance.
-3. **Feed playback listener consolidation** — the feed controller still attaches playback/click listeners per video for visible button state while the accessibility helper already uses delegated playback events. Consider a focused delegation cleanup only if it can preserve playback behavior and controller ownership.
+1. **Feed playback listener consolidation** — the feed controller still attaches playback/click listeners per video for visible button state while the accessibility helper already uses delegated playback events. Consider a focused delegation cleanup only if it can preserve playback behavior and controller ownership.
 
 ## Verification baseline
 

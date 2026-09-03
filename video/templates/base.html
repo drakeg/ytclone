@@ -23,7 +23,8 @@
 
             <form class="header-search" role="search" method="get" action="{% url 'search' %}">
                 <label class="visually-hidden" for="site-search">Search videos, channels, and playlists</label>
-                <input id="site-search" type="search" placeholder="Search VideoShare" name="query" value="{{ request.GET.query }}">
+                <input id="site-search" type="search" placeholder="Search VideoShare" name="query" value="{{ request.GET.query }}" list="site-search-suggestions" data-search-suggestions="{% url 'search_suggestions' %}">
+                <datalist id="site-search-suggestions"></datalist>
                 <button type="submit" aria-label="Search">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg>
                 </button>
@@ -52,7 +53,8 @@
     <div class="mobile-search-wrap">
         <form class="header-search mobile-search" role="search" method="get" action="{% url 'search' %}">
             <label class="visually-hidden" for="mobile-site-search">Search videos, channels, and playlists</label>
-            <input id="mobile-site-search" type="search" placeholder="Search VideoShare" name="query" value="{{ request.GET.query }}">
+            <input id="mobile-site-search" type="search" placeholder="Search VideoShare" name="query" value="{{ request.GET.query }}" list="mobile-site-search-suggestions" data-search-suggestions="{% url 'search_suggestions' %}">
+            <datalist id="mobile-site-search-suggestions"></datalist>
             <button type="submit" aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"/></svg></button>
         </form>
     </div>
@@ -99,6 +101,7 @@
         </main>
     </div>
 
+    <script src="{% static 'video/search_suggestions.js' %}" defer></script>
     {% if request.resolver_match.url_name == 'shorts_feed' %}<script src="{% static 'video/shorts_feed.js' %}" defer></script><script src="{% static 'video/shorts_reply_ajax.js' %}" defer></script><script src="{% static 'video/shorts_reaction_ajax.js' %}" defer></script><script src="{% static 'video/shorts_playback_accessibility.js' %}" defer></script><script src="{% static 'video/shorts_share.js' %}" defer></script><script src="{% static 'video/shorts_subscription_ajax.js' %}" defer></script>{% endif %}
 </body>
 </html>

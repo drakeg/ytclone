@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
@@ -30,13 +32,21 @@ class ShortsPlaybackControlsTests(TestCase):
         self.assertContains(response, 'aria-label="Unmute Playback Short"')
         self.assertContains(response, 'aria-pressed="false"')
 
-    def test_feed_supports_video_click_and_space_playback_toggle(self):
+    def test_feed_supports_delegated_video_click_and_space_playback_toggle(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
-        self.assertIn("v.addEventListener('click',()=>togglePlay(i))", script)
+        self.assertIn("feed.addEventListener('click'", script)
+        self.assertIn("e.target.matches?.('.shorts-video')", script)
         self.assertIn("e.code==='Space'", script)
         self.assertIn("togglePlay(activeIndex)", script)
-        self.assertIn("v.addEventListener('play',()=>syncPlay(i))", script)
-        self.assertIn("v.addEventListener('pause',()=>syncPlay(i))", script)
+        self.assertNotIn("v.addEventListener('click'", script)
+
+    def test_feed_delegates_playback_state_events(self):
+        script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
+        self.assertIn("feed.addEventListener('play',syncPlaybackEvent,true)", script)
+        self.assertIn("feed.addEventListener('pause',syncPlaybackEvent,true)", script)
+        self.assertIn("if(Number.isInteger(i))syncPlay(i)", script)
+        self.assertNotIn("v.addEventListener('play'", script)
+        self.assertNotIn("v.addEventListener('pause'", script)
 
     def test_sound_preference_is_shared_across_feed_videos(self):
         script = Path("video/static/video/shorts_feed.js").read_text(encoding="utf-8")
@@ -52,4 +62,3 @@ class ShortsPlaybackControlsTests(TestCase):
         self.assertIn("PageDown", script)
         self.assertIn("visibilitychange", script)
         self.assertIn("prefers-reduced-motion", script)
-from pathlib import Path

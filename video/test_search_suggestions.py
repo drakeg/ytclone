@@ -38,7 +38,7 @@ class SearchSuggestionsTests(TestCase):
             video_file="videos/files/private.mp4",
             author=self.creator,
             channel=self.channel,
-            publication_status=Video.PublicationStatus.PRIVATE,
+            publication_status=Video.PublicationStatus.DRAFT,
         )
         self.public_playlist = Playlist.objects.create(
             owner=self.creator,

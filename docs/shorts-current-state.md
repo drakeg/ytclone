@@ -33,7 +33,7 @@ The immersive feed supports progressive enhancement. JavaScript-capable browsers
 - `video/subscription_views.py` owns subscription mutation and its AJAX response contract.
 - `video/services/short_clips.py` owns local FFmpeg clip generation, reframing, overlays, and source-frame thumbnail generation.
 - `video/static/video/shorts.css` owns the immersive feed layout, responsive rules, and reduced-motion presentation and loads only on the Shorts feed route.
-- `video/static/video/shorts_feed.js` owns feed initialization, navigation, autoplay, sound, visibility lifecycle, and visible Play/Pause text/styling.
+- `video/static/video/shorts_feed.js` owns feed initialization, navigation, autoplay, sound, visibility lifecycle, delegated video click/play/pause handling, and visible Play/Pause text/styling.
 - `video/static/video/shorts_reply_ajax.js` owns progressive enhancement for both top-level comments and replies, including dynamically inserted reply forms.
 - `video/static/video/shorts_reaction_ajax.js` is the sole JavaScript owner of Shorts Like/Dislike AJAX behavior and serializes reaction changes per Short.
 - `video/static/video/shorts_playback_accessibility.js` is the sole owner of dynamic playback ARIA state and keeps command-button labels synchronized.
@@ -78,9 +78,7 @@ The feed intentionally preloads the data required by its template:
 
 ## Known follow-up debt
 
-These are maintenance candidates, not delivered behavior:
-
-1. **Feed playback listener consolidation** — the feed controller still attaches playback/click listeners per video for visible button state while the accessibility helper already uses delegated playback events. Consider a focused delegation cleanup only if it can preserve playback behavior and controller ownership.
+The previously tracked Shorts maintenance candidates for real FFmpeg smoke coverage, CSRF-aware AJAX recovery, and per-video playback-listener consolidation are now implemented. New maintenance work should be driven by observed regressions, profiling evidence, accessibility findings, or product requirements rather than speculative cleanup.
 
 ## Verification baseline
 

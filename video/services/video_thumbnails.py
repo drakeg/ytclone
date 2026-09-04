@@ -106,7 +106,7 @@ def _generated_file(frame_bytes):
 
 
 def _selected_frame(source_path, frame_seconds, duration_seconds):
-    if frame_seconds < 0 or frame_seconds > duration_seconds:
+    if frame_seconds < 0 or frame_seconds >= duration_seconds:
         raise VideoThumbnailError("The selected thumbnail frame is outside the video duration.")
     with tempfile.NamedTemporaryFile(suffix=".jpg") as output:
         _extract_frame(source_path, output.name, frame_seconds)

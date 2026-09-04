@@ -3,7 +3,13 @@ from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from .services.search import VIDEO_SORT_OPTIONS, search_content, search_suggestions
+from .services.search import (
+    VIDEO_CONTENT_FILTERS,
+    VIDEO_SORT_OPTIONS,
+    VIDEO_UPLOAD_DATE_FILTERS,
+    search_content,
+    search_suggestions,
+)
 
 
 VIDEO_PAGE_SIZE = 12
@@ -26,6 +32,8 @@ def search(request):
         request.GET.get("query", ""),
         request.GET.get("sort", "relevance"),
         request.user,
+        request.GET.get("content", "all"),
+        request.GET.get("uploaded", "any"),
     )
     videos = _bounded_page(
         results.videos, request.GET.get("video_page"), VIDEO_PAGE_SIZE
@@ -43,6 +51,10 @@ def search(request):
             "query": results.query,
             "selected_sort": results.sort,
             "sort_options": VIDEO_SORT_OPTIONS,
+            "selected_content_filter": results.content_filter,
+            "content_filters": VIDEO_CONTENT_FILTERS,
+            "selected_upload_date_filter": results.upload_date_filter,
+            "upload_date_filters": VIDEO_UPLOAD_DATE_FILTERS,
             "videos": videos,
             "channels": channels,
             "playlists": playlists,

@@ -48,6 +48,16 @@ Every successfully uploaded video still receives a thumbnail. The change only re
 
 Automatic selection samples frames at approximately 15%, 30%, 45%, 60%, 75%, and 90% of the video duration. Each extracted frame is scored using grayscale brightness and contrast. Very dark, washed-out, or nearly flat frames receive strong penalties; the highest-scoring sample is used. This is intentionally lightweight and deterministic so Docker and CI remain fast and no external inference service is required.
 
+## Validation
+
+GitHub Actions run `33828046169` passed on the completed implementation head before this closeout documentation update:
+
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — passed with no changes detected.
+- `python manage.py test --parallel 4` — passed.
+
+The pull request remains subject to the same checks on this documentation-only closeout commit before it is marked ready for review.
+
 ## Out of scope
 
 - AI/ML thumbnail ranking or face/object detection.

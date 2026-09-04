@@ -46,6 +46,16 @@ The date filter compares `pub_date` against a timezone-aware lower bound calcula
 
 These choices keep the first version deterministic and inexpensive while remaining useful for typical search refinement.
 
+## Validation
+
+GitHub Actions run `33829250341` passed on the completed implementation head:
+
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — passed.
+- `python manage.py test --parallel 4` — passed.
+
+The documentation-only closeout commit remains subject to the same checks before the pull request is marked ready for review.
+
 ## Out of scope
 
 - Duration filtering (video duration is not currently stored on the `Video` row).

@@ -22,6 +22,7 @@ Every successfully uploaded video still receives a thumbnail. The change only re
 - Generate JPEG thumbnails from the uploaded video with existing FFmpeg/FFprobe availability.
 - Sample bounded timestamps for automatic selection and reject obviously dark/flat frames using a lightweight image heuristic.
 - Keep existing custom thumbnail extension, MIME-type, and size validation unchanged.
+- Preserve compatibility with existing upload POSTs that provide a custom thumbnail but predate the new thumbnail-mode field.
 - Add focused form, service, view, and browser-contract tests.
 
 ## Acceptance criteria
@@ -29,18 +30,19 @@ Every successfully uploaded video still receives a thumbnail. The change only re
 - A new upload with no thumbnail image succeeds in Automatic mode and receives a generated JPEG thumbnail.
 - Automatic mode samples a bounded set of frames rather than scanning the entire video.
 - Choose-from-video mode requires a selected timestamp and extracts that frame.
-- The selected timestamp must be within the uploaded video's duration.
+- The selected timestamp must be within the uploaded video's duration and before the exact end of the media.
 - Custom mode requires an uploaded thumbnail and uses the existing validation rules.
 - The upload page shows a video preview/scrubber only for Choose-from-video mode and shows the image file input only for Custom mode.
+- Existing custom-thumbnail upload POSTs remain valid when no thumbnail-mode field is present.
 - Existing edit-video thumbnail behavior remains unchanged.
 - No external service, AI model, worker, queue, schema migration, or paid dependency is added.
 
 ## Architecture
 
-- `video/forms.py` owns thumbnail-mode validation.
+- `video/upload_forms.py` owns the new thumbnail-mode validation while reusing the existing `VideoUploadForm` validation.
 - A focused `video/services/video_thumbnails.py` service owns FFprobe/FFmpeg thumbnail generation and frame scoring.
-- `video/views.py` asks the service for a generated thumbnail before the `Video` model is saved, so generation failures do not leave a partially-created video row.
-- `video/templates/videos/upload_video.html` provides progressive-enhancement controls using the browser's native video element and object URLs. The server remains authoritative for validation and frame extraction.
+- `video/upload_views.py` asks the service for a generated thumbnail before the `Video` model is saved, so generation failures do not leave a partially-created video row.
+- `video/templates/videos/upload_video.html` and `video/static/video/upload_thumbnail_picker.js` provide progressive-enhancement controls using the browser's native video element and object URLs. The server remains authoritative for validation and frame extraction.
 
 ## Automatic selection heuristic
 

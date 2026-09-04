@@ -9,6 +9,7 @@ class ThumbnailVideoUploadForm(VideoUploadForm):
     THUMBNAIL_CUSTOM = "custom"
 
     thumbnail_mode = forms.ChoiceField(
+        required=False,
         choices=(
             (THUMBNAIL_AUTO, "Automatically select a frame"),
             (THUMBNAIL_FRAME, "Choose a frame from the video"),
@@ -30,8 +31,11 @@ class ThumbnailVideoUploadForm(VideoUploadForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        mode = cleaned_data.get("thumbnail_mode") or self.THUMBNAIL_AUTO
         thumbnail = cleaned_data.get("thumbnail")
+        mode = cleaned_data.get("thumbnail_mode")
+        if not mode:
+            mode = self.THUMBNAIL_CUSTOM if thumbnail else self.THUMBNAIL_AUTO
+        cleaned_data["thumbnail_mode"] = mode
         frame_seconds = cleaned_data.get("thumbnail_frame_seconds")
 
         if mode == self.THUMBNAIL_CUSTOM and not thumbnail:

@@ -35,6 +35,16 @@ Keep search responsive and usable as the video, channel, and playlist catalogs g
 - `video/templates/videos/search_results.html` renders compact independent pagination controls beneath each result group.
 - `video/urls.py` routes the existing `search` URL name to `search_views.search`, so callers and bookmarks keep the same URL contract.
 
+## Validation
+
+GitHub Actions run `33828378311` passed on the completed implementation head before this closeout documentation update:
+
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — passed with no changes detected.
+- `python manage.py test --parallel 4` — passed.
+
+The pull request remains subject to the same checks on this documentation-only closeout commit before it is marked ready for review.
+
 ## Out of scope
 
 - Infinite scroll.

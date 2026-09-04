@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Upload · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Upload video or Short</h1><p>Choose Standard video or Short, then select the channel, media, and visibility for your next release.</p></div></header>
+<header class="page-header"><div><p class="eyebrow">Creator studio</p><h1>Upload video or Short</h1><p>Choose Standard video or Short, then select the channel, media, visibility, and thumbnail for your next release.</p></div></header>
 {% if form.channel.field.queryset %}
 <form class="form-panel" method="post" enctype="multipart/form-data">{% csrf_token %}
     <div id="video-drop-zone" class="card mb-4" style="border-style: dashed;">
@@ -27,6 +28,7 @@
     <p class="helptext">If Chrome's file chooser freezes on your Mac, use the drag-and-drop area above instead of the video file Browse button.</p>
     <div class="form-actions"><button type="submit" class="btn btn-primary">Upload</button></div>
 </form>
+<script src="{% static 'video/upload_thumbnail_picker.js' %}" defer></script>
 <script>
 (() => {
     const dropZone = document.getElementById('video-drop-zone');

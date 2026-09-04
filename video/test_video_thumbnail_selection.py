@@ -24,7 +24,7 @@ class ThumbnailUploadFormTests(TestCase):
     def data(self, **overrides):
         payload = {
             "title": "Thumbnail upload",
-            "description": "",
+            "description": "Thumbnail selection test",
             "channel": self.channel.pk,
             "publication_status": Video.PublicationStatus.DRAFT,
             "content_format": "video",
@@ -96,6 +96,11 @@ class VideoThumbnailServiceTests(TestCase):
         with self.assertRaisesRegex(VideoThumbnailError, "outside the video duration"):
             generate_thumbnail_for_upload(self.video(), mode="frame", frame_seconds=12)
 
+    @patch("video.services.video_thumbnails._probe_duration", return_value=10)
+    def test_selected_frame_rejects_exact_end_of_video(self, unused_probe):
+        with self.assertRaisesRegex(VideoThumbnailError, "outside the video duration"):
+            generate_thumbnail_for_upload(self.video(), mode="frame", frame_seconds=10)
+
 
 class ThumbnailUploadViewTests(TestCase):
     def setUp(self):
@@ -113,7 +118,7 @@ class ThumbnailUploadViewTests(TestCase):
     def payload(self):
         return {
             "title": "Generated thumbnail video",
-            "description": "",
+            "description": "Generated thumbnail test",
             "category": self.category.pk,
             "channel": self.channel.pk,
             "publication_status": Video.PublicationStatus.DRAFT,

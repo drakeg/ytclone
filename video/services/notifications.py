@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
-from video.models import Notification, Video
+from video.models import Notification, SubscriptionNotificationPreference, Video
 
 
 def create_notification(*, recipient, actor, kind, video=None, channel=None):
@@ -58,6 +58,14 @@ def notify_subscription(*, channel, actor):
 def _create_upload_notifications(video):
     if video.channel_id is None:
         return 0
+    disabled_user_ids = SubscriptionNotificationPreference.objects.filter(
+        channel_id=video.channel_id,
+        upload_notifications_enabled=False,
+    ).values("user_id")
+    subscribers = (
+        video.channel.subscribers.exclude(pk=video.author_id)
+        .exclude(pk__in=disabled_user_ids)
+    )
     notifications = [
         Notification(
             recipient=subscriber,
@@ -66,7 +74,7 @@ def _create_upload_notifications(video):
             video=video,
             channel=video.channel,
         )
-        for subscriber in video.channel.subscribers.exclude(pk=video.author_id)
+        for subscriber in subscribers
     ]
     Notification.objects.bulk_create(notifications)
     return len(notifications)

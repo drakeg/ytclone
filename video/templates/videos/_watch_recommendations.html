@@ -1,0 +1,18 @@
+{% if recommendations %}
+<section class="mt-4" aria-labelledby="watch-next-heading">
+    <div class="section-heading"><div><p class="eyebrow">Keep watching</p><h2 id="watch-next-heading">Watch next</h2></div></div>
+    <div class="row g-3">
+        {% for recommendation in recommendations %}
+        <div class="col-12 col-sm-6 col-lg-3">
+            <article class="card h-100">
+                <a href="{% url 'video_detail' recommendation.pk %}"><img class="card-img-top" src="{{ recommendation.thumbnail.url }}" alt="Thumbnail for {{ recommendation.title }}"></a>
+                <div class="card-body">
+                    <h3 class="h6 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' recommendation.pk %}">{{ recommendation.title }}</a></h3>
+                    <p class="video-meta mb-0">{% if recommendation.channel %}{{ recommendation.channel.name }}{% else %}{{ recommendation.author.username }}{% endif %} · {{ recommendation.views }} view{{ recommendation.views|pluralize }}</p>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}

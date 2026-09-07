@@ -35,6 +35,13 @@ Make the full long-form browse page more useful by letting viewers narrow the vi
 - `python manage.py test --parallel 4`
 - `docker compose run --build --rm test`
 
+## Validation results
+- GitHub Actions Django configuration check passed.
+- Migration drift check reported no changes.
+- Full parallel suite passed: 597 tests.
+- The first CI run exposed an older browse pagination assertion that expected the pre-filter query string; the regression was updated to assert preserved sort, upload filter, and page state independently.
+- No schema, dependency, external-service, AWS, paid-service, worker, or Terraform change.
+
 ## Out of scope
 - Shorts filters.
 - Duration or resolution filters.

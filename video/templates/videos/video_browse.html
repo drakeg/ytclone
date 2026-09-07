@@ -9,9 +9,31 @@
     </div>
 </header>
 
+<form class="row g-3 align-items-end mb-3" method="get" action="{% url 'video_browse' %}" aria-label="Video browse filters">
+    <input type="hidden" name="sort" value="{{ selected_sort }}">
+    <div class="col-sm-6 col-lg-4">
+        <label class="form-label" for="browse-category">Category</label>
+        <select class="form-select" id="browse-category" name="category" onchange="this.form.submit()">
+            <option value="">All categories</option>
+            {% for category in categories %}
+                <option value="{{ category.pk }}"{% if selected_category and selected_category.pk == category.pk %} selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <label class="form-label" for="browse-uploaded">Uploaded</label>
+        <select class="form-select" id="browse-uploaded" name="uploaded" onchange="this.form.submit()">
+            {% for value, label in upload_filters.items %}
+                <option value="{{ value }}"{% if selected_upload == value %} selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <noscript><div class="col-auto"><button class="btn btn-primary" type="submit">Apply filters</button></div></noscript>
+</form>
+
 <nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Video browse order">
     {% for value, label in sort_options.items %}
-        <a class="btn {% if selected_sort == value %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_browse' %}?sort={{ value }}"{% if selected_sort == value %} aria-current="page"{% endif %}>{{ label }}</a>
+        <a class="btn {% if selected_sort == value %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_browse' %}?sort={{ value }}{% if selected_category %}&category={{ selected_category.pk }}{% endif %}&uploaded={{ selected_upload }}"{% if selected_sort == value %} aria-current="page"{% endif %}>{{ label }}</a>
     {% endfor %}
 </nav>
 
@@ -21,11 +43,11 @@
 <nav class="mt-4" aria-label="Browse videos pagination">
     <ul class="pagination justify-content-center">
         <li class="page-item{% if not videos.has_previous %} disabled{% endif %}">
-            {% if videos.has_previous %}<a class="page-link" href="?sort={{ selected_sort }}&page={{ videos.previous_page_number }}">Previous</a>{% else %}<span class="page-link">Previous</span>{% endif %}
+            {% if videos.has_previous %}<a class="page-link" href="?sort={{ selected_sort }}{% if selected_category %}&category={{ selected_category.pk }}{% endif %}&uploaded={{ selected_upload }}&page={{ videos.previous_page_number }}">Previous</a>{% else %}<span class="page-link">Previous</span>{% endif %}
         </li>
         <li class="page-item disabled"><span class="page-link">Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span></li>
         <li class="page-item{% if not videos.has_next %} disabled{% endif %}">
-            {% if videos.has_next %}<a class="page-link" href="?sort={{ selected_sort }}&page={{ videos.next_page_number }}">Next</a>{% else %}<span class="page-link">Next</span>{% endif %}
+            {% if videos.has_next %}<a class="page-link" href="?sort={{ selected_sort }}{% if selected_category %}&category={{ selected_category.pk }}{% endif %}&uploaded={{ selected_upload }}&page={{ videos.next_page_number }}">Next</a>{% else %}<span class="page-link">Next</span>{% endif %}
         </li>
     </ul>
 </nav>

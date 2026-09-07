@@ -8,7 +8,7 @@ Make the watch page a better continuation point by showing a small, relevant set
 - Prefer videos sharing the current video's category, then channel, then broader visible catalog candidates.
 - Exclude the current video and Shorts.
 - Reuse `Video.objects.visible_to(user)` so private, draft, scheduled, members-only, and other restricted content cannot leak.
-- Render up to 8 recommendations in the existing watch sidebar below creator/save controls.
+- Render up to 8 recommendations in a Watch next section after the watch-page content.
 - Keep the existing video player, comments, Q&A, bookmarks, playlists, and watch tracking behavior unchanged.
 
 ## Acceptance criteria
@@ -21,16 +21,15 @@ Make the watch page a better continuation point by showing a small, relevant set
 - The watch page remains functional when no recommendations exist.
 
 ## Architecture
-- Put recommendation selection in a focused `video/services/recommendations.py` service.
-- Keep `_render_video_detail` responsible for passing the current video/user into the service and adding the result to template context.
-- Reuse existing video card/media fields; no schema change.
+- Recommendation selection lives in `video/services/recommendations.py`.
+- A focused inclusion tag renders `videos/_watch_recommendations.html` only on normal `video_detail` pages.
+- The recommendation service receives the current video and request user and reuses the centralized visibility queryset.
+- Existing video card/media fields are reused; no schema change.
 
-## Local validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- `python manage.py test video.test_watch_recommendations`
-- `python manage.py test --parallel 4`
-- `docker compose run --build --rm test`
+## Validation
+GitHub Actions run `34126709215` completed successfully on the implementation head. Dependency installation, Django configuration checks, migration drift checks, and the full test suite all passed.
+
+The focused coverage verifies ranking, current-video exclusion, Shorts exclusion, hidden-content exclusion, the eight-item bound, deterministic recency ordering, and watch-page rendering.
 
 ## Out of scope
 - Personalized machine-learning ranking.

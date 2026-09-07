@@ -41,3 +41,21 @@ Let viewers stay subscribed to a channel without being forced to receive every n
 - Notification digests or schedules.
 - Changing creator-facing subscription notifications.
 - External services, workers, AWS resources, or paid infrastructure.
+
+## Delivered
+- Added migration `0037_subscriptionnotificationpreference` with one unique viewer/channel preference row.
+- Existing subscribers default to upload notifications enabled when no preference row exists.
+- Channel pages expose an On/Off upload-notification control only for subscribed viewers.
+- The POST endpoint requires authentication and an active subscription.
+- Immediate and scheduled upload notifications both exclude subscribers who opted out.
+- Unsubscribing deletes any stored preference so stale rows cannot linger.
+- Reconciled the branch with merged PR #180 before final validation so autoplay-next remains intact.
+
+## Validation results
+GitHub Actions on reconciled head `1d0b0abf34857d63bfed6ed1b9966b32f52e15ba` passed:
+- Django configuration check: success
+- migration drift check: success
+- full test suite: success
+- workflow job completed successfully with zero check annotations
+
+No external service, worker, AWS resource, paid infrastructure, or notification-delivery provider was added.

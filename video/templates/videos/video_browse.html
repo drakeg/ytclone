@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Browse videos · VideoShare{% endblock %}
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Explore the catalog</p>
+        <h1>Browse videos</h1>
+        <p>Keep going beyond the homepage shelves and find more long-form videos from across VideoShare.</p>
+    </div>
+</header>
+
+<nav class="d-flex flex-wrap gap-2 mb-4" aria-label="Video browse order">
+    {% for value, label in sort_options.items %}
+        <a class="btn {% if selected_sort == value %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_browse' %}?sort={{ value }}"{% if selected_sort == value %} aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+</nav>
+
+{% include 'videos/_video_cards.html' with videos=videos %}
+
+{% if videos.paginator.num_pages > 1 %}
+<nav class="mt-4" aria-label="Browse videos pagination">
+    <ul class="pagination justify-content-center">
+        <li class="page-item{% if not videos.has_previous %} disabled{% endif %}">
+            {% if videos.has_previous %}<a class="page-link" href="?sort={{ selected_sort }}&page={{ videos.previous_page_number }}">Previous</a>{% else %}<span class="page-link">Previous</span>{% endif %}
+        </li>
+        <li class="page-item disabled"><span class="page-link">Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span></li>
+        <li class="page-item{% if not videos.has_next %} disabled{% endif %}">
+            {% if videos.has_next %}<a class="page-link" href="?sort={{ selected_sort }}&page={{ videos.next_page_number }}">Next</a>{% else %}<span class="page-link">Next</span>{% endif %}
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

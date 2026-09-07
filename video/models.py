@@ -162,6 +162,19 @@ class Channel(models.Model):
     def __str__(self): return self.name
 
 
+class SubscriptionNotificationPreference(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscription_notification_preferences")
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name="notification_preferences")
+    upload_notifications_enabled = models.BooleanField(default=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["user", "channel"], name="unique_subscription_notification_preference")]
+
+    def __str__(self):
+        return f"{self.user} / {self.channel}: uploads={self.upload_notifications_enabled}"
+
+
 class ChannelMembership(models.Model):
     class Role(models.TextChoices): EDITOR = "editor", "Editor"
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE, related_name="memberships")

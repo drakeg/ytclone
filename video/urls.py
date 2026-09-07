@@ -1,9 +1,10 @@
 from django.urls import path
 
-from . import access_views, account_views, administration_views, category_views, channel_views, community_views, metadata_views, qa_views, reporting_views, search_views, shorts_views, subscription_views, subscriptions_feed_views, upload_views, views
+from . import access_views, account_views, administration_views, category_views, channel_views, community_views, discovery_views, metadata_views, qa_views, reporting_views, search_views, shorts_views, subscription_views, subscriptions_feed_views, upload_views, views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
+    path("browse/", discovery_views.video_browse, name="video_browse"),
     path("shorts/", shorts_views.shorts_feed, name="shorts_feed"),
     path("shorts/<int:pk>/like/", shorts_views.like_short, name="like_short"),
     path("shorts/<int:pk>/dislike/", shorts_views.dislike_short, name="dislike_short"),

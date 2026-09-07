@@ -7,203 +7,21 @@
 <article class="video-watch">
     <div>
         <div class="player-frame">
-            <video id="video-player" src="{{ video.video_file.url }}" controls data-watch-url="{% url 'watch_time_event' video.pk %}" {% if user.is_authenticated %}data-progress-url="{% url 'playback_progress' video.pk %}" data-resume-position="{{ history_entry.playback_position_seconds }}"{% endif %}></video>
+            <video id="video-player" src="{{ video.video_file.url }}" controls data-watch-url="{% url 'watch_time_event' video.pk %}" {% if user.is_authenticated %}data-progress-url="{% url 'playback_progress' video.pk %}" data-resume-position="{{ history_entry.playback_position_seconds }}"{% endif %}>{% if video.captions_file %}<track kind="captions" src="{{ video.captions_file.url }}" srclang="en" label="English">{% endif %}</video>
         </div>
         <h1 class="watch-title">{{ video.title }}</h1>
-        <div class="watch-meta">
-            <span>{{ video.views }} view{{ video.views|pluralize }}</span>
-            <span>{{ video.pub_date|date:"M j, Y" }}</span>
-            {% if video.category %}<a href="{% url 'category_detail' video.category.pk %}">{{ video.category }}</a>{% endif %}
-            {% if may_edit_video %}<span>{{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</span>{% endif %}
-        </div>
-        {% if video.tags.exists or video.hashtags.exists %}
-        <div class="d-flex flex-wrap gap-2 mt-2" aria-label="Video topics">
-            {% for tag in video.tags.all %}<span class="badge text-bg-secondary">{{ tag.name }}</span>{% endfor %}
-            {% for hashtag in video.hashtags.all %}<a class="badge text-bg-light text-decoration-none" href="{% url 'hashtag_detail' hashtag.name %}">#{{ hashtag.name }}</a>{% endfor %}
-        </div>
-        {% endif %}
-        {% if video.chapters.exists %}
-        <section class="surface-card mt-3" aria-labelledby="chapters-heading">
-            <h2 id="chapters-heading" class="h4">Chapters</h2>
-            <div class="d-flex flex-wrap gap-2">
-                {% for chapter in video.chapters.all %}<button class="btn btn-outline-secondary video-chapter" type="button" data-chapter-time="{{ chapter.start_seconds }}">{{ chapter.timestamp_display }} · {{ chapter.title }}</button>{% endfor %}
-            </div>
-        </section>
-        {% endif %}
-
-        {% if user.is_authenticated and bookmarks_enabled %}
-        <section class="surface-card mt-3" aria-labelledby="bookmarks-heading">
-            <h2 id="bookmarks-heading" class="h4">Saved moments</h2>
-            <form id="bookmark-form" class="d-flex flex-wrap gap-2 align-items-end mb-3" method="post" action="{% url 'video_bookmark_create' video.pk %}">
-                {% csrf_token %}
-                <div class="flex-grow-1"><label for="bookmark-label">Label</label><input class="form-control" id="bookmark-label" name="label" maxlength="120" required placeholder="What happens here?"></div>
-                <input id="bookmark-position" type="hidden" name="position_seconds" value="0">
-                <button class="btn btn-outline-primary" type="submit">Save current moment</button>
-            </form>
-            <div class="d-flex flex-wrap gap-2">
-                {% for bookmark in bookmarks %}
-                    <div id="bookmark-{{ bookmark.pk }}" class="d-flex gap-1">
-                        <button class="btn btn-outline-secondary video-seek" type="button" data-seek-time="{{ bookmark.position_seconds }}">{{ bookmark.timestamp_display }} · {{ bookmark.label }}</button>
-                        <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit" aria-label="Remove bookmark {{ bookmark.label }}">×</button></form>
-                    </div>
-                {% empty %}
-                    <p class="video-meta mb-0">No saved moments for this video.</p>
-                {% endfor %}
-            </div>
-        </section>
-        {% endif %}
-
-        <div class="watch-actions">
-            {% if user.is_authenticated %}
-                <form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-primary">Like</button></form>
-                <form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary">Dislike</button></form>
-                {% if user != video.author %}<a class="btn btn-outline-danger" href="{% url 'report_content' 'video' video.pk %}">Report video</a>{% endif %}
-            {% endif %}
-            {% if may_edit_video %}
-                <a class="btn btn-outline-secondary" href="{% url 'video_edit' video.pk %}">Edit video</a>
-                {% if user == video.author %}<a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>{% endif %}
-            {% endif %}
-        </div>
-
+        <div class="watch-meta"><span>{{ video.views }} view{{ video.views|pluralize }}</span><span>{{ video.pub_date|date:"M j, Y" }}</span>{% if video.category %}<a href="{% url 'category_detail' video.category.pk %}">{{ video.category }}</a>{% endif %}{% if may_edit_video %}<span>{{ video.get_publication_status_display }}{% if video.publish_at %} · {{ video.publish_at }}{% endif %}</span>{% endif %}</div>
+        {% if video.tags.exists or video.hashtags.exists %}<div class="d-flex flex-wrap gap-2 mt-2" aria-label="Video topics">{% for tag in video.tags.all %}<span class="badge text-bg-secondary">{{ tag.name }}</span>{% endfor %}{% for hashtag in video.hashtags.all %}<a class="badge text-bg-light text-decoration-none" href="{% url 'hashtag_detail' hashtag.name %}">#{{ hashtag.name }}</a>{% endfor %}</div>{% endif %}
+        {% if video.chapters.exists %}<section class="surface-card mt-3" aria-labelledby="chapters-heading"><h2 id="chapters-heading" class="h4">Chapters</h2><div class="d-flex flex-wrap gap-2">{% for chapter in video.chapters.all %}<button class="btn btn-outline-secondary video-chapter" type="button" data-chapter-time="{{ chapter.start_seconds }}">{{ chapter.timestamp_display }} · {{ chapter.title }}</button>{% endfor %}</div></section>{% endif %}
+        {% if user.is_authenticated and bookmarks_enabled %}<section class="surface-card mt-3" aria-labelledby="bookmarks-heading"><h2 id="bookmarks-heading" class="h4">Saved moments</h2><form id="bookmark-form" class="d-flex flex-wrap gap-2 align-items-end mb-3" method="post" action="{% url 'video_bookmark_create' video.pk %}">{% csrf_token %}<div class="flex-grow-1"><label for="bookmark-label">Label</label><input class="form-control" id="bookmark-label" name="label" maxlength="120" required placeholder="What happens here?"></div><input id="bookmark-position" type="hidden" name="position_seconds" value="0"><button class="btn btn-outline-primary" type="submit">Save current moment</button></form><div class="d-flex flex-wrap gap-2">{% for bookmark in bookmarks %}<div id="bookmark-{{ bookmark.pk }}" class="d-flex gap-1"><button class="btn btn-outline-secondary video-seek" type="button" data-seek-time="{{ bookmark.position_seconds }}">{{ bookmark.timestamp_display }} · {{ bookmark.label }}</button><form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit" aria-label="Remove bookmark {{ bookmark.label }}">×</button></form></div>{% empty %}<p class="video-meta mb-0">No saved moments for this video.</p>{% endfor %}</div></section>{% endif %}
+        <div class="watch-actions">{% if user.is_authenticated %}<form method="post" action="{% url 'like_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-primary">Like</button></form><form method="post" action="{% url 'dislike_video' video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-outline-secondary">Dislike</button></form>{% if user != video.author %}<a class="btn btn-outline-danger" href="{% url 'report_content' 'video' video.pk %}">Report video</a>{% endif %}{% endif %}{% if may_edit_video %}<a class="btn btn-outline-secondary" href="{% url 'video_edit' video.pk %}">Edit video</a>{% if user == video.author %}<a class="btn btn-outline-danger" href="{% url 'video_delete' video.pk %}">Delete video</a>{% endif %}{% endif %}</div>
         <div class="watch-description">{{ video.description }}</div>
-
-        {% if user == video.author and video.publication_status == "unlisted" %}
-            <section class="panel p-3 my-3" aria-labelledby="share-heading">
-                <h2 class="h5" id="share-heading">Unlisted share link</h2>
-                <p class="text-break"><a href="{% url 'shared_video_detail' video.share_token %}">{% url 'shared_video_detail' video.share_token %}</a></p>
-                <form method="post" action="{% url 'video_rotate_share_token' video.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Revoke and create a new link</button></form>
-            </section>
-        {% endif %}
+        {% if user == video.author and video.publication_status == "unlisted" %}<section class="panel p-3 my-3" aria-labelledby="share-heading"><h2 class="h5" id="share-heading">Unlisted share link</h2><p class="text-break"><a href="{% url 'shared_video_detail' video.share_token %}">{% url 'shared_video_detail' video.share_token %}</a></p><form method="post" action="{% url 'video_rotate_share_token' video.pk %}">{% csrf_token %}<button class="btn btn-outline-danger" type="submit">Revoke and create a new link</button></form></section>{% endif %}
     </div>
-
-    <aside class="watch-sidebar" aria-label="Video creator and saving options">
-        <p class="eyebrow">Creator</p>
-        {% if video.channel %}
-            <h2 class="h4"><a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></h2>
-        {% else %}
-            <h2 class="h4"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></h2>
-        {% endif %}
-        <p class="video-meta">Uploaded by {{ video.author }}</p>
-
-        {% if user.is_authenticated %}
-            <hr>
-            <h3 class="h6">Save to a playlist</h3>
-            <div class="d-flex flex-wrap gap-2">
-                {% for playlist in playlists %}
-                    <form method="post" action="{% url 'playlist_add_video' playlist.pk video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">{{ playlist.name }}</button></form>
-                {% empty %}
-                    <p class="video-meta"><a href="{% url 'playlist_create' %}">Create your first playlist</a></p>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p class="video-meta"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to comment, react, or save videos.</a></p>
-        {% endif %}
-    </aside>
+    <aside class="watch-sidebar" aria-label="Video creator and saving options"><p class="eyebrow">Creator</p>{% if video.channel %}<h2 class="h4"><a href="{% url 'channel_detail' video.channel.pk %}">{{ video.channel.name }}</a></h2>{% else %}<h2 class="h4"><a href="{% url 'user_profile' video.author.username %}">{{ video.author }}</a></h2>{% endif %}<p class="video-meta">Uploaded by {{ video.author }}</p>{% if user.is_authenticated %}<hr><h3 class="h6">Save to a playlist</h3><div class="d-flex flex-wrap gap-2">{% for playlist in playlists %}<form method="post" action="{% url 'playlist_add_video' playlist.pk video.pk %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-outline-secondary">{{ playlist.name }}</button></form>{% empty %}<p class="video-meta"><a href="{% url 'playlist_create' %}">Create your first playlist</a></p>{% endfor %}</div>{% else %}<p class="video-meta"><a href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to comment, react, or save videos.</a></p>{% endif %}</aside>
 </article>
-
-<section class="comments" aria-labelledby="comments-heading">
-    <div class="section-heading d-flex flex-wrap justify-content-between gap-2 align-items-center">
-        <h2 id="comments-heading">Comments &amp; Q&amp;A</h2>
-        <div class="btn-group btn-group-sm" role="group" aria-label="Comment filter">
-            <a class="btn {% if request.GET.comments == 'questions' %}btn-outline-secondary{% else %}btn-primary{% endif %}" href="{% url 'video_detail' video.pk %}#comments-heading">All</a>
-            <a class="btn {% if request.GET.comments == 'questions' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_detail' video.pk %}?comments=questions#comments-heading">Questions</a>
-        </div>
-    </div>
-
-    {% if user.is_authenticated %}
-        <form class="form-panel mb-4" method="post" action="{% url 'add_comment' video.pk %}">
-            {% csrf_token %}{{ form.as_p }}
-            <div class="d-flex flex-wrap gap-2">
-                <button type="submit" class="btn btn-primary">Comment</button>
-                <button type="submit" class="btn btn-outline-primary" formaction="{% url 'ask_video_question' video.pk %}">Ask question</button>
-            </div>
-            <p class="form-text mt-2 mb-0">Questions stay public like normal comments, but creators can highlight a helpful reply as the answer.</p>
-        </form>
-    {% endif %}
-
-    {% for comment in comments %}
-        {% if request.GET.comments != 'questions' or comment.question %}
-        <article class="comment">
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <span class="comment-author">{{ comment.author }}</span>
-                <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span>
-                {% if comment.question %}<span class="badge text-bg-primary">Question</span>{% endif %}
-                {% supporter_badge_for comment.author video as is_supporter %}{% if is_supporter %}<span class="badge text-bg-warning">Paid member</span>{% endif %}
-                {% if user.is_authenticated and user != comment.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' comment.pk %}">Report</a>{% endif %}
-            </div>
-            <p class="comment-body">{{ comment.comment }}</p>
-            {% if user == comment.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a></div>{% endif %}
-
-            {% if comment.question.featured_reply %}
-                <div class="alert alert-info mt-3 mb-3">
-                    <strong>Creator-highlighted answer</strong>
-                    <div><strong>@{{ comment.question.featured_reply.author.username }}</strong></div>
-                    <div>{{ comment.question.featured_reply.comment }}</div>
-                </div>
-            {% endif %}
-
-            {% for reply in comment.visible_replies %}
-                <article class="comment-reply">
-                    <div class="d-flex flex-wrap gap-2 align-items-center"><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span>{% if user.is_authenticated and user != reply.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' reply.pk %}">Report</a>{% endif %}</div>
-                    <p class="comment-body">{{ reply.comment }}</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% if user == reply.author %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>{% endif %}
-                        {% if user == video.author and comment.question %}<form method="post" action="{% url 'feature_question_answer' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">{% if comment.question.featured_reply_id == reply.pk %}Unhighlight answer{% else %}Highlight answer{% endif %}</button></form>{% endif %}
-                    </div>
-                </article>
-            {% endfor %}
-
-            {% if user.is_authenticated %}
-                <form class="comment-reply mt-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
-                    {% csrf_token %}<label for="reply-{{ comment.pk }}">Reply</label><textarea id="reply-{{ comment.pk }}" name="comment" rows="2" required></textarea><button class="btn btn-sm btn-outline-primary mt-2" type="submit">Post reply</button>
-                </form>
-            {% endif %}
-        </article>
-        {% endif %}
-    {% empty %}
-        <div class="empty-state">No comments yet.</div>
-    {% endfor %}
-</section>
-
-<script>
-(() => {
-    const player = document.getElementById("video-player");
-    const progressUrl = player.dataset.progressUrl;
-    const watchUrl = player.dataset.watchUrl;
-    const resumePosition = Number(player.dataset.resumePosition || 0);
-    const playbackSessionId = crypto.randomUUID();
-    let lastSavedSecond = -1;
-    let lastWatchTick = performance.now();
-    const csrfToken = document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1];
-    document.querySelectorAll(".video-chapter").forEach((button) => button.addEventListener("click", () => { player.currentTime = Number(button.dataset.chapterTime); player.play(); }));
-    document.querySelectorAll(".video-seek").forEach((button) => button.addEventListener("click", () => { player.currentTime = Number(button.dataset.seekTime); player.play(); }));
-    const bookmarkForm = document.getElementById("bookmark-form");
-    bookmarkForm?.addEventListener("submit", () => { document.getElementById("bookmark-position").value = String(player.currentTime || 0); });
-    player.addEventListener("loadedmetadata", () => { if (progressUrl && resumePosition > 0 && resumePosition < player.duration - 5) player.currentTime = resumePosition; }, { once: true });
-    const saveProgress = () => {
-        if (!progressUrl) return;
-        if (!Number.isFinite(player.duration) || player.duration <= 0) return;
-        const currentSecond = Math.round(player.currentTime);
-        if (currentSecond === lastSavedSecond) return;
-        lastSavedSecond = currentSecond;
-        fetch(progressUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }, body: JSON.stringify({ position_seconds: player.currentTime, duration_seconds: player.duration }), credentials: "same-origin", keepalive: true });
-    };
-    const saveWatchTime = (force = false) => {
-        const now = performance.now();
-        const watchedSeconds = Math.min(15, Math.round((now - lastWatchTick) / 1000));
-        lastWatchTick = now;
-        if ((!force && (player.paused || player.ended || document.visibilityState !== "visible")) || watchedSeconds < 1 || !Number.isFinite(player.duration) || player.duration <= 0) return;
-        fetch(watchUrl, { method: "POST", headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken }, body: JSON.stringify({ event_id: crypto.randomUUID(), playback_session_id: playbackSessionId, watched_seconds: watchedSeconds, position_seconds: player.currentTime, duration_seconds: player.duration }), credentials: "same-origin", keepalive: true });
-    };
-    setInterval(saveWatchTime, 10000);
-    player.addEventListener("play", () => { lastWatchTick = performance.now(); });
-    player.addEventListener("seeking", () => { lastWatchTick = performance.now(); });
-    document.addEventListener("visibilitychange", () => { lastWatchTick = performance.now(); });
-    player.addEventListener("pause", () => saveWatchTime(true));
-    player.addEventListener("ended", () => saveWatchTime(true));
-    window.addEventListener("pagehide", () => saveWatchTime(true));
-    player.addEventListener("timeupdate", () => { if (Math.round(player.currentTime) % 10 === 0) saveProgress(); });
-    player.addEventListener("pause", saveProgress); player.addEventListener("ended", saveProgress); window.addEventListener("pagehide", saveProgress);
-})();
-</script>
+<section class="comments" aria-labelledby="comments-heading"><div class="section-heading d-flex flex-wrap justify-content-between gap-2 align-items-center"><h2 id="comments-heading">Comments &amp; Q&amp;A</h2><div class="btn-group btn-group-sm" role="group" aria-label="Comment filter"><a class="btn {% if request.GET.comments == 'questions' %}btn-outline-secondary{% else %}btn-primary{% endif %}" href="{% url 'video_detail' video.pk %}#comments-heading">All</a><a class="btn {% if request.GET.comments == 'questions' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'video_detail' video.pk %}?comments=questions#comments-heading">Questions</a></div></div>
+{% if user.is_authenticated %}<form class="form-panel mb-4" method="post" action="{% url 'add_comment' video.pk %}">{% csrf_token %}{{ form.as_p }}<div class="d-flex flex-wrap gap-2"><button type="submit" class="btn btn-primary">Comment</button><button type="submit" class="btn btn-outline-primary" formaction="{% url 'ask_video_question' video.pk %}">Ask question</button></div><p class="form-text mt-2 mb-0">Questions stay public like normal comments, but creators can highlight a helpful reply as the answer.</p></form>{% endif %}
+{% for comment in comments %}{% if request.GET.comments != 'questions' or comment.question %}<article class="comment"><div class="d-flex flex-wrap gap-2 align-items-center"><span class="comment-author">{{ comment.author }}</span><span class="comment-date">· {{ comment.pub_date|timesince }} ago</span>{% if comment.question %}<span class="badge text-bg-primary">Question</span>{% endif %}{% supporter_badge_for comment.author video as is_supporter %}{% if is_supporter %}<span class="badge text-bg-warning">Paid member</span>{% endif %}{% if user.is_authenticated and user != comment.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' comment.pk %}">Report</a>{% endif %}</div><p class="comment-body">{{ comment.comment }}</p>{% if user == comment.author %}<div class="d-flex gap-2"><a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a></div>{% endif %}{% if comment.question.featured_reply %}<div class="alert alert-info mt-3 mb-3"><strong>Creator-highlighted answer</strong><div><strong>@{{ comment.question.featured_reply.author.username }}</strong></div><div>{{ comment.question.featured_reply.comment }}</div></div>{% endif %}{% for reply in comment.visible_replies %}<article class="comment-reply"><div class="d-flex flex-wrap gap-2 align-items-center"><span class="comment-author">{{ reply.author }}</span> <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span>{% if user.is_authenticated and user != reply.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' reply.pk %}">Report</a>{% endif %}</div><p class="comment-body">{{ reply.comment }}</p><div class="d-flex flex-wrap gap-2">{% if user == reply.author %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a><a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>{% endif %}{% if user == video.author and comment.question %}<form method="post" action="{% url 'feature_question_answer' reply.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-primary" type="submit">{% if comment.question.featured_reply_id == reply.pk %}Unhighlight answer{% else %}Highlight answer{% endif %}</button></form>{% endif %}</div></article>{% endfor %}{% if user.is_authenticated %}<form class="comment-reply mt-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">{% csrf_token %}<label for="reply-{{ comment.pk }}">Reply</label><textarea id="reply-{{ comment.pk }}" name="comment" rows="2" required></textarea><button class="btn btn-sm btn-outline-primary mt-2" type="submit">Post reply</button></form>{% endif %}</article>{% endif %}{% empty %}<div class="empty-state">No comments yet.</div>{% endfor %}</section>
+<script>(()=>{const player=document.getElementById("video-player");const progressUrl=player.dataset.progressUrl;const watchUrl=player.dataset.watchUrl;const resumePosition=Number(player.dataset.resumePosition||0);const playbackSessionId=crypto.randomUUID();let lastSavedSecond=-1;let lastWatchTick=performance.now();const csrfToken=document.cookie.split("; ").find((row)=>row.startsWith("csrftoken="))?.split("=")[1];document.querySelectorAll(".video-chapter").forEach((button)=>button.addEventListener("click",()=>{player.currentTime=Number(button.dataset.chapterTime);player.play();}));document.querySelectorAll(".video-seek").forEach((button)=>button.addEventListener("click",()=>{player.currentTime=Number(button.dataset.seekTime);player.play();}));const bookmarkForm=document.getElementById("bookmark-form");bookmarkForm?.addEventListener("submit",()=>{document.getElementById("bookmark-position").value=String(player.currentTime||0);});player.addEventListener("loadedmetadata",()=>{if(progressUrl&&resumePosition>0&&resumePosition<player.duration-5)player.currentTime=resumePosition;},{once:true});const saveProgress=()=>{if(!progressUrl)return;if(!Number.isFinite(player.duration)||player.duration<=0)return;const currentSecond=Math.round(player.currentTime);if(currentSecond===lastSavedSecond)return;lastSavedSecond=currentSecond;fetch(progressUrl,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken},body:JSON.stringify({position_seconds:player.currentTime,duration_seconds:player.duration}),credentials:"same-origin",keepalive:true});};const saveWatchTime=(force=false)=>{const now=performance.now();const watchedSeconds=Math.min(15,Math.round((now-lastWatchTick)/1000));lastWatchTick=now;if((!force&&(player.paused||player.ended||document.visibilityState!=="visible"))||watchedSeconds<1||!Number.isFinite(player.duration)||player.duration<=0)return;fetch(watchUrl,{method:"POST",headers:{"Content-Type":"application/json","X-CSRFToken":csrfToken},body:JSON.stringify({event_id:crypto.randomUUID(),playback_session_id:playbackSessionId,watched_seconds:watchedSeconds,position_seconds:player.currentTime,duration_seconds:player.duration}),credentials:"same-origin",keepalive:true});};setInterval(saveWatchTime,10000);player.addEventListener("play",()=>{lastWatchTick=performance.now();});player.addEventListener("seeking",()=>{lastWatchTick=performance.now();});document.addEventListener("visibilitychange",()=>{lastWatchTick=performance.now();});player.addEventListener("pause",()=>saveWatchTime(true));player.addEventListener("ended",()=>saveWatchTime(true));window.addEventListener("pagehide",()=>saveWatchTime(true));player.addEventListener("timeupdate",()=>{if(Math.round(player.currentTime)%10===0)saveProgress();});player.addEventListener("pause",saveProgress);player.addEventListener("ended",saveProgress);window.addEventListener("pagehide",saveProgress);})();</script>
 {% endblock %}

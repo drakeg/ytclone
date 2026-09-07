@@ -65,6 +65,7 @@ class Video(models.Model):
     description = models.TextField()
     thumbnail = models.ImageField(upload_to="videos/thumbnails")
     video_file = models.FileField(upload_to="videos/files")
+    captions_file = models.FileField(upload_to="videos/captions", blank=True)
     views = models.PositiveIntegerField(default=0)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     channel = models.ForeignKey("Channel", on_delete=models.SET_NULL, null=True, blank=True, related_name="videos")

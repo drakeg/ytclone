@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 from .models import Channel, Comment, Playlist, Video
+from .services.captions import CaptionValidationError, validate_webvtt_upload
 from .services.channels import accessible_channels
 from .services.chapters import ChapterValidationError, format_chapters, parse_chapters
 from .services.media_probe import MediaProbeError, probe_uploaded_video, should_auto_classify_as_short
@@ -31,67 +32,21 @@ class PlaylistForm(forms.ModelForm):
 
 
 class VideoUploadForm(forms.ModelForm):
-    content_format = forms.ChoiceField(
-        required=False,
-        choices=(
-            ("auto", "Auto-detect"),
-            ("video", "Standard video"),
-            ("short", "Short"),
-        ),
-        initial="auto",
-        help_text=(
-            "Auto-detect marks portrait or square videos up to 3 minutes as Shorts. "
-            "Choose a format explicitly to override detection."
-        ),
-    )
-    tags = forms.CharField(
-        required=False,
-        help_text="Optional. Separate tags with commas, for example: rv travel, camping, solar.",
-        widget=forms.TextInput(attrs={"placeholder": "rv travel, camping, solar"}),
-    )
-    chapters = forms.CharField(
-        required=False,
-        widget=forms.Textarea(
-            attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}
-        ),
-        help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.",
-    )
+    content_format = forms.ChoiceField(required=False, choices=(("auto", "Auto-detect"),("video", "Standard video"),("short", "Short")), initial="auto", help_text="Auto-detect marks portrait or square videos up to 3 minutes as Shorts. Choose a format explicitly to override detection.")
+    tags = forms.CharField(required=False, help_text="Optional. Separate tags with commas, for example: rv travel, camping, solar.", widget=forms.TextInput(attrs={"placeholder": "rv travel, camping, solar"}))
+    chapters = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 6, "placeholder": "0:00 Introduction\n1:30 Main topic"}), help_text="Optional. One line per chapter: MM:SS Title or HH:MM:SS Title.")
     allowed_video_extensions = {".mp4", ".webm", ".mov"}
-    allowed_video_content_types = {
-        "video/mp4",
-        "video/webm",
-        "video/quicktime",
-    }
+    allowed_video_content_types = {"video/mp4", "video/webm", "video/quicktime"}
     allowed_thumbnail_extensions = {".jpg", ".jpeg", ".png", ".webp"}
-    allowed_thumbnail_content_types = {
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-    }
+    allowed_thumbnail_content_types = {"image/jpeg", "image/png", "image/webp"}
 
     class Meta:
         model = Video
-        fields = [
-            "title",
-            "description",
-            "thumbnail",
-            "video_file",
-            "category",
-            "channel",
-            "publication_status",
-            "audience",
-            "publish_at",
-            "public_release_at",
-        ]
+        fields = ["title", "description", "thumbnail", "video_file", "captions_file", "category", "channel", "publication_status", "audience", "publish_at", "public_release_at"]
         widgets = {
-            "thumbnail": forms.ClearableFileInput(
-                attrs={"accept": "image/jpeg,image/png,image/webp"}
-            ),
-            # Do not set an ``accept`` filter on the video chooser. Chrome on macOS
-            # can spend a very long time filtering large/mixed folders before the
-            # native picker becomes responsive. Server-side validation below still
-            # enforces the supported extensions, MIME types, and upload-size limit.
+            "thumbnail": forms.ClearableFileInput(attrs={"accept": "image/jpeg,image/png,image/webp"}),
             "video_file": forms.ClearableFileInput(),
+            "captions_file": forms.ClearableFileInput(attrs={"accept": ".vtt,text/vtt"}),
             "publish_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
             "public_release_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
@@ -99,172 +54,88 @@ class VideoUploadForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._auto_video_probe = None
-        self._existing_is_short = bool(
-            self.instance and self.instance.pk and hasattr(self.instance, "short_metadata")
-        )
+        self._existing_is_short = bool(self.instance and self.instance.pk and hasattr(self.instance, "short_metadata"))
         self.fields["channel"].queryset = accessible_channels(user)
         self.fields["channel"].required = True
+        self.fields["captions_file"].required = False
+        self.fields["captions_file"].help_text = "Optional English WebVTT (.vtt) captions, up to 2 MB."
         self.fields["audience"].required = False
         self.fields["audience"].initial = Video.Audience.EVERYONE
-        self.fields["audience"].help_text = (
-            "Paid members only requires an active paid membership for the selected channel."
-        )
+        self.fields["audience"].help_text = "Paid members only requires an active paid membership for the selected channel."
         self.fields["public_release_at"].required = False
-        self.fields["public_release_at"].help_text = (
-            "Optional for paid-members-only videos. Members can watch first; everyone gets access automatically at this time."
-        )
-        if user and not self.fields["channel"].queryset.exists():
-            self.fields["channel"].help_text = "Create a channel before uploading a video."
+        self.fields["public_release_at"].help_text = "Optional for paid-members-only videos. Members can watch first; everyone gets access automatically at this time."
+        if user and not self.fields["channel"].queryset.exists(): self.fields["channel"].help_text = "Create a channel before uploading a video."
         if self.instance and self.instance.pk:
             self.fields["chapters"].initial = format_chapters(self.instance)
-            self.fields["tags"].initial = ", ".join(
-                self.instance.tags.values_list("name", flat=True)
-            )
-            self.fields["content_format"].initial = (
-                "short" if self._existing_is_short else "video"
-            )
+            self.fields["tags"].initial = ", ".join(self.instance.tags.values_list("name", flat=True))
+            self.fields["content_format"].initial = "short" if self._existing_is_short else "video"
 
     def clean_tags(self):
-        try:
-            return normalize_tag_names(self.cleaned_data.get("tags", ""))
-        except ValueError as error:
-            raise forms.ValidationError(str(error))
+        try: return normalize_tag_names(self.cleaned_data.get("tags", ""))
+        except ValueError as error: raise forms.ValidationError(str(error))
 
     def clean_chapters(self):
-        try:
-            return parse_chapters(self.cleaned_data.get("chapters", ""))
-        except ChapterValidationError as error:
-            raise forms.ValidationError(str(error))
+        try: return parse_chapters(self.cleaned_data.get("chapters", ""))
+        except ChapterValidationError as error: raise forms.ValidationError(str(error))
+
+    def clean_captions_file(self):
+        captions_file = self.cleaned_data.get("captions_file")
+        try: return validate_webvtt_upload(captions_file)
+        except CaptionValidationError as error: raise forms.ValidationError(str(error))
 
     def clean(self):
-        cleaned_data = super().clean()
-        status = cleaned_data.get("publication_status")
-        publish_at = cleaned_data.get("publish_at")
-        public_release_at = cleaned_data.get("public_release_at")
-        audience = cleaned_data.get("audience") or Video.Audience.EVERYONE
-        cleaned_data["audience"] = audience
-        channel = cleaned_data.get("channel")
-
+        cleaned_data = super().clean(); status=cleaned_data.get("publication_status"); publish_at=cleaned_data.get("publish_at"); public_release_at=cleaned_data.get("public_release_at"); audience=cleaned_data.get("audience") or Video.Audience.EVERYONE; cleaned_data["audience"]=audience; channel=cleaned_data.get("channel")
         if audience == Video.Audience.MEMBERS_ONLY and channel is not None:
             from monetization.models import CreatorMonetizationAccount
-
-            if not CreatorMonetizationAccount.objects.filter(
-                channel=channel,
-                status=CreatorMonetizationAccount.Status.ACTIVE,
-                payouts_enabled=True,
-                terms_accepted_at__isnull=False,
-            ).exists():
-                self.add_error(
-                    "audience",
-                    "Enable monetization for this channel before publishing members-only videos.",
-                )
-
+            if not CreatorMonetizationAccount.objects.filter(channel=channel,status=CreatorMonetizationAccount.Status.ACTIVE,payouts_enabled=True,terms_accepted_at__isnull=False).exists(): self.add_error("audience", "Enable monetization for this channel before publishing members-only videos.")
         if audience == Video.Audience.EVERYONE:
             cleaned_data["public_release_at"] = None
-            if public_release_at is not None:
-                self.add_error(
-                    "public_release_at",
-                    "Public release timing is only available for paid-members-only videos.",
-                )
-        elif public_release_at is not None and public_release_at <= timezone.now():
-            self.add_error(
-                "public_release_at",
-                "Choose a future public release time, or leave it blank to keep the video members only.",
-            )
-
+            if public_release_at is not None: self.add_error("public_release_at", "Public release timing is only available for paid-members-only videos.")
+        elif public_release_at is not None and public_release_at <= timezone.now(): self.add_error("public_release_at", "Choose a future public release time, or leave it blank to keep the video members only.")
         if status == Video.PublicationStatus.SCHEDULED:
-            if publish_at is None:
-                self.add_error("publish_at", "Choose a publication time.")
-            elif publish_at <= timezone.now():
-                self.add_error("publish_at", "Choose a future publication time.")
-            elif public_release_at is not None and public_release_at <= publish_at:
-                self.add_error(
-                    "public_release_at",
-                    "Public release must be after the scheduled member publication time.",
-                )
-        else:
-            cleaned_data["publish_at"] = None
+            if publish_at is None: self.add_error("publish_at", "Choose a publication time.")
+            elif publish_at <= timezone.now(): self.add_error("publish_at", "Choose a future publication time.")
+            elif public_release_at is not None and public_release_at <= publish_at: self.add_error("public_release_at", "Public release must be after the scheduled member publication time.")
+        else: cleaned_data["publish_at"] = None
         return cleaned_data
 
     def save(self, commit=True):
         self.instance._pending_tag_names = self.cleaned_data.get("tags", [])
         requested_format = self.cleaned_data.get("content_format") or "auto"
-        if requested_format == "short":
-            desired_short_state = True
-        elif requested_format == "video":
-            desired_short_state = False
-        elif self._auto_video_probe is not None:
-            desired_short_state = should_auto_classify_as_short(self._auto_video_probe)
-        elif self.instance.pk:
-            desired_short_state = self._existing_is_short
-        else:
-            desired_short_state = False
+        if requested_format == "short": desired_short_state = True
+        elif requested_format == "video": desired_short_state = False
+        elif self._auto_video_probe is not None: desired_short_state = should_auto_classify_as_short(self._auto_video_probe)
+        elif self.instance.pk: desired_short_state = self._existing_is_short
+        else: desired_short_state = False
         self.instance._pending_short_state = desired_short_state
         return super().save(commit=commit)
 
     def clean_thumbnail(self):
-        thumbnail = self.cleaned_data.get("thumbnail")
-        if not thumbnail:
-            return thumbnail
-        if not hasattr(thumbnail, "content_type"):
-            return thumbnail
-
-        extension = Path(thumbnail.name).suffix.lower()
-        content_type = getattr(thumbnail, "content_type", "").lower()
-
-        if extension not in self.allowed_thumbnail_extensions:
-            raise forms.ValidationError("Use a JPG, PNG, or WebP thumbnail.")
-        if content_type and content_type not in self.allowed_thumbnail_content_types:
-            raise forms.ValidationError("The thumbnail file type is not supported.")
-        if thumbnail.size > settings.MAX_THUMBNAIL_UPLOAD_SIZE:
-            raise forms.ValidationError(
-                f"Thumbnail files must be {settings.MAX_THUMBNAIL_UPLOAD_MB} MB or smaller."
-            )
-
+        thumbnail=self.cleaned_data.get("thumbnail")
+        if not thumbnail or not hasattr(thumbnail,"content_type"): return thumbnail
+        extension=Path(thumbnail.name).suffix.lower(); content_type=getattr(thumbnail,"content_type","").lower()
+        if extension not in self.allowed_thumbnail_extensions: raise forms.ValidationError("Use a JPG, PNG, or WebP thumbnail.")
+        if content_type and content_type not in self.allowed_thumbnail_content_types: raise forms.ValidationError("The thumbnail file type is not supported.")
+        if thumbnail.size > settings.MAX_THUMBNAIL_UPLOAD_SIZE: raise forms.ValidationError(f"Thumbnail files must be {settings.MAX_THUMBNAIL_UPLOAD_MB} MB or smaller.")
         return thumbnail
 
     def clean_video_file(self):
-        video_file = self.cleaned_data.get("video_file")
-        if not video_file:
-            return video_file
-        if not hasattr(video_file, "content_type"):
-            return video_file
-
-        extension = Path(video_file.name).suffix.lower()
-        content_type = getattr(video_file, "content_type", "").lower()
-
-        if extension not in self.allowed_video_extensions:
-            raise forms.ValidationError("Use an MP4, WebM, or MOV video file.")
-        if content_type and content_type not in self.allowed_video_content_types:
-            raise forms.ValidationError("The video file type is not supported.")
-        if video_file.size > settings.MAX_VIDEO_UPLOAD_SIZE:
-            raise forms.ValidationError(
-                f"Video files must be {settings.MAX_VIDEO_UPLOAD_MB} MB or smaller."
-            )
-
-        requested_format = self.data.get("content_format") or "auto"
+        video_file=self.cleaned_data.get("video_file")
+        if not video_file or not hasattr(video_file,"content_type"): return video_file
+        extension=Path(video_file.name).suffix.lower(); content_type=getattr(video_file,"content_type","").lower()
+        if extension not in self.allowed_video_extensions: raise forms.ValidationError("Use an MP4, WebM, or MOV video file.")
+        if content_type and content_type not in self.allowed_video_content_types: raise forms.ValidationError("The video file type is not supported.")
+        if video_file.size > settings.MAX_VIDEO_UPLOAD_SIZE: raise forms.ValidationError(f"Video files must be {settings.MAX_VIDEO_UPLOAD_MB} MB or smaller.")
+        requested_format=self.data.get("content_format") or "auto"
         if requested_format == "auto":
-            try:
-                self._auto_video_probe = probe_uploaded_video(video_file)
-            except MediaProbeError:
-                self._auto_video_probe = None
+            try: self._auto_video_probe=probe_uploaded_video(video_file)
+            except MediaProbeError: self._auto_video_probe=None
         return video_file
 
 
 class VideoEditForm(VideoUploadForm):
     class Meta(VideoUploadForm.Meta):
-        fields = [
-            "title",
-            "description",
-            "thumbnail",
-            "video_file",
-            "category",
-            "channel",
-            "publication_status",
-            "audience",
-            "publish_at",
-            "public_release_at",
-        ]
+        fields = ["title", "description", "thumbnail", "video_file", "captions_file", "category", "channel", "publication_status", "audience", "publish_at", "public_release_at"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

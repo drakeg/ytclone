@@ -5,11 +5,10 @@ Improve accessibility and watch usability by letting creators attach a WebVTT ca
 
 ## Scope
 - Add one optional English WebVTT caption file per video.
-- Accept caption upload and replacement from existing video upload/edit flows.
+- Accept caption upload, replacement, and removal from existing video upload/edit flows.
 - Validate the uploaded file as bounded UTF-8 WebVTT before persistence.
 - Render the caption as a native `<track kind="captions">` on standard-video watch pages.
-- Keep caption media private/visibility-bound through the parent video's existing access rules.
-- Removing the caption from edit is supported explicitly.
+- Keep caption availability bound to the parent video's existing access rules.
 
 ## Acceptance criteria
 - Videos continue to work without captions.
@@ -21,12 +20,22 @@ Improve accessibility and watch usability by letting creators attach a WebVTT ca
 - Existing upload/edit behavior, thumbnails, chapters, visibility, reactions, comments, analytics, and recommendations remain unchanged.
 
 ## Architecture
-- Store the optional caption file on `Video`, following the existing video/thumbnail storage lifecycle.
-- Keep WebVTT validation in a focused service/helper rather than the template.
-- Reuse the existing upload/edit authorization and form flows.
-- Use the browser's native `<track>` support; no JavaScript caption framework or external transcription service.
+- Store the optional caption file on `Video` at `videos/captions`.
+- Keep WebVTT validation in `video/services/captions.py`.
+- Reuse existing upload/edit authorization and forms.
+- Use native HTML `<track>` support; no JavaScript caption framework or external transcription service.
+- Migration `0036_video_captions_file` adds the optional field.
 
-## Local validation
+## Verification
+GitHub Actions run `34156386407` completed successfully on the implementation head:
+- dependency install: passed
+- Django configuration check: passed
+- migration drift check: passed
+- full test suite: passed
+
+Focused caption tests cover WebVTT validation, form persistence/rejection, optional player-track rendering, and edit-page controls. The existing CI full suite protects upload/edit, Shorts, recommendations, visibility, and other regressions.
+
+Local/Docker verification remains available with:
 - `python manage.py check`
 - `python manage.py makemigrations --check --dry-run`
 - `python manage.py test video.test_video_captions`

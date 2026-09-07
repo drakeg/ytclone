@@ -68,7 +68,7 @@ class VideoBrowseTests(TestCase):
         self.assertEqual(len(first.context["videos"]), 24)
         self.assertEqual(len(second.context["videos"]), 2)
         self.assertContains(first, "Page 1 of 2")
-        self.assertContains(first, "sort=newest&amp;page=2")
+        self.assertContains(first, "sort=newest&page=2")
 
     def test_bad_page_values_resolve_safely(self):
         for number in range(26):

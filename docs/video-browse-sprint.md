@@ -28,11 +28,11 @@ Turn the discovery homepage's small curated shelves into useful entry points for
 - Keep the homepage's existing four-item curated shelf behavior unchanged.
 
 ## Validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- `python manage.py test video.test_video_browse`
-- `python manage.py test`
-- CI must pass before the PR leaves draft.
+- GitHub Actions run `34080964636` passed on the implementation head after the pagination-link assertion was corrected.
+- `python manage.py check` passed.
+- `python manage.py makemigrations --check --dry-run` reported no changes.
+- The complete parallel Django test suite passed.
+- No schema or dependency changes were introduced.
 
 ## Out of scope
 - Infinite scroll.

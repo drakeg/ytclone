@@ -189,3 +189,47 @@ class Playlist(models.Model):
     class Visibility(models.TextChoices): PUBLIC="public","Public"; UNLISTED="unlisted","Unlisted"; PRIVATE="private","Private"
     owner=models.ForeignKey(User,on_delete=models.CASCADE,related_name="playlists"); name=models.CharField(max_length=120); description=models.TextField(blank=True)
     visibility=models.CharField(max_length=10,choices=Visibility.choices,default=Visibility.PRIVATE); created_at=models.DateTimeField(auto_now_add=True); updated_at=models.DateTimeField(auto_now=True)
+    class Meta:
+        ordering=["-updated_at","name"]
+        constraints=[models.UniqueConstraint(fields=["owner","name"],name="unique_playlist_name_per_owner")]
+    def __str__(self): return self.name
+    def can_view(self,user): return self.visibility != self.Visibility.PRIVATE or (user.is_authenticated and user.pk == self.owner_id)
+
+
+class PlaylistItem(models.Model):
+    playlist=models.ForeignKey(Playlist,on_delete=models.CASCADE,related_name="items"); video=models.ForeignKey(Video,on_delete=models.CASCADE,related_name="playlist_items")
+    position=models.PositiveIntegerField(default=0); added_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering=["position","added_at"]
+        constraints=[models.UniqueConstraint(fields=["playlist","video"],name="unique_video_per_playlist")]
+    def __str__(self): return f"{self.playlist}: {self.video}"
+
+
+class WatchHistory(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE,related_name="watch_history"); video=models.ForeignKey(Video,on_delete=models.CASCADE,related_name="history_entries")
+    watched_at=models.DateTimeField(auto_now=True); playback_position_seconds=models.PositiveIntegerField(default=0); duration_seconds=models.PositiveIntegerField(default=0)
+    class Meta:
+        ordering=["-watched_at"]
+        constraints=[models.UniqueConstraint(fields=["user","video"],name="unique_video_per_user_history")]
+    def __str__(self): return f"{self.user}: {self.video}"
+
+
+class VideoWatchEvent(models.Model):
+    event_id=models.UUIDField(default=uuid.uuid4,unique=True,editable=False); playback_session_id=models.UUIDField(); video=models.ForeignKey(Video,on_delete=models.CASCADE,related_name="watch_events")
+    viewer=models.ForeignKey(User,null=True,blank=True,on_delete=models.SET_NULL,related_name="video_watch_events"); viewer_session_hash=models.CharField(max_length=64)
+    watched_seconds=models.PositiveSmallIntegerField(); position_seconds=models.PositiveIntegerField(); duration_seconds=models.PositiveIntegerField(); created_at=models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering=["created_at","pk"]
+        indexes=[models.Index(fields=["video","created_at"],name="watch_video_created_idx"),models.Index(fields=["video","playback_session_id"],name="watch_video_session_idx")]
+        constraints=[models.CheckConstraint(condition=models.Q(watched_seconds__gte=1,watched_seconds__lte=15),name="watch_event_delta_between_1_and_15")]
+
+
+class Notification(models.Model):
+    class Kind(models.TextChoices):
+        COMMENT="comment","Comment"; REPLY="reply","Reply"; LIKE="like","Like"; DISLIKE="dislike","Dislike"; SUBSCRIPTION="subscription","Subscription"; UPLOAD="upload","New upload"; TEAM_INVITATION="team_invite","Team invitation"
+    recipient=models.ForeignKey(User,on_delete=models.CASCADE,related_name="notifications"); actor=models.ForeignKey(User,on_delete=models.SET_NULL,null=True,related_name="sent_notifications")
+    kind=models.CharField(max_length=20,choices=Kind.choices); video=models.ForeignKey(Video,on_delete=models.CASCADE,null=True,blank=True); channel=models.ForeignKey(Channel,on_delete=models.CASCADE,null=True,blank=True)
+    created_at=models.DateTimeField(auto_now_add=True); read_at=models.DateTimeField(null=True,blank=True)
+    class Meta: ordering=["-created_at","-pk"]
+    @property
+    def is_read(self): return self.read_at is not None

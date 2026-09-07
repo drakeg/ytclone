@@ -5,7 +5,7 @@ import uuid
 from pathlib import Path
 
 from django.core.files.base import ContentFile
-from PIL import Image, ImageStat
+from PIL import Image, ImageFilter, ImageStat
 
 from .media_probe import MediaProbeError, probe_video_path
 
@@ -40,29 +40,12 @@ def _copy_uploaded_file(uploaded_file, destination):
 
 def _extract_frame(source_path, output_path, frame_seconds):
     command = [
-        "ffmpeg",
-        "-hide_banner",
-        "-loglevel",
-        "error",
-        "-y",
-        "-ss",
-        str(frame_seconds),
-        "-i",
-        str(source_path),
-        "-frames:v",
-        "1",
-        "-q:v",
-        "2",
-        str(output_path),
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-ss", str(frame_seconds), "-i", str(source_path),
+        "-frames:v", "1", "-q:v", "2", str(output_path),
     ]
     try:
-        subprocess.run(
-            command,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
+        subprocess.run(command, check=True, capture_output=True, text=True, timeout=60)
     except FileNotFoundError as error:
         raise VideoThumbnailError("FFmpeg is not installed on this server.") from error
     except subprocess.TimeoutExpired as error:
@@ -80,14 +63,17 @@ def _frame_score(path):
         stats = ImageStat.Stat(grayscale)
         brightness = stats.mean[0]
         contrast = stats.stddev[0]
+        detail = ImageStat.Stat(grayscale.filter(ImageFilter.FIND_EDGES)).mean[0]
 
-    score = contrast * 2.0 - abs(brightness - 128.0) * 0.20
+    score = contrast * 2.0 + detail * 0.75 - abs(brightness - 128.0) * 0.20
     if brightness < 40:
         score -= (40 - brightness) * 4.0
     elif brightness > 225:
         score -= (brightness - 225) * 3.0
     if contrast < 12:
         score -= (12 - contrast) * 5.0
+    if detail < 4:
+        score -= (4 - detail) * 3.0
     return score
 
 
@@ -99,10 +85,7 @@ def _probe_duration(source_path):
 
 
 def _generated_file(frame_bytes):
-    return ContentFile(
-        frame_bytes,
-        name=f"video-thumbnail-{uuid.uuid4().hex}.jpg",
-    )
+    return ContentFile(frame_bytes, name=f"video-thumbnail-{uuid.uuid4().hex}.jpg")
 
 
 def _selected_frame(source_path, frame_seconds, duration_seconds):

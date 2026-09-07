@@ -1,10 +1,16 @@
 {% if recommendations %}
-<section class="mt-4" aria-labelledby="watch-next-heading">
-    <div class="section-heading"><div><p class="eyebrow">Keep watching</p><h2 id="watch-next-heading">Watch next</h2></div></div>
+<section class="mt-4" aria-labelledby="watch-next-heading" data-watch-next>
+    <div class="section-heading">
+        <div><p class="eyebrow">Keep watching</p><h2 id="watch-next-heading">Watch next</h2></div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="video-meta" data-autoplay-status aria-live="polite"></span>
+            <button class="btn btn-sm btn-outline-secondary" type="button" data-autoplay-toggle aria-pressed="true">Autoplay on</button>
+        </div>
+    </div>
     <div class="row g-3">
         {% for recommendation in recommendations %}
         <div class="col-12 col-sm-6 col-lg-3">
-            <article class="card h-100">
+            <article class="card h-100"{% if forloop.first %} data-watch-next-url="{% url 'video_detail' recommendation.pk %}"{% endif %}>
                 <a href="{% url 'video_detail' recommendation.pk %}"><img class="card-img-top" src="{{ recommendation.thumbnail.url }}" alt="Thumbnail for {{ recommendation.title }}"></a>
                 <div class="card-body">
                     <h3 class="h6 mb-1"><a class="text-decoration-none" href="{% url 'video_detail' recommendation.pk %}">{{ recommendation.title }}</a></h3>

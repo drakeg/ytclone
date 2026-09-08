@@ -1,4 +1,4 @@
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
@@ -6,11 +6,13 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from PIL import Image
 
 from .models import Category, Channel, Video
 from .services.video_thumbnails import (
     AUTO_SAMPLE_FRACTIONS,
     VideoThumbnailError,
+    _frame_score,
     generate_thumbnail_for_upload,
 )
 from .upload_forms import ThumbnailVideoUploadForm
@@ -22,14 +24,7 @@ class ThumbnailUploadFormTests(TestCase):
         self.channel = Channel.objects.create(owner=self.user, name="Thumbnail Channel", description="")
 
     def data(self, **overrides):
-        payload = {
-            "title": "Thumbnail upload",
-            "description": "Thumbnail selection test",
-            "channel": self.channel.pk,
-            "publication_status": Video.PublicationStatus.DRAFT,
-            "content_format": "video",
-            "thumbnail_mode": "auto",
-        }
+        payload = {"title": "Thumbnail upload", "description": "Thumbnail selection test", "channel": self.channel.pk, "publication_status": Video.PublicationStatus.DRAFT, "content_format": "video", "thumbnail_mode": "auto"}
         payload.update(overrides)
         return payload
 
@@ -42,28 +37,16 @@ class ThumbnailUploadFormTests(TestCase):
         self.assertFalse(form.fields["thumbnail"].required)
 
     def test_automatic_thumbnail_does_not_require_image_upload(self):
-        form = ThumbnailVideoUploadForm(
-            user=self.user,
-            data=self.data(),
-            files={"video_file": self.video()},
-        )
+        form = ThumbnailVideoUploadForm(user=self.user, data=self.data(), files={"video_file": self.video()})
         self.assertTrue(form.is_valid(), form.errors)
 
     def test_custom_thumbnail_requires_image_upload(self):
-        form = ThumbnailVideoUploadForm(
-            user=self.user,
-            data=self.data(thumbnail_mode="custom"),
-            files={"video_file": self.video()},
-        )
+        form = ThumbnailVideoUploadForm(user=self.user, data=self.data(thumbnail_mode="custom"), files={"video_file": self.video()})
         self.assertFalse(form.is_valid())
         self.assertIn("thumbnail", form.errors)
 
     def test_choose_frame_requires_selected_timestamp(self):
-        form = ThumbnailVideoUploadForm(
-            user=self.user,
-            data=self.data(thumbnail_mode="frame"),
-            files={"video_file": self.video()},
-        )
+        form = ThumbnailVideoUploadForm(user=self.user, data=self.data(thumbnail_mode="frame"), files={"video_file": self.video()})
         self.assertFalse(form.is_valid())
         self.assertIn("thumbnail_frame_seconds", form.errors)
 
@@ -78,11 +61,21 @@ class VideoThumbnailServiceTests(TestCase):
     def test_automatic_mode_samples_only_bounded_candidate_frames(self, unused_probe, extract_frame, frame_score):
         frame_score.side_effect = [1, 2, 3, 6, 5, 4]
         thumbnail = generate_thumbnail_for_upload(self.video(), mode="auto")
-
         self.assertTrue(thumbnail.name.endswith(".jpg"))
         self.assertEqual(extract_frame.call_count, len(AUTO_SAMPLE_FRACTIONS))
         sampled_seconds = [call.args[2] for call in extract_frame.call_args_list]
         self.assertEqual(sampled_seconds, [15, 30, 45, 60, 75, 90])
+
+    def test_frame_score_prefers_crisp_detail_over_flat_frame(self):
+        with NamedTemporaryFile(suffix=".png") as flat_file, NamedTemporaryFile(suffix=".png") as detailed_file:
+            Image.new("L", (64, 64), 128).save(flat_file.name)
+            detailed = Image.new("L", (64, 64), 128)
+            pixels = detailed.load()
+            for y in range(64):
+                for x in range(64):
+                    pixels[x, y] = 96 if (x + y) % 2 else 160
+            detailed.save(detailed_file.name)
+            self.assertGreater(_frame_score(detailed_file.name), _frame_score(flat_file.name))
 
     @patch("video.services.video_thumbnails._extract_frame")
     @patch("video.services.video_thumbnails._probe_duration", return_value=120)
@@ -104,34 +97,20 @@ class VideoThumbnailServiceTests(TestCase):
 
 class ThumbnailUploadViewTests(TestCase):
     def setUp(self):
-        self.media_dir = TemporaryDirectory()
-        self.addCleanup(self.media_dir.cleanup)
-        self.settings_override = override_settings(MEDIA_ROOT=self.media_dir.name)
-        self.settings_override.enable()
-        self.addCleanup(self.settings_override.disable)
-
+        self.media_dir = TemporaryDirectory(); self.addCleanup(self.media_dir.cleanup)
+        self.settings_override = override_settings(MEDIA_ROOT=self.media_dir.name); self.settings_override.enable(); self.addCleanup(self.settings_override.disable)
         self.user = User.objects.create_user(username="thumbnail-view", password="password123")
         self.category = Category.objects.create(name="General", description="")
         self.channel = Channel.objects.create(owner=self.user, name="View Channel", description="")
         self.client.login(username="thumbnail-view", password="password123")
 
     def payload(self):
-        return {
-            "title": "Generated thumbnail video",
-            "description": "Generated thumbnail test",
-            "category": self.category.pk,
-            "channel": self.channel.pk,
-            "publication_status": Video.PublicationStatus.DRAFT,
-            "content_format": "video",
-            "thumbnail_mode": "auto",
-            "video_file": SimpleUploadedFile("video.mp4", b"video", content_type="video/mp4"),
-        }
+        return {"title": "Generated thumbnail video", "description": "Generated thumbnail test", "category": self.category.pk, "channel": self.channel.pk, "publication_status": Video.PublicationStatus.DRAFT, "content_format": "video", "thumbnail_mode": "auto", "video_file": SimpleUploadedFile("video.mp4", b"video", content_type="video/mp4")}
 
     @patch("video.upload_views.generate_thumbnail_for_upload")
     def test_upload_generates_thumbnail_when_no_custom_image_is_supplied(self, generate_thumbnail):
         generate_thumbnail.return_value = ContentFile(b"generated-thumbnail", name="generated.jpg")
         response = self.client.post(reverse("upload"), self.payload())
-
         self.assertEqual(response.status_code, 302)
         video = Video.objects.get(title="Generated thumbnail video")
         self.assertTrue(video.thumbnail.name.startswith("videos/thumbnails/generated"))

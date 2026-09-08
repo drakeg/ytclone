@@ -12,7 +12,10 @@
                 <a class="btn btn-outline-secondary" href="{% url 'channel_team' channel.pk %}">Manage team</a>
                 <a class="btn btn-primary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
             {% elif user.is_authenticated %}
-                <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if user in channel.subscribers.all %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
+                <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if is_subscribed %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
+                {% if is_subscribed %}
+                    <form method="post" action="{% url 'subscription_upload_notifications' channel.pk %}">{% csrf_token %}<input type="hidden" name="enabled" value="{% if upload_notifications_enabled %}0{% else %}1{% endif %}"><button type="submit" class="btn btn-outline-secondary">{% if upload_notifications_enabled %}Upload notifications: On{% else %}Upload notifications: Off{% endif %}</button></form>
+                {% endif %}
                 <a class="btn btn-outline-danger" href="{% url 'report_content' 'channel' channel.pk %}">Report channel</a>
             {% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>{% endif %}
         </div>

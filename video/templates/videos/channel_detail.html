@@ -13,9 +13,7 @@
                 <a class="btn btn-primary" href="{% url 'monetization:creator_dashboard' channel.pk %}">Monetization</a>
             {% elif user.is_authenticated %}
                 <form method="post" action="{% url 'subscribe' channel.pk %}">{% csrf_token %}<button type="submit" class="btn btn-primary">{% if is_subscribed %}Unsubscribe{% else %}Subscribe{% endif %}</button></form>
-                {% if is_subscribed %}
-                    <form method="post" action="{% url 'subscription_upload_notifications' channel.pk %}">{% csrf_token %}<input type="hidden" name="enabled" value="{% if upload_notifications_enabled %}0{% else %}1{% endif %}"><button type="submit" class="btn btn-outline-secondary">{% if upload_notifications_enabled %}Upload notifications: On{% else %}Upload notifications: Off{% endif %}</button></form>
-                {% endif %}
+                {% if is_subscribed %}<form method="post" action="{% url 'subscription_upload_notifications' channel.pk %}">{% csrf_token %}<input type="hidden" name="enabled" value="{% if upload_notifications_enabled %}0{% else %}1{% endif %}"><button type="submit" class="btn btn-outline-secondary">{% if upload_notifications_enabled %}Upload notifications: On{% else %}Upload notifications: Off{% endif %}</button></form>{% endif %}
                 <a class="btn btn-outline-danger" href="{% url 'report_content' 'channel' channel.pk %}">Report channel</a>
             {% else %}<a class="btn btn-primary" href="{% url 'login' %}?next={{ request.path|urlencode }}">Log in to subscribe</a>{% endif %}
         </div>
@@ -30,11 +28,7 @@
                     <h3 class="h4">Paid memberships</h3>
                     {% if paid_membership %}
                         <div class="card mb-3"><div class="card-body"><strong>You are a paid member.</strong><p>Current tier: {{ paid_membership.tier.name }}. Members-only videos are unlocked while this membership is active.</p>
-                        {% if account.provider == 'stripe' and paid_membership.provider_subscription_id and not paid_membership.provider_subscription_id|slice:":9" == "test_sub_" %}
-                            <form method="post" action="{% url 'monetization:cancel_stripe_membership' paid_membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel at billing period end</button></form>
-                        {% else %}
-                            <form method="post" action="{% url 'monetization:cancel_sandbox_membership' paid_membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel membership</button></form>
-                        {% endif %}
+                        {% if account.provider == 'stripe' and paid_membership.provider_subscription_id and not paid_membership.provider_subscription_id|slice:":9" == "test_sub_" %}<form method="post" action="{% url 'monetization:cancel_stripe_membership' paid_membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel at billing period end</button></form>{% else %}<form method="post" action="{% url 'monetization:cancel_sandbox_membership' paid_membership.pk %}">{% csrf_token %}<button class="btn btn-outline-danger btn-sm" type="submit">Cancel membership</button></form>{% endif %}
                         </div></div>
                         <h4 class="h5">Change tier</h4>
                         <div class="row g-3">{% for tier in account.membership_tiers.all %}{% if tier.is_active and tier.pk != paid_membership.tier_id %}<div class="col-md-6"><div class="card h-100"><div class="card-body"><h5>{{ tier.name }}</h5><p>{{ tier.description }}</p><p class="fw-bold">${{ tier.price_minor|money_minor }} / month</p><form method="post" action="{% if account.provider == 'stripe' %}{% url 'monetization:start_stripe_membership' tier.pk %}{% else %}{% url 'monetization:join_sandbox_membership' tier.pk %}{% endif %}">{% csrf_token %}<button class="btn btn-outline-primary" type="submit">{% if account.provider == 'stripe' %}Switch via Stripe test checkout{% else %}Switch tier{% endif %}</button></form></div></div></div>{% endif %}{% endfor %}</div>
@@ -48,12 +42,13 @@
     {% if shorts %}
     <section class="discovery-section" aria-labelledby="channel-shorts">
         <div class="section-heading"><div><p class="eyebrow">Short-form</p><h2 id="channel-shorts">Shorts</h2></div><a href="{% url 'shorts_feed' %}">Browse all Shorts</a></div>
-        <div class="row g-3">
-            {% for video in shorts %}
-            <div class="col-6 col-md-4 col-lg-3"><div class="card h-100"><a href="{% url 'video_detail' video.pk %}"><img class="card-img-top" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" style="aspect-ratio:9/16; object-fit:cover;"></a><div class="card-body"><span class="badge text-bg-dark mb-2">Short</span><h3 class="h6"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3></div></div></div>
-            {% endfor %}
-        </div>
+        <div class="row g-3">{% for video in shorts %}<div class="col-6 col-md-4 col-lg-3"><div class="card h-100"><a href="{% url 'video_detail' video.pk %}"><img class="card-img-top" src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" style="aspect-ratio:9/16; object-fit:cover;"></a><div class="card-body"><span class="badge text-bg-dark mb-2">Short</span><h3 class="h6"><a class="text-decoration-none" href="{% url 'video_detail' video.pk %}">{{ video.title }}</a></h3></div></div></div>{% endfor %}</div>
+        {% if shorts.paginator.num_pages > 1 %}<nav class="d-flex gap-2 align-items-center mt-3" aria-label="Shorts pages">{% if shorts.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?short_page={{ shorts.previous_page_number }}&video_page={{ videos.number }}#channel-shorts">Previous Shorts</a>{% endif %}<span class="video-meta">Shorts page {{ shorts.number }} of {{ shorts.paginator.num_pages }}</span>{% if shorts.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?short_page={{ shorts.next_page_number }}&video_page={{ videos.number }}#channel-shorts">Next Shorts</a>{% endif %}</nav>{% endif %}
     </section>
     {% endif %}
-    <section class="discovery-section" aria-labelledby="channel-videos"><div class="section-heading"><h2 id="channel-videos">Videos</h2></div>{% include 'videos/_video_cards.html' with videos=videos %}</section>
+    <section class="discovery-section" aria-labelledby="channel-videos">
+        <div class="section-heading"><h2 id="channel-videos">Videos</h2></div>
+        {% include 'videos/_video_cards.html' with videos=videos %}
+        {% if videos.paginator.num_pages > 1 %}<nav class="d-flex gap-2 align-items-center mt-3" aria-label="Video pages">{% if videos.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?video_page={{ videos.previous_page_number }}&short_page={{ shorts.number }}#channel-videos">Previous videos</a>{% endif %}<span class="video-meta">Videos page {{ videos.number }} of {{ videos.paginator.num_pages }}</span>{% if videos.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?video_page={{ videos.next_page_number }}&short_page={{ shorts.number }}#channel-videos">Next videos</a>{% endif %}</nav>{% endif %}
+    </section>
 {% endblock %}

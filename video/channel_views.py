@@ -1,8 +1,13 @@
+from django.core.paginator import Paginator
 from django.db.models import Count, Q
 from django.shortcuts import render
 
 from .models import SubscriptionNotificationPreference, Video
 from .services.channel_access import available_channels, require_available_channel
+
+
+CHANNEL_VIDEO_PAGE_SIZE = 12
+CHANNEL_SHORT_PAGE_SIZE = 8
 
 
 def channel_list(request):
@@ -29,8 +34,14 @@ def channel_list(request):
 def channel_detail(request, pk):
     channel = require_available_channel(request.user, pk=pk)
     visible = channel.videos.visible_to(request.user).select_related("author", "category")
-    videos = visible.filter(short_metadata__isnull=True)
-    shorts = visible.filter(short_metadata__isnull=False)
+    videos = Paginator(
+        visible.filter(short_metadata__isnull=True).order_by("-pub_date", "-pk"),
+        CHANNEL_VIDEO_PAGE_SIZE,
+    ).get_page(request.GET.get("video_page"))
+    shorts = Paginator(
+        visible.filter(short_metadata__isnull=False).order_by("-pub_date", "-pk"),
+        CHANNEL_SHORT_PAGE_SIZE,
+    ).get_page(request.GET.get("short_page"))
 
     is_subscribed = False
     upload_notifications_enabled = True

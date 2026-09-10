@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="VideoShare">
+  <defs>
+    <linearGradient id="brand-gradient" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ef5f5f"/>
+      <stop offset="1" stop-color="#6c5ce7"/>
+    </linearGradient>
+  </defs>
+  <rect x="7" y="7" width="50" height="50" rx="16" fill="url(#brand-gradient)" transform="rotate(-4 32 32)"/>
+  <path d="M27 21.5 45 32 27 42.5Z" fill="#fff"/>
+</svg>

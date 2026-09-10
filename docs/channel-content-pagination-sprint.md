@@ -27,10 +27,16 @@ Keep channel pages usable as creators accumulate large video libraries by boundi
 - Keep the existing Shorts card markup while feeding it a page object.
 
 ## Validation
+GitHub Actions run `34431390103` passed Django configuration and migration checks, then exposed one overly escaped pagination-URL assertion in the new regression test. The rendered application URL was correct; the assertion was updated to match Django's response-testing behavior.
+
+Corrected GitHub Actions run `34431443185` passed:
+- dependency installation
 - `python manage.py check`
 - `python manage.py makemigrations --check --dry-run`
+- the full 630-test suite with `python manage.py test --parallel 4`
+
+Local/Docker equivalents remain:
 - `python manage.py test video.test_channel_content_pagination`
-- `python manage.py test --parallel 4`
 - `docker compose run --build --rm test`
 
 ## Out of scope

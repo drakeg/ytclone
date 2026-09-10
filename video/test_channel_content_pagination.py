@@ -51,8 +51,8 @@ class ChannelContentPaginationTests(TestCase):
 
         response = self.client.get(self.url, {"video_page": 1, "short_page": 1})
 
-        self.assertContains(response, "?video_page=2&amp;short_page=1#channel-videos")
-        self.assertContains(response, "?short_page=2&amp;video_page=1#channel-shorts")
+        self.assertContains(response, "?video_page=2&short_page=1#channel-videos")
+        self.assertContains(response, "?short_page=2&video_page=1#channel-shorts")
 
     def test_second_pages_return_remaining_content(self):
         for index in range(13):

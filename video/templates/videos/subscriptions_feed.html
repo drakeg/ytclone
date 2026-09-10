@@ -26,13 +26,32 @@
 </section>
 
 <section class="discovery-section" aria-labelledby="subscription-videos-heading">
-    <div class="section-heading"><h2 id="subscription-videos-heading">Latest videos</h2></div>
+    <div class="section-heading d-flex flex-wrap justify-content-between gap-3 align-items-end">
+        <div><p class="eyebrow">Feed</p><h2 id="subscription-videos-heading">{% if selected_channel %}Latest from {{ selected_channel.name }}{% else %}Latest videos{% endif %}</h2></div>
+        <form method="get" class="d-flex gap-2 align-items-end">
+            <div>
+                <label class="form-label mb-1" for="subscription-channel-filter">Channel</label>
+                <select class="form-select" id="subscription-channel-filter" name="channel" onchange="this.form.submit()">
+                    <option value="">All followed channels</option>
+                    {% for channel in subscribed_channels %}<option value="{{ channel.pk }}"{% if selected_channel and selected_channel.pk == channel.pk %} selected{% endif %}>{{ channel.name }}</option>{% endfor %}
+                </select>
+            </div>
+            <noscript><button class="btn btn-outline-primary" type="submit">Apply</button></noscript>
+        </form>
+    </div>
     {% if videos %}
         {% include 'videos/_video_cards.html' with videos=videos %}
+        {% if videos.paginator.num_pages > 1 %}
+        <nav class="d-flex flex-wrap gap-2 align-items-center mt-4" aria-label="Subscription video pages">
+            {% if videos.has_previous %}<a class="btn btn-sm btn-outline-secondary" href="?{% if selected_channel %}channel={{ selected_channel.pk }}&amp;{% endif %}page={{ videos.previous_page_number }}">Previous</a>{% endif %}
+            <span class="video-meta">Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span>
+            {% if videos.has_next %}<a class="btn btn-sm btn-outline-secondary" href="?{% if selected_channel %}channel={{ selected_channel.pk }}&amp;{% endif %}page={{ videos.next_page_number }}">Next</a>{% endif %}
+        </nav>
+        {% endif %}
     {% else %}
         <div class="empty-state">
             <h2 class="h4">Nothing new to watch yet</h2>
-            <p>The channels you follow do not have any videos currently available to you.</p>
+            <p>{% if selected_channel %}This channel does not have any videos currently available to you.{% else %}The channels you follow do not have any videos currently available to you.{% endif %}</p>
         </div>
     {% endif %}
 </section>

@@ -1,3 +1,4 @@
+{% load watch_later_tags %}
 <div class="video-grid">
     {% for video in videos %}
         <article class="video-card">
@@ -16,6 +17,7 @@
                         {% for hashtag in video.hashtags.all %}<a href="{% url 'hashtag_detail' hashtag.name %}">#{{ hashtag.name }}</a>{% if not forloop.last %} {% endif %}{% endfor %}
                     </p>
                 {% endif %}
+                {% watch_later_action video %}
             </div>
         </article>
     {% empty %}

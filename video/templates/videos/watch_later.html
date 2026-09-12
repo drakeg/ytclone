@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}Watch Later · VideoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Your private queue</p>
+        <h1>Watch Later</h1>
+        <p>Save videos here when you want to come back to them.</p>
+    </div>
+</header>
+
+{% if videos %}
+    {% include 'videos/_video_cards.html' with videos=videos %}
+{% else %}
+    <div class="empty-state">
+        <h2 class="h4">Nothing saved yet</h2>
+        <p>Add a video from its watch page and it will appear here.</p>
+        <a class="btn btn-primary" href="{% url 'video_list' %}">Discover videos</a>
+    </div>
+{% endif %}
+{% endblock %}

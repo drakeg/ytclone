@@ -88,3 +88,69 @@ class WatchLaterTests(TestCase):
         response = self.client.get(reverse("video_list"))
 
         self.assertContains(response, f'href="{reverse("watch_later")}"')
+
+    def test_watch_later_paginates_at_24_newest_saved_first(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        saved_videos = []
+        for index in range(25):
+            video = Video.objects.create(
+                title=f"Saved video {index:02d}",
+                description="Description",
+                thumbnail=f"videos/thumbnails/{index}.jpg",
+                video_file=f"videos/files/{index}.mp4",
+                author=self.creator,
+            )
+            saved_videos.append(video)
+            PlaylistItem.objects.create(playlist=playlist, video=video, position=index)
+        self.client.force_login(self.viewer)
+
+        first_page = self.client.get(reverse("watch_later"))
+        second_page = self.client.get(reverse("watch_later"), {"page": 2})
+
+        self.assertEqual(first_page.context["videos"].paginator.per_page, 24)
+        self.assertEqual(first_page.context["videos"].paginator.count, 25)
+        self.assertContains(first_page, saved_videos[-1].title)
+        self.assertNotContains(first_page, saved_videos[0].title)
+        self.assertContains(first_page, "?page=2")
+        self.assertContains(second_page, saved_videos[0].title)
+        self.assertNotContains(second_page, saved_videos[-1].title)
+        self.assertContains(second_page, "?page=1")
+
+    def test_visibility_filter_runs_before_watch_later_pagination(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        for index in range(24):
+            video = Video.objects.create(
+                title=f"Visible saved {index:02d}",
+                description="Description",
+                thumbnail=f"videos/thumbnails/visible-{index}.jpg",
+                video_file=f"videos/files/visible-{index}.mp4",
+                author=self.creator,
+            )
+            PlaylistItem.objects.create(playlist=playlist, video=video, position=index)
+        hidden = Video.objects.create(
+            title="Hidden saved item",
+            description="Description",
+            thumbnail="videos/thumbnails/hidden-saved.jpg",
+            video_file="videos/files/hidden-saved.mp4",
+            author=self.creator,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=hidden, position=24)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"))
+
+        self.assertEqual(response.context["videos"].paginator.count, 24)
+        self.assertEqual(response.context["videos"].paginator.num_pages, 1)
+        self.assertNotContains(response, hidden.title)
+
+    def test_invalid_watch_later_page_falls_back_safely(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"page": "not-a-page"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["videos"].number, 1)
+        self.assertContains(response, self.video.title)

@@ -13,6 +13,15 @@
 
 {% if videos %}
     {% include 'videos/_video_cards.html' with videos=videos %}
+    {% if videos.paginator.num_pages > 1 %}
+        <nav class="mt-4" aria-label="Watch Later pages">
+            <div class="d-flex justify-content-between align-items-center gap-3">
+                {% if videos.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ videos.previous_page_number }}">Previous</a>{% else %}<span></span>{% endif %}
+                <span class="video-meta">Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span>
+                {% if videos.has_next %}<a class="btn btn-outline-secondary" href="?page={{ videos.next_page_number }}">Next</a>{% else %}<span></span>{% endif %}
+            </div>
+        </nav>
+    {% endif %}
 {% else %}
     <div class="empty-state">
         <h2 class="h4">Nothing saved yet</h2>

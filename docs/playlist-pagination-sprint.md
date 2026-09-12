@@ -19,8 +19,9 @@ Keep large playlists usable by paging their visible videos instead of rendering 
 - Empty playlists keep the existing empty state.
 
 ## Architecture
-- Use Django `Paginator` in `playlist_detail`; no schema or service changes are required.
+- Use Django `Paginator` in the focused `video/playlist_views.py` detail view.
 - Paginate the already visibility-filtered `PlaylistItem` queryset.
+- Route only playlist detail through the focused module; existing playlist mutation behavior remains unchanged.
 - Reuse the existing playlist card markup and owner controls.
 
 ## Out of scope
@@ -31,7 +32,10 @@ Keep large playlists usable by paging their visible videos instead of rendering 
 - Schema changes, new packages, workers, external services, AWS resources, or paid infrastructure.
 
 ## Validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- focused playlist tests
-- full test suite
+GitHub Actions run `34673881260` passed against the current PR/base merge state:
+- dependency installation — passed.
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — passed; no migration drift.
+- `python manage.py test --parallel 4` — passed.
+
+Focused coverage in `video/test_playlists.py` verifies the 24-item boundary, playlist order across pages, visibility filtering before pagination, page navigation, and safe invalid-page handling.

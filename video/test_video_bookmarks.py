@@ -74,7 +74,7 @@ class VideoBookmarkTests(TestCase):
         self.assertContains(response, 'data-seek-time="5"')
         self.assertContains(response, "0:05 · Sooner")
         self.assertNotContains(response, "Private note")
-        self.assertLess(response.content.index(b"Sooner"), response.content.index(b"Later"))
+        self.assertLess(response.content.index("0:05 · Sooner".encode()), response.content.index("1:30 · Later".encode()))
         self.assertContains(response, 'id="bookmark-position"')
         self.assertContains(response, "player.currentTime")
 

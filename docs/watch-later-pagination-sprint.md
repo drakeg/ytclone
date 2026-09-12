@@ -32,8 +32,17 @@ Keep large Watch Later queues easy to browse by paging saved videos instead of r
 - Shorts-specific behavior.
 - New packages, workers, external services, AWS resources, or paid infrastructure.
 
+## Delivered
+- Watch Later now pages its visibility-safe queue at 24 videos per page.
+- Newest-saved-first ordering is preserved across page boundaries.
+- Previous/Next controls are shown only when more than one page exists.
+- The existing Watch Later action preserves the current query string, so removing a video from a later page returns the viewer to that page when it remains valid.
+- Focused regression coverage verifies page size, ordering, visibility-before-pagination, and invalid page fallback.
+
 ## Validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- focused Watch Later pagination tests
-- full test suite
+GitHub Actions run `34674133903` passed on the implementation head:
+- `python manage.py check` — passed.
+- `python manage.py makemigrations --check --dry-run` — passed; no migration drift.
+- `python manage.py test --parallel 4` — passed.
+
+The repository Docker test command remains `docker compose run --build --rm test`; this sprint does not change Docker configuration.

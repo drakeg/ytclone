@@ -123,11 +123,32 @@ def search_suggestions(query: str, user=AnonymousUser(), limit: int = 8) -> list
     if getattr(user, "is_authenticated", False):
         visibility |= Q(owner=user, visibility=Playlist.Visibility.UNLISTED)
 
-    candidates = [
-        *Video.objects.visible_to(user)
+    visible_videos = Video.objects.visible_to(user)
+    hashtag_query = normalized_query[1:] if normalized_query.startswith("#") else normalized_query
+    tag_values = list(
+        Tag.objects.filter(videos__in=visible_videos, name__icontains=normalized_query)
+        .distinct()
+        .order_by("name")
+        .values_list("name", flat=True)[:limit]
+    )
+    hashtag_values = [
+        f"#{name}"
+        for name in Hashtag.objects.filter(
+            videos__in=visible_videos,
+            name__icontains=hashtag_query,
+        )
+        .distinct()
+        .order_by("name")
+        .values_list("name", flat=True)[:limit]
+    ]
+
+    standard_candidates = [
+        *visible_videos
         .filter(title__icontains=normalized_query)
         .order_by("-views", "title")
         .values_list("title", flat=True)[:limit],
+        *tag_values,
+        *hashtag_values,
         *available_channels(user)
         .filter(name__icontains=normalized_query)
         .order_by("name")
@@ -137,6 +158,7 @@ def search_suggestions(query: str, user=AnonymousUser(), limit: int = 8) -> list
         .order_by("-updated_at", "name")
         .values_list("name", flat=True)[:limit],
     ]
+    candidates = [*hashtag_values, *standard_candidates] if normalized_query.startswith("#") else standard_candidates
 
     suggestions = []
     seen = set()

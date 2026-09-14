@@ -26,6 +26,17 @@ class WatchHistoryTests(TestCase):
             category=self.category,
         )
 
+    def _history_video(self, title, *, publication_status=Video.PublicationStatus.PUBLISHED):
+        return Video.objects.create(
+            title=title,
+            description="History pagination test",
+            thumbnail="videos/thumbnails/history.jpg",
+            video_file=f"videos/files/{title.lower().replace(' ', '-')}.mp4",
+            author=self.owner,
+            category=self.category,
+            publication_status=publication_status,
+        )
+
     def test_anonymous_view_does_not_create_history(self):
         self.client.get(reverse("video_detail", kwargs={"pk": self.video.pk}))
         self.assertEqual(WatchHistory.objects.count(), 0)
@@ -57,6 +68,51 @@ class WatchHistoryTests(TestCase):
         self.assertContains(response, self.video.title)
         self.assertEqual(list(response.context["entries"]), [self.viewer.watch_history.get()])
 
+    def test_history_page_paginates_visible_entries_newest_first(self):
+        entries = []
+        for index in range(26):
+            video = self._history_video(f"History video {index:02d}")
+            entries.append(WatchHistory.objects.create(user=self.viewer, video=video))
+        self.client.force_login(self.viewer)
+
+        first_page = self.client.get(reverse("watch_history"))
+        second_page = self.client.get(reverse("watch_history"), {"page": 2})
+
+        self.assertEqual(len(first_page.context["entries"]), 24)
+        self.assertEqual(len(second_page.context["entries"]), 2)
+        self.assertEqual(first_page.context["entries"][0].pk, entries[-1].pk)
+        self.assertEqual(second_page.context["entries"][-1].pk, entries[0].pk)
+        self.assertContains(first_page, "?page=2")
+        self.assertContains(second_page, "?page=1")
+
+    def test_inaccessible_entries_do_not_consume_page_slots(self):
+        hidden = self._history_video(
+            "Hidden history video",
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        WatchHistory.objects.create(user=self.viewer, video=hidden)
+        for index in range(25):
+            video = self._history_video(f"Visible history {index:02d}")
+            WatchHistory.objects.create(user=self.viewer, video=video)
+        self.client.force_login(self.viewer)
+
+        first_page = self.client.get(reverse("watch_history"))
+        second_page = self.client.get(reverse("watch_history"), {"page": 2})
+
+        self.assertEqual(len(first_page.context["entries"]), 24)
+        self.assertEqual(len(second_page.context["entries"]), 1)
+        self.assertNotContains(first_page, hidden.title)
+        self.assertNotContains(second_page, hidden.title)
+
+    def test_invalid_history_page_falls_back_safely(self):
+        WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_history"), {"page": "not-a-page"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["entries"].number, 1)
+
     def test_user_can_remove_own_history_entry(self):
         entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
         self.client.login(username="viewer", password="password123")
@@ -66,6 +122,18 @@ class WatchHistoryTests(TestCase):
         )
 
         self.assertRedirects(response, reverse("watch_history"))
+        self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
+
+    def test_remove_preserves_requested_history_page(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_history_remove", kwargs={"pk": entry.pk}),
+            {"page": 2},
+        )
+
+        self.assertRedirects(response, f'{reverse("watch_history")}?page=2')
         self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
 
     def test_user_cannot_remove_another_users_history_entry(self):

@@ -24,6 +24,7 @@
                 </div>
                 <form method="post" action="{% url 'watch_history_remove' entry.pk %}">
                     {% csrf_token %}
+                    <input type="hidden" name="page" value="{{ entries.number }}">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Remove</button>
                 </form>
             </div>
@@ -31,5 +32,23 @@
     {% empty %}
         <p>Your watch history is empty.</p>
     {% endfor %}
+
+    {% if entries.has_other_pages %}
+        <nav class="mt-4" aria-label="Watch history pages">
+            <div class="d-flex justify-content-between align-items-center gap-3">
+                {% if entries.has_previous %}
+                    <a class="btn btn-outline-secondary btn-sm" href="?page={{ entries.previous_page_number }}">Previous</a>
+                {% else %}
+                    <span></span>
+                {% endif %}
+                <span class="video-meta">Page {{ entries.number }} of {{ entries.paginator.num_pages }}</span>
+                {% if entries.has_next %}
+                    <a class="btn btn-outline-secondary btn-sm" href="?page={{ entries.next_page_number }}">Next</a>
+                {% else %}
+                    <span></span>
+                {% endif %}
+            </div>
+        </nav>
+    {% endif %}
 </div>
 {% endblock %}

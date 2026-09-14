@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import access_views, account_views, administration_views, category_views, channel_views, community_views, discovery_views, history_views, metadata_views, playlist_views, qa_views, reporting_views, search_views, shorts_views, subscription_views, subscriptions_feed_views, upload_views, views, watch_later_views
+from . import access_views, account_views, administration_views, bookmark_views, category_views, channel_views, community_views, discovery_views, history_views, metadata_views, playlist_views, qa_views, reporting_views, search_views, shorts_views, subscription_views, subscriptions_feed_views, upload_views, views, watch_later_views
 
 urlpatterns = [
     path("", views.video_list, name="video_list"),
@@ -30,7 +30,7 @@ urlpatterns = [
     path("creator/videos/publication/", views.creator_video_bulk_publication, name="creator_video_bulk_publication"),
     path("creator/videos/trash/", views.creator_video_trash, name="creator_video_trash"),
     path("notifications/", views.notification_list, name="notification_list"), path("notifications/read-all/", views.notification_mark_all_read, name="notification_mark_all_read"), path("notifications/<int:pk>/read/", views.notification_mark_read, name="notification_mark_read"),
-    path("bookmarks/", views.video_bookmark_list, name="video_bookmark_list"), path("bookmarks/<int:pk>/delete/", views.video_bookmark_delete, name="video_bookmark_delete"),
+    path("bookmarks/", bookmark_views.video_bookmark_list, name="video_bookmark_list"), path("bookmarks/<int:pk>/delete/", bookmark_views.video_bookmark_delete, name="video_bookmark_delete"),
     path("watch-later/", watch_later_views.watch_later, name="watch_later"), path("watch-later/<int:pk>/add/", watch_later_views.watch_later_add, name="watch_later_add"), path("watch-later/<int:pk>/remove/", watch_later_views.watch_later_remove, name="watch_later_remove"),
     path("videos/<int:pk>/", views.video_detail, name="video_detail"), path("videos/<int:pk>/bookmarks/", views.video_bookmark_create, name="video_bookmark_create"), path("videos/<int:pk>/questions/", qa_views.ask_question, name="ask_video_question"),
     path("comments/replies/<int:reply_pk>/feature-answer/", qa_views.feature_question_answer, name="feature_question_answer"), path("videos/shared/<uuid:token>/", access_views.shared_video_detail, name="shared_video_detail"), path("videos/<int:pk>/rotate-share-token/", views.video_rotate_share_token, name="video_rotate_share_token"),

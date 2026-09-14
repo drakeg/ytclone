@@ -24,6 +24,7 @@ Keep the private notifications inbox usable as activity grows by paging notifica
 - Use Django `Paginator` in `notification_list` with a page size of 24.
 - Paginate the existing recipient-scoped queryset after `select_related` optimization.
 - Pass the current page through the single-notification Mark read form so its redirect can preserve context.
+- Notification request dispatch is moved to a focused view module while preserving the existing named URL reversals.
 - No schema or dependency changes.
 
 ## Out of scope
@@ -35,7 +36,9 @@ Keep the private notifications inbox usable as activity grows by paging notifica
 - New packages, workers, external services, AWS resources, or paid infrastructure.
 
 ## Validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- focused notification pagination tests
-- full test suite
+GitHub Actions run `34796542692` on the implementation head passed:
+- `python manage.py check` — passed; no issues.
+- `python manage.py makemigrations --check --dry-run` — passed; no changes detected.
+- `python manage.py test --parallel 4` — passed; 658 tests run, 1 skipped.
+
+The final documentation-only commit must also pass the same CI workflow before the PR is marked ready for review.

@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
+from .bookmark_views import SAVED_MOMENTS_PAGE_SIZE
 from .models import Video, VideoBookmark
 from .services.bookmarks import BookmarkValidationError, save_bookmark
 
@@ -95,6 +96,66 @@ class VideoBookmarkTests(TestCase):
         self.assertContains(response, own.label)
         self.assertNotContains(response, "Not mine")
         self.assertNotContains(response, "No longer visible")
+
+    def test_saved_moments_are_paginated_newest_first(self):
+        for index in range(SAVED_MOMENTS_PAGE_SIZE + 3):
+            VideoBookmark.objects.create(
+                user=self.viewer,
+                video=self.video,
+                position_seconds=index,
+                label=f"Moment {index:02d}",
+            )
+
+        self.client.force_login(self.viewer)
+        first_page = self.client.get(reverse("video_bookmark_list"))
+        bookmarks = first_page.context["bookmarks"]
+        self.assertEqual(bookmarks.number, 1)
+        self.assertEqual(bookmarks.paginator.num_pages, 2)
+        self.assertEqual(len(bookmarks.object_list), SAVED_MOMENTS_PAGE_SIZE)
+        self.assertContains(first_page, "Moment 26")
+        self.assertNotContains(first_page, "Moment 02")
+        self.assertContains(first_page, "Page 1 of 2")
+        self.assertContains(first_page, "?page=2")
+
+        second_page = self.client.get(reverse("video_bookmark_list"), {"page": 2})
+        bookmarks = second_page.context["bookmarks"]
+        self.assertEqual(bookmarks.number, 2)
+        self.assertEqual(len(bookmarks.object_list), 3)
+        self.assertContains(second_page, "Moment 02")
+        self.assertContains(second_page, "Moment 00")
+        self.assertNotContains(second_page, "Moment 26")
+
+    def test_saved_moments_invalid_pages_fall_back_safely(self):
+        for index in range(SAVED_MOMENTS_PAGE_SIZE + 1):
+            VideoBookmark.objects.create(
+                user=self.viewer,
+                video=self.video,
+                position_seconds=index,
+                label=f"Moment {index:02d}",
+            )
+
+        self.client.force_login(self.viewer)
+        invalid = self.client.get(reverse("video_bookmark_list"), {"page": "not-a-page"})
+        self.assertEqual(invalid.context["bookmarks"].number, 1)
+        out_of_range = self.client.get(reverse("video_bookmark_list"), {"page": 999})
+        self.assertEqual(out_of_range.context["bookmarks"].number, 2)
+
+    def test_list_removal_preserves_current_page(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Mine",
+        )
+        self.client.force_login(self.viewer)
+        url = reverse("video_bookmark_delete", args=[bookmark.pk])
+        expected = f'{reverse("video_bookmark_list")}?page=2'
+        self.assertRedirects(
+            self.client.post(url, {"source": "list", "page": "2"}),
+            expected,
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
 
     def test_removal_is_post_only_and_owner_scoped(self):
         bookmark = VideoBookmark.objects.create(user=self.viewer, video=self.video, position_seconds=5, label="Mine")

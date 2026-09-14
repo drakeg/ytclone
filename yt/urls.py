@@ -17,7 +17,7 @@ from django.urls import include, path, reverse_lazy
 from django.views.generic import RedirectView
 from django.views.generic.edit import CreateView
 
-from video import access_views
+from video import access_views, notification_views
 from video.account_views import current_profile
 from .forms import RegistrationForm
 
@@ -37,5 +37,10 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('monetization/', include('monetization.urls')),
     path('media/videos/files/<path:path>', access_views.media_video_file, name='protected_video_media'),
+    # Keep the existing named routes in video.urls for reverse compatibility while
+    # dispatching notification requests through the focused paginated views first.
+    path('videos/notifications/', notification_views.notification_list),
+    path('videos/notifications/read-all/', notification_views.notification_mark_all_read),
+    path('videos/notifications/<int:pk>/read/', notification_views.notification_mark_read),
     path('videos/', include('video.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

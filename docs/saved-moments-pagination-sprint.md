@@ -35,7 +35,9 @@ Keep the private Saved moments library usable as bookmark history grows by pagin
 - New packages, workers, external services, AWS resources, or paid infrastructure.
 
 ## Validation
-- `python manage.py check`
-- `python manage.py makemigrations --check --dry-run`
-- focused saved-moments pagination tests
-- full test suite
+GitHub Actions run `34798267150` on implementation head `04c63e83219cb69a39293d28406c270e8aacf81c` passed:
+- `python manage.py check` — no issues.
+- `python manage.py makemigrations --check --dry-run` — no changes detected.
+- `python manage.py test --parallel 4` — 661 tests passed, 1 skipped.
+
+The final documentation-only head must pass the same CI workflow before the PR is marked ready for review.

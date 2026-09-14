@@ -4,6 +4,7 @@ from django.contrib.auth.models import AnonymousUser, User
 from django.test import TestCase
 from django.urls import reverse
 
+from .metadata_models import Hashtag, Tag
 from .models import Channel, Playlist, Video
 from .services.search import search_suggestions
 
@@ -79,12 +80,47 @@ class SearchSuggestionsTests(TestCase):
         self.assertIn(self.unlisted_playlist.name, suggestions)
         self.assertNotIn(self.private_playlist.name, suggestions)
 
+    def test_visible_structured_metadata_is_suggested(self):
+        tag = Tag.objects.create(name="trail gear")
+        tag.videos.add(self.public_video)
+        hashtag = Hashtag.objects.create(name="trailtips")
+        hashtag.videos.add(self.public_video)
+
+        suggestions = search_suggestions("trail", AnonymousUser())
+
+        self.assertIn("trail gear", suggestions)
+        self.assertIn("#trailtips", suggestions)
+
+    def test_metadata_attached_only_to_inaccessible_video_is_not_suggested(self):
+        hidden_tag = Tag.objects.create(name="secret trail")
+        hidden_tag.videos.add(self.private_video)
+        hidden_hashtag = Hashtag.objects.create(name="secrettrail")
+        hidden_hashtag.videos.add(self.private_video)
+
+        suggestions = search_suggestions("secret", AnonymousUser())
+
+        self.assertNotIn("secret trail", suggestions)
+        self.assertNotIn("#secrettrail", suggestions)
+
+    def test_hash_prefixed_query_prioritizes_hashtags_without_double_prefix(self):
+        first = Hashtag.objects.create(name="trailcamp")
+        first.videos.add(self.public_video)
+        second = Hashtag.objects.create(name="trailgear")
+        second.videos.add(self.public_video)
+
+        suggestions = search_suggestions("#trail", AnonymousUser(), limit=2)
+
+        self.assertEqual(suggestions, ["#trailcamp", "#trailgear"])
+        self.assertTrue(all(not value.startswith("##") for value in suggestions))
+
     def test_suggestions_are_deduplicated_and_bounded(self):
         Channel.objects.create(
             owner=self.viewer,
             name=self.public_video.title,
             description="",
         )
+        tag = Tag.objects.create(name=self.public_video.title)
+        tag.videos.add(self.public_video)
         for index in range(10):
             Video.objects.create(
                 title=f"Trail Extra {index}",

@@ -1,6 +1,6 @@
 from django.core.paginator import Paginator
-from django.http import JsonResponse
-from django.shortcuts import render
+from django.http import HttpResponseForbidden, HttpResponseNotAllowed, JsonResponse
+from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
 from .services.search import (
@@ -10,6 +10,7 @@ from .services.search import (
     search_content,
     search_suggestions,
 )
+from .services.search_history import clear_search_history, recent_searches, record_search
 
 
 VIDEO_PAGE_SIZE = 12
@@ -28,6 +29,14 @@ def _bounded_page(queryset, raw_page, per_page):
 
 
 def search(request):
+    if request.method == "POST":
+        if not request.user.is_authenticated:
+            return HttpResponseForbidden()
+        if request.POST.get("action") != "clear_history":
+            return HttpResponseNotAllowed(["GET"])
+        clear_search_history(request.user)
+        return redirect("search")
+
     results = search_content(
         request.GET.get("query", ""),
         request.GET.get("sort", "relevance"),
@@ -35,6 +44,9 @@ def search(request):
         request.GET.get("content", "all"),
         request.GET.get("uploaded", "any"),
     )
+    if results.query:
+        record_search(request.user, results.query)
+
     videos = _bounded_page(
         results.videos, request.GET.get("video_page"), VIDEO_PAGE_SIZE
     )
@@ -58,6 +70,7 @@ def search(request):
             "videos": videos,
             "channels": channels,
             "playlists": playlists,
+            "recent_searches": recent_searches(request.user),
         },
     )
 

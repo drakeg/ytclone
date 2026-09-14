@@ -39,7 +39,27 @@
     </div>
 
     {% if not query %}
-        <div class="alert alert-secondary">Enter a title, creator, channel, category, or playlist name.</div>
+        <div class="alert alert-secondary">Enter a title, creator, channel, category, playlist name, tag, or hashtag.</div>
+        {% if recent_searches %}
+        <section class="surface-card p-3" aria-labelledby="recent-searches-heading">
+            <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                <div>
+                    <p class="eyebrow mb-1">Private to you</p>
+                    <h2 id="recent-searches-heading" class="h5 mb-0">Recent searches</h2>
+                </div>
+                <form method="post" action="{% url 'search' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="clear_history">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit">Clear history</button>
+                </form>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for entry in recent_searches %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'search' %}?query={{ entry.query|urlencode }}">{{ entry.query }}</a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
     {% else %}
         <section class="mb-5">
             <h2 class="h4">Channels</h2>

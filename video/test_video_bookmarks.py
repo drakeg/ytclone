@@ -172,3 +172,106 @@ class VideoBookmarkTests(TestCase):
         VideoBookmark.objects.create(user=self.viewer, video=self.video, position_seconds=5, label="Mine")
         self.video.delete()
         self.assertFalse(VideoBookmark.objects.exists())
+
+    def test_saved_moments_search_matches_label_and_video_title(self):
+        other_video = Video.objects.create(
+            title="Garden walkthrough",
+            description="Video",
+            thumbnail="videos/g.jpg",
+            video_file="videos/g.mp4",
+            author=self.owner,
+        )
+        label_match = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=10, label="Important setup note"
+        )
+        title_match = VideoBookmark.objects.create(
+            user=self.viewer, video=other_video, position_seconds=20, label="Watch this"
+        )
+        VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=30, label="Unrelated"
+        )
+        self.client.force_login(self.viewer)
+
+        label_response = self.client.get(reverse("video_bookmark_list"), {"q": "SETUP"})
+        self.assertEqual(list(label_response.context["bookmarks"].object_list), [label_match])
+
+        title_response = self.client.get(reverse("video_bookmark_list"), {"q": "garden"})
+        self.assertEqual(list(title_response.context["bookmarks"].object_list), [title_match])
+
+    def test_saved_moments_search_filters_before_pagination_and_preserves_query(self):
+        for index in range(SAVED_MOMENTS_PAGE_SIZE + 1):
+            VideoBookmark.objects.create(
+                user=self.viewer,
+                video=self.video,
+                position_seconds=index,
+                label=f"Needle moment {index:02d}",
+            )
+        VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=100, label="Different"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("video_bookmark_list"), {"q": "Needle"})
+        bookmarks = response.context["bookmarks"]
+        self.assertEqual(bookmarks.paginator.count, SAVED_MOMENTS_PAGE_SIZE + 1)
+        self.assertEqual(bookmarks.paginator.num_pages, 2)
+        self.assertEqual(response.context["bookmark_query"], "Needle")
+        self.assertContains(response, "q=Needle&amp;page=2")
+
+    def test_saved_moments_search_keeps_visibility_boundary(self):
+        hidden = Video.objects.create(
+            title="Secret needle video",
+            description="Draft",
+            thumbnail="videos/secret.jpg",
+            video_file="videos/secret.mp4",
+            author=self.owner,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        VideoBookmark.objects.create(
+            user=self.viewer, video=hidden, position_seconds=5, label="Needle secret"
+        )
+        visible = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=6, label="Needle visible"
+        )
+        VideoBookmark.objects.create(
+            user=self.other, video=self.video, position_seconds=7, label="Needle other user"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("video_bookmark_list"), {"q": "needle"})
+
+        self.assertEqual(list(response.context["bookmarks"].object_list), [visible])
+
+    def test_saved_moments_blank_query_behaves_unfiltered_and_no_match_has_empty_state(self):
+        VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Existing"
+        )
+        self.client.force_login(self.viewer)
+
+        blank = self.client.get(reverse("video_bookmark_list"), {"q": "   "})
+        self.assertEqual(blank.context["bookmark_query"], "")
+        self.assertEqual(blank.context["bookmarks"].paginator.count, 1)
+
+        missing = self.client.get(reverse("video_bookmark_list"), {"q": "nothing-here"})
+        self.assertContains(missing, "No saved moments match")
+
+    def test_list_removal_preserves_search_query_and_page(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Needle",
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("video_bookmark_delete", args=[bookmark.pk]),
+            {"source": "list", "page": "2", "q": "needle & setup"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("video_bookmark_list") + "?q=needle+%26+setup&page=2",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())

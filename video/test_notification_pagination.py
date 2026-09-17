@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .models import Notification
 
@@ -102,3 +103,60 @@ class NotificationPaginationTests(TestCase):
         )
         other_notification.refresh_from_db()
         self.assertFalse(other_notification.is_read)
+
+    def test_unread_filter_excludes_read_notifications_before_pagination(self):
+        notifications = self.create_notifications(26)
+        Notification.objects.filter(pk__in=[item.pk for item in notifications[:2]]).update(
+            read_at=timezone.now()
+        )
+
+        response = self.client.get(reverse("notification_list") + "?filter=unread")
+        page = response.context["notifications"]
+
+        self.assertEqual(response.context["notification_filter"], "unread")
+        self.assertEqual(page.paginator.count, 24)
+        self.assertEqual(page.paginator.num_pages, 1)
+        self.assertNotIn(notifications[0], page.object_list)
+        self.assertNotIn(notifications[1], page.object_list)
+        self.assertContains(response, "Unread (24)")
+
+    def test_unread_filter_pagination_preserves_filter(self):
+        self.create_notifications(25)
+
+        response = self.client.get(reverse("notification_list") + "?filter=unread")
+
+        self.assertContains(response, "filter=unread&amp;page=2")
+
+    def test_invalid_filter_falls_back_to_all(self):
+        notifications = self.create_notifications(2)
+        notifications[0].read_at = timezone.now()
+        notifications[0].save(update_fields=["read_at"])
+
+        response = self.client.get(reverse("notification_list") + "?filter=unknown")
+
+        self.assertEqual(response.context["notification_filter"], "all")
+        self.assertEqual(response.context["notifications"].paginator.count, 2)
+
+    def test_mark_read_preserves_unread_filter_and_page(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_mark_read", kwargs={"pk": notification.pk}),
+            {"page": "2", "filter": "unread"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list") + "?filter=unread&page=2",
+            fetch_redirect_response=False,
+        )
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+
+    def test_unread_filter_remains_private_to_viewer(self):
+        self.create_notifications(2)
+        self.create_notifications(3, recipient=self.other)
+
+        response = self.client.get(reverse("notification_list") + "?filter=unread")
+
+        self.assertEqual(response.context["notifications"].paginator.count, 2)

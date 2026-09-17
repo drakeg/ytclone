@@ -14,6 +14,11 @@
         {% endif %}
     </header>
 
+    <nav class="d-flex gap-2 mb-3" aria-label="Notification filters">
+        <a class="btn btn-sm {% if notification_filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'notification_list' %}">All</a>
+        <a class="btn btn-sm {% if notification_filter == 'unread' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="{% url 'notification_list' %}?filter=unread">Unread{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</a>
+    </nav>
+
     <div class="list-group">
         {% for notification in notifications %}
             <article class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}">
@@ -37,13 +42,18 @@
                         <form method="post" action="{% url 'notification_mark_read' notification.pk %}">
                             {% csrf_token %}
                             <input type="hidden" name="page" value="{{ notifications.number }}">
+                            <input type="hidden" name="filter" value="{{ notification_filter }}">
                             <button class="btn btn-sm btn-outline-secondary" type="submit">Mark read</button>
                         </form>
                     {% endif %}
                 </div>
             </article>
         {% empty %}
-            <p class="text-body-secondary">You have no notifications yet.</p>
+            {% if notification_filter == 'unread' %}
+                <p class="text-body-secondary">You have no unread notifications.</p>
+            {% else %}
+                <p class="text-body-secondary">You have no notifications yet.</p>
+            {% endif %}
         {% endfor %}
     </div>
 
@@ -51,13 +61,13 @@
         <nav class="d-flex justify-content-between align-items-center mt-4" aria-label="Notification pages">
             <div>
                 {% if notifications.has_previous %}
-                    <a class="btn btn-outline-secondary" href="?page={{ notifications.previous_page_number }}">Previous</a>
+                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}page={{ notifications.previous_page_number }}">Previous</a>
                 {% endif %}
             </div>
             <span class="text-body-secondary">Page {{ notifications.number }} of {{ notifications.paginator.num_pages }}</span>
             <div>
                 {% if notifications.has_next %}
-                    <a class="btn btn-outline-secondary" href="?page={{ notifications.next_page_number }}">Next</a>
+                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}page={{ notifications.next_page_number }}">Next</a>
                 {% endif %}
             </div>
         </nav>

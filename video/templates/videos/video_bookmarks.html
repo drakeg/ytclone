@@ -7,6 +7,14 @@
     <div class="section-heading">
         <div><p class="eyebrow">Your space</p><h1 id="bookmarks-heading">Saved moments</h1></div>
     </div>
+
+    <form method="get" class="d-flex gap-2 mb-4" role="search">
+        <label class="visually-hidden" for="saved-moments-search">Search saved moments</label>
+        <input class="form-control" id="saved-moments-search" name="q" type="search" maxlength="120" value="{{ bookmark_query }}" placeholder="Search labels or video titles">
+        <button class="btn btn-primary" type="submit">Search</button>
+        {% if bookmark_query %}<a class="btn btn-outline-secondary" href="{% url 'video_bookmark_list' %}">Clear</a>{% endif %}
+    </form>
+
     <div class="content-stack">
         {% for bookmark in bookmarks %}
             <article class="surface-card p-3 d-flex justify-content-between align-items-start gap-3">
@@ -15,17 +23,21 @@
                     <p class="mb-1"><strong>{{ bookmark.timestamp_display }}</strong> · {{ bookmark.label }}</p>
                     <p class="video-meta mb-0">By {{ bookmark.video.author }} · Saved {{ bookmark.updated_at|timesince }} ago</p>
                 </div>
-                <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+                <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
             </article>
         {% empty %}
-            <div class="empty-state">You have no saved moments yet. Open a video and save the current playback position.</div>
+            {% if bookmark_query %}
+                <div class="empty-state">No saved moments match “{{ bookmark_query }}”.</div>
+            {% else %}
+                <div class="empty-state">You have no saved moments yet. Open a video and save the current playback position.</div>
+            {% endif %}
         {% endfor %}
     </div>
     {% if bookmarks.paginator.num_pages > 1 %}
         <nav class="d-flex justify-content-between align-items-center gap-3 mt-4" aria-label="Saved moments pages">
-            <div>{% if bookmarks.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ bookmarks.previous_page_number }}">Previous</a>{% endif %}</div>
+            <div>{% if bookmarks.has_previous %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}page={{ bookmarks.previous_page_number }}">Previous</a>{% endif %}</div>
             <span class="video-meta">Page {{ bookmarks.number }} of {{ bookmarks.paginator.num_pages }}</span>
-            <div>{% if bookmarks.has_next %}<a class="btn btn-outline-secondary" href="?page={{ bookmarks.next_page_number }}">Next</a>{% endif %}</div>
+            <div>{% if bookmarks.has_next %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}page={{ bookmarks.next_page_number }}">Next</a>{% endif %}</div>
         </nav>
     {% endif %}
 </section>

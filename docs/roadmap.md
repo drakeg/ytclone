@@ -29,7 +29,7 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
-## Active sprint: Development Workflow Reconciliation
+## Completed sprint: Development Workflow Reconciliation
 
 Goal: restore a trustworthy contributor handoff after the feature work merged
 through PR #201 by reconciling documentation, local FFmpeg test behavior, and
@@ -65,6 +65,26 @@ terraform fmt -check -recursive ../..
 terraform init -backend=false
 terraform validate
 ```
+
+Delivered:
+
+- Current README capabilities and a September 17 handoff through PR #201,
+  migration `0038_searchhistory`, and the current service/view boundaries
+- Docker verification restored to every affected sprint record that omitted it
+- Capability-aware real-FFmpeg smoke-test gating with focused regressions
+- Correct Terraform discovery for Dependabot and a Django 6.1 Renovate policy
+- CI-aligned Terraform 1.16.3 documentation
+
+Verification:
+
+- Django checks and migration-drift checks passed
+- All 692 tests passed with four parallel workers; the host-incompatible real
+  FFmpeg test was the sole intentional skip
+- Terraform formatting, initialization, and validation passed
+- Docker Compose configuration parsed successfully; the test container could
+  not start because the delivery environment had no Docker daemon socket
+- No product behavior, schema, migration, AWS resource, paid service, worker,
+  queue, or Terraform resource changed
 
 ## Completed sprint: Shorts Feed Controller Extraction
 

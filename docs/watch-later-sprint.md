@@ -43,3 +43,6 @@ GitHub Actions run `34673686469` passed on the corrected feature head:
 - `python manage.py test --parallel 4` — passed.
 
 The first full-suite run exposed an existing bookmark-ordering assertion that matched the generic word `Later` in the new navigation. That test was narrowed to the actual rendered bookmark labels (`0:05 · Sooner` and `1:30 · Later`) without changing application behavior, and the full suite then passed.
+
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands.

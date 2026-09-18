@@ -62,3 +62,32 @@ docker compose run --build --rm test
 - Dependency upgrades beyond correcting automation policy and discovery paths.
 - AWS resources, paid services, or Terraform resource changes.
 
+## Delivered
+
+- Reconciled the README and development handoff with viewer, discovery, upload,
+  notification, and collection-management work merged through PR #201.
+- Updated the handoff through migration `0038_searchhistory` and the current
+  focused view/service boundaries.
+- Restored the Docker test command to every sprint document added after the
+  Shorts controller extraction that was missing it.
+- Added capability-aware FFmpeg smoke-test gating for `drawtext`, `libx264`, and
+  `aac`, with four focused detection regressions.
+- Pointed Terraform Dependabot discovery at `/terraform`.
+- Aligned Renovate's Django policy with the supported 6.1 release line.
+- Updated the documented CI Terraform version to 1.16.3.
+
+## Verification results
+
+- `python manage.py check` passed with no issues.
+- `python manage.py makemigrations --check --dry-run` reported no changes.
+- All five focused FFmpeg tests passed or skipped as designed: four capability
+  tests passed and the real-binary smoke test skipped because the host FFmpeg
+  lacks `drawtext`.
+- All 692 tests passed with four parallel workers; the same real-binary test was
+  the sole intentional skip.
+- Renovate JSON parsing passed.
+- Terraform formatting, initialization, and validation passed.
+- `docker compose config --quiet` passed. The full container suite could not
+  start because the Docker daemon socket was not present in the delivery
+  environment; `docker compose run --build --rm test` remains the required local
+  verification command and Docker remains the guaranteed FFmpeg environment.

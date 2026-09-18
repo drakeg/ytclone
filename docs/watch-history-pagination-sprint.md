@@ -37,3 +37,4 @@ Keep large private watch histories usable by paging visible history entries inst
 - `python manage.py makemigrations --check --dry-run`
 - focused watch-history pagination tests
 - full test suite
+- `docker compose run --build --rm test`

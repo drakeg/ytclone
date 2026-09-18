@@ -31,6 +31,9 @@ GitHub Actions run `34126709215` completed successfully on the implementation he
 
 The focused coverage verifies ranking, current-video exclusion, Shorts exclusion, hidden-content exclusion, the eight-item bound, deterministic recency ordering, and watch-page rendering.
 
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands.
+
 ## Out of scope
 - Personalized machine-learning ranking.
 - Watch-history profiling or recommendation persistence.

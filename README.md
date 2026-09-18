@@ -12,13 +12,21 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private watch history with remove and clear controls
 - Private, labeled video bookmarks with player seek controls
 - Grouped search across videos, channels, and visible playlists
-- Video search sorting by relevance, date, views, and likes
+- Search suggestions from visible titles, creators, categories, tags, hashtags,
+  and playlists, plus private recent-search history
+- Paginated search results with content-type, category, upload-date, and sort filters
 - Homepage discovery for new, viewed, liked, recently watched, and public playlist content
+- Paginated video browsing with category and upload-date filters
 - Personalized discovery with creator affinities, tags, and hashtags
+- A private, paginated subscriptions feed with channel filtering
 - Private playback progress with Continue Watching and automatic resume
+- Visibility-safe watch recommendations and optional autoplay-next controls
+- Optional validated WebVTT captions
+- A private Watch Later queue and paginated watch history
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private creator watch-time analytics with per-video duration, completion, and retention aggregates
-- Private in-app notifications for comments, reactions, subscriptions, and channel-team invitations
+- Private, paginated in-app notifications with unread filtering
+- Per-channel subscription upload-notification preferences
 - Explicit video-to-channel publishing with subscriber upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics
 - Owner-only video metadata editing, channel moves, and confirmed deletion
@@ -34,7 +42,11 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Original responsive interface with accessible navigation, polished video surfaces, and shared creator components
 - Self-service registration, profile management, and creator-channel onboarding
 - Viewer and creator navigation tailored to each account's role
-- Optional upload categories and thumbnails with drag-and-drop file selection
+- Optional upload categories and thumbnails with drag-and-drop file selection,
+  source-frame selection, and automatic detail-aware thumbnail scoring
+- Structured tag and hashtag discovery pages
+- Paginated channel, playlist, notification, history, Watch Later, subscription,
+  and saved-moment collections, with owner-controlled playlist reordering
 - Test-mode creator monetization with tips, channel memberships, refunds, and accounting
 - Members-only video access with cancellation and payment-lifecycle handling
 - Channel community posts, polls, and highlighted creator Q&A
@@ -200,9 +212,20 @@ python manage.py test --parallel 4
 
 A successful migration-drift check prints `No changes detected`. If it reports model changes, create and review the required migration before closing the sprint.
 
+The suite includes a real FFmpeg Shorts-rendering smoke test. It runs when the
+installed `ffmpeg` provides the `drawtext` filter plus the `libx264` and `aac`
+encoders; otherwise that environment-specific test is skipped. The Docker image
+installs the required FFmpeg and font packages and is the guaranteed path for
+running this smoke test. To inspect a host installation, use:
+
+```bash
+ffmpeg -hide_banner -filters | grep drawtext
+ffmpeg -hide_banner -encoders | grep -E 'libx264|aac'
+```
+
 ### Terraform checks
 
-Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.13.5 matches CI.
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.3 matches CI.
 
 ```bash
 cd terraform/environments/dev

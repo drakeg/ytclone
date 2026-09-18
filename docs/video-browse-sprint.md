@@ -33,6 +33,7 @@ Turn the discovery homepage's small curated shelves into useful entry points for
 - `python manage.py makemigrations --check --dry-run` reported no changes.
 - The complete parallel Django test suite passed.
 - No schema or dependency changes were introduced.
+- Local container verification: `docker compose run --build --rm test`.
 
 ## Out of scope
 - Infinite scroll.

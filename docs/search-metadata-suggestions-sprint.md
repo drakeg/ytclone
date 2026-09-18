@@ -38,3 +38,4 @@ Improve search discovery by surfacing structured video tags and hashtags in the 
 - `python manage.py makemigrations --check --dry-run`
 - focused search suggestion tests
 - full test suite
+- `docker compose run --build --rm test`

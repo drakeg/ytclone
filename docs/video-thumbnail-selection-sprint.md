@@ -58,6 +58,9 @@ GitHub Actions run `33828046169` passed on the completed implementation head bef
 
 The pull request remains subject to the same checks on this documentation-only closeout commit before it is marked ready for review.
 
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands. Docker supplies the required FFmpeg binary.
+
 ## Out of scope
 
 - AI/ML thumbnail ranking or face/object detection.

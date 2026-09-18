@@ -56,6 +56,9 @@ GitHub Actions run `33829250341` passed on the completed implementation head:
 
 The documentation-only closeout commit remains subject to the same checks before the pull request is marked ready for review.
 
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands.
+
 ## Out of scope
 
 - Duration filtering (video duration is not currently stored on the `Video` row).

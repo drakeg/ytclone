@@ -2,6 +2,11 @@
 <form method="post" action="{% if saved_for_later %}{% url 'watch_later_remove' video.pk %}{% else %}{% url 'watch_later_add' video.pk %}{% endif %}">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% if request.resolver_match.url_name == "watch_later" %}
+        <input type="hidden" name="source" value="watch_later">
+        <input type="hidden" name="q" value="{{ request.GET.q }}">
+        <input type="hidden" name="page" value="{{ request.GET.page }}">
+    {% endif %}
     <button class="btn btn-outline-secondary" type="submit">{% if saved_for_later %}Remove from Watch Later{% else %}Watch Later{% endif %}</button>
 </form>
 {% endif %}

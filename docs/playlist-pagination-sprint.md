@@ -39,3 +39,6 @@ GitHub Actions run `34673881260` passed against the current PR/base merge state:
 - `python manage.py test --parallel 4` — passed.
 
 Focused coverage in `video/test_playlists.py` verifies the 24-item boundary, playlist order across pages, visibility filtering before pagination, page navigation, and safe invalid-page handling.
+
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands.

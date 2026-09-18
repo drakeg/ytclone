@@ -4,14 +4,14 @@ This document lets a new development session or assistant continue the project
 without depending on prior chat history. Repository files and current GitHub
 state are authoritative when they differ from this dated snapshot.
 
-## Handoff snapshot — September 1, 2026
+## Handoff snapshot — September 17, 2026
 
 - Repository: `drakeg/ytclone`
 - Default branch: `main`
-- Latest merged work reviewed at handoff: [#157 — Fix Shorts overlay fontconfig style syntax](https://github.com/drakeg/ytclone/pull/157)
-- Current continuation branch: `cleanup/shorts-feed-controller`
-- Latest migration on `main`: `video/0035_videoshort_thumbnail_frame_seconds`
-- Verified test count on the continuation branch: 536
+- Latest merged work reviewed at handoff: [#201 — Saved moments search](https://github.com/drakeg/ytclone/pull/201)
+- Current continuation branch: `chore/development-workflow-reconciliation`
+- Latest migration on `main`: `video/0038_searchhistory`
+- Verified baseline test count on `main`: 688
 
 Before making changes, inspect GitHub rather than assuming this snapshot is still
 current. Update local `main` and branch from it. Never reconstruct
@@ -36,6 +36,9 @@ Important code locations:
   `video/reporting_models.py` — site moderation and reporting
 - `video/services/` — business rules, authorization-sensitive operations, and
   query composition
+- Focused discovery modules such as `search_views.py`, `discovery_views.py`,
+  `subscriptions_feed_views.py`, and their matching services own search,
+  browse, recommendation, and subscription-feed queries
 - `video/templates/` and `video/static/` — server-rendered interface and browser behavior
 - `monetization/` — sandbox and Stripe test-mode monetization
 - `yt/settings.py` — environment-driven application configuration
@@ -132,6 +135,11 @@ python manage.py makemigrations --check --dry-run
 python manage.py test --parallel 4
 ```
 
+The real Shorts rendering smoke test runs only when the host FFmpeg provides
+`drawtext`, `libx264`, and `aac`. A host FFmpeg without those components is not
+equivalent to the application image; the smoke test skips there, while Docker
+provides the guaranteed FFmpeg/font environment.
+
 Add a focused test-module command for every sprint before the full suite. When a
 change affects `terraform/` or its workflow, also run:
 
@@ -173,20 +181,24 @@ docker compose exec -e DJANGO_ADMIN_USERNAME=your_username web python manage.py 
 - `0029_moderation_states_audit` and `0030_channelmoderationstate` — moderation state and audit history
 - `0031_contentreport` — site content reports
 - `0032_videoshort` through `0035_videoshort_thumbnail_frame_seconds` — Shorts metadata, reframing, overlays, and thumbnails
+- `0036_video_captions_file` — optional validated WebVTT caption storage
+- `0037_subscriptionnotificationpreference` — per-channel upload-notification preferences
+- `0038_searchhistory` — private recent-search history
 
 Migration files are required source code. Any model change must include and test
 its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #157 was merged at this review. Synchronize the repository and
-re-read `docs/roadmap.md` and `docs/shorts-current-state.md`; they are the
-authoritative backlog. Good low-cost candidates include:
+Work through PR #201 was merged at this review. Synchronize the repository and
+re-read `docs/roadmap.md` and the relevant feature sprint documents before
+selecting new work. Good low-cost candidates include:
 
 - optional channel-team invitation email delivery and scheduled reminders
-- bounded database-side Shorts discussion prefetching when feed scale requires it
-- removal of legacy handlers now shadowed by specialized Shorts controllers
-- optional real-FFmpeg rendering smoke coverage in a guaranteed environment
+- saved-moment reordering or bulk cleanup
+- private notification search, date filters, or retention controls
+- Watch Later reordering or completion-based cleanup
+- further accessibility and visual verification across recently added list pages
 - low-cost AWS application hosting and deployment when operating cost is justified
 
 Select only one concern. Prefer a user-visible improvement that needs no paid

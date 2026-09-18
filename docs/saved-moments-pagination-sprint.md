@@ -41,3 +41,6 @@ GitHub Actions run `34798267150` on implementation head `04c63e83219cb69a39293d2
 - `python manage.py test --parallel 4` — 661 tests passed, 1 skipped.
 
 The final documentation-only head must pass the same CI workflow before the PR is marked ready for review.
+
+Local container verification uses `docker compose run --build --rm test` after
+the listed non-Docker commands.

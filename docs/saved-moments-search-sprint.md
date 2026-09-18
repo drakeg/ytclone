@@ -41,3 +41,13 @@ Keep visibility and ordering centralized in `services.bookmarks.get_visible_book
 ## Validation
 
 CI must run Django configuration checks, migration drift checks, and the complete test suite. The PR remains draft until those checks are green.
+
+Local verification, with and without Docker:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_video_bookmarks
+python manage.py test --parallel 4
+docker compose run --build --rm test
+```

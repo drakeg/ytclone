@@ -29,6 +29,63 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Completed sprint: Development Workflow Reconciliation
+
+Goal: restore a trustworthy contributor handoff after the feature work merged
+through PR #201 by reconciling documentation, local FFmpeg test behavior, and
+dependency-update automation with the current repository.
+
+Acceptance criteria:
+
+- The README, roadmap, and development handoff reflect current capabilities,
+  migration state, test coverage, and next sprint candidates.
+- Docker and non-Docker verification paths document the real FFmpeg smoke-test
+  requirements.
+- Hosts with an installed but incompatible FFmpeg binary skip the environment-
+  specific smoke test without hiding application regressions.
+- Dependabot discovers the Terraform manifests and Renovate's Django policy
+  matches the supported release line.
+- Focused regressions, the full Django suite, and Terraform checks pass; Docker
+  verification is recorded when the daemon is available.
+
+Out of scope: product features, UI changes, migrations, media-pipeline changes,
+external services, AWS resources, paid services, and Terraform resource changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_shorts_ffmpeg_smoke
+python manage.py test --parallel 4
+docker compose config --quiet
+docker compose run --build --rm test
+cd terraform/environments/dev
+terraform fmt -check -recursive ../..
+terraform init -backend=false
+terraform validate
+```
+
+Delivered:
+
+- Current README capabilities and a September 17 handoff through PR #201,
+  migration `0038_searchhistory`, and the current service/view boundaries
+- Docker verification restored to every affected sprint record that omitted it
+- Capability-aware real-FFmpeg smoke-test gating with focused regressions
+- Correct Terraform discovery for Dependabot and a Django 6.1 Renovate policy
+- CI-aligned Terraform 1.16.3 documentation
+
+Verification:
+
+- Django checks and migration-drift checks passed
+- All 692 tests passed with four parallel workers; the host-incompatible real
+  FFmpeg test was the sole intentional skip
+- Terraform formatting, initialization, and validation passed
+- Docker Compose configuration parsed successfully; the test container could
+  not start because the delivery environment had no Docker daemon socket
+- No product behavior, schema, migration, AWS resource, paid service, worker,
+  queue, or Terraform resource changed
+
 ## Completed sprint: Shorts Feed Controller Extraction
 
 Goal: move the remaining inline Shorts feed JavaScript into a namespaced static

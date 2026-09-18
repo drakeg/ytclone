@@ -39,3 +39,4 @@ Make repeated discovery faster for signed-in viewers by keeping a small private 
 - `python manage.py makemigrations --check --dry-run`
 - focused private search-history tests
 - full test suite
+- `docker compose run --build --rm test`

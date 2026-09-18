@@ -57,15 +57,19 @@ def remove_from_watch_later(user, video):
     return bool(deleted)
 
 
-def watch_later_videos(user):
+def watch_later_videos(user, query=""):
     playlist = get_watch_later_playlist(user)
     if playlist is None:
         return Video.objects.none()
 
-    return (
+    videos = (
         Video.objects.visible_to(user)
         .filter(playlist_items__playlist=playlist)
         .select_related("author", "category", "channel")
         .prefetch_related("hashtags")
         .order_by("-playlist_items__added_at", "-playlist_items__pk")
     )
+    normalized_query = query.strip()
+    if normalized_query:
+        videos = videos.filter(title__icontains=normalized_query)
+    return videos

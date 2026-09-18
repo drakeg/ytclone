@@ -154,3 +154,61 @@ class WatchLaterTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["videos"].number, 1)
         self.assertContains(response, self.video.title)
+
+    def test_watch_later_search_filters_titles_case_insensitively(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        match = Video.objects.create(title="Finger Lakes Adventure", description="Description", thumbnail="videos/thumbnails/match.jpg", video_file="videos/files/match.mp4", author=self.creator)
+        other = Video.objects.create(title="Mountain Drive", description="Description", thumbnail="videos/thumbnails/other.jpg", video_file="videos/files/other.mp4", author=self.creator)
+        PlaylistItem.objects.create(playlist=playlist, video=match, position=0)
+        PlaylistItem.objects.create(playlist=playlist, video=other, position=1)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"q": "finger lakes"})
+
+        self.assertContains(response, match.title)
+        self.assertNotContains(response, other.title)
+        self.assertEqual(response.context["query"], "finger lakes")
+
+    def test_watch_later_search_applies_visibility_before_filtering(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        hidden = Video.objects.create(title="Secret Trail", description="Description", thumbnail="videos/thumbnails/secret.jpg", video_file="videos/files/secret.mp4", author=self.creator, publication_status=Video.PublicationStatus.DRAFT)
+        PlaylistItem.objects.create(playlist=playlist, video=hidden)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"q": "secret"})
+
+        self.assertEqual(response.context["videos"].paginator.count, 0)
+        self.assertNotContains(response, hidden.title)
+
+    def test_watch_later_search_pagination_preserves_query(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        for index in range(25):
+            video = Video.objects.create(title=f"Trail video {index:02d}", description="Description", thumbnail=f"videos/thumbnails/trail-{index}.jpg", video_file=f"videos/files/trail-{index}.mp4", author=self.creator)
+            PlaylistItem.objects.create(playlist=playlist, video=video, position=index)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"q": "trail"})
+
+        self.assertEqual(response.context["videos"].paginator.count, 25)
+        self.assertContains(response, "?q=trail&amp;page=2")
+
+    def test_watch_later_remove_preserves_filtered_page(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(reverse("watch_later_remove", args=[self.video.pk]), {"source": "watch_later", "q": "Save me", "page": "2"})
+
+        self.assertRedirects(response, f'{reverse("watch_later")}?q=Save+me&page=2', fetch_redirect_response=False)
+
+    def test_whitespace_only_watch_later_search_is_unfiltered(self):
+        playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"q": "   "})
+
+        self.assertEqual(response.context["query"], "")
+        self.assertEqual(response.context["videos"].paginator.count, 1)
+        self.assertContains(response, self.video.title)
+

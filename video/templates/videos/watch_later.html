@@ -11,22 +11,37 @@
     </div>
 </header>
 
+<form method="get" class="mb-4" role="search">
+    <div class="input-group">
+        <label class="visually-hidden" for="watch-later-search">Search Watch Later</label>
+        <input id="watch-later-search" class="form-control" type="search" name="q" value="{{ query }}" placeholder="Search saved video titles">
+        <button class="btn btn-outline-secondary" type="submit">Search</button>
+        {% if query %}<a class="btn btn-outline-secondary" href="{% url 'watch_later' %}">Clear</a>{% endif %}
+    </div>
+</form>
+
 {% if videos %}
     {% include 'videos/_video_cards.html' with videos=videos %}
     {% if videos.paginator.num_pages > 1 %}
         <nav class="mt-4" aria-label="Watch Later pages">
             <div class="d-flex justify-content-between align-items-center gap-3">
-                {% if videos.has_previous %}<a class="btn btn-outline-secondary" href="?page={{ videos.previous_page_number }}">Previous</a>{% else %}<span></span>{% endif %}
+                {% if videos.has_previous %}<a class="btn btn-outline-secondary" href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ videos.previous_page_number }}">Previous</a>{% else %}<span></span>{% endif %}
                 <span class="video-meta">Page {{ videos.number }} of {{ videos.paginator.num_pages }}</span>
-                {% if videos.has_next %}<a class="btn btn-outline-secondary" href="?page={{ videos.next_page_number }}">Next</a>{% else %}<span></span>{% endif %}
+                {% if videos.has_next %}<a class="btn btn-outline-secondary" href="?{% if query %}q={{ query|urlencode }}&{% endif %}page={{ videos.next_page_number }}">Next</a>{% else %}<span></span>{% endif %}
             </div>
         </nav>
     {% endif %}
 {% else %}
     <div class="empty-state">
-        <h2 class="h4">Nothing saved yet</h2>
-        <p>Add a video from its watch page and it will appear here.</p>
-        <a class="btn btn-primary" href="{% url 'video_list' %}">Discover videos</a>
+        {% if query %}
+            <h2 class="h4">No matching saved videos</h2>
+            <p>No Watch Later titles match “{{ query }}”.</p>
+            <a class="btn btn-primary" href="{% url 'watch_later' %}">Show all Watch Later</a>
+        {% else %}
+            <h2 class="h4">Nothing saved yet</h2>
+            <p>Add a video from its watch page and it will appear here.</p>
+            <a class="btn btn-primary" href="{% url 'video_list' %}">Discover videos</a>
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}

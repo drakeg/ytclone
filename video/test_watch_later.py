@@ -190,7 +190,7 @@ class WatchLaterTests(TestCase):
         response = self.client.get(reverse("watch_later"), {"q": "trail"})
 
         self.assertEqual(response.context["videos"].paginator.count, 25)
-        self.assertContains(response, "?q=trail&amp;page=2")
+        self.assertContains(response, "?q=trail&page=2")
 
     def test_watch_later_remove_preserves_filtered_page(self):
         playlist = Playlist.objects.create(owner=self.viewer, name=WATCH_LATER_NAME, visibility=Playlist.Visibility.PRIVATE)

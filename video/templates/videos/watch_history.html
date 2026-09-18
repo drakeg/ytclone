@@ -12,6 +12,13 @@
         {% endif %}
     </div>
 
+    <form method="get" class="d-flex gap-2 mb-4" role="search">
+        <label class="visually-hidden" for="watch-history-search">Search watch history</label>
+        <input class="form-control" id="watch-history-search" name="q" type="search" maxlength="120" value="{{ history_query }}" placeholder="Search watched video titles">
+        <button class="btn btn-primary" type="submit">Search</button>
+        {% if history_query %}<a class="btn btn-outline-secondary" href="{% url 'watch_history' %}">Clear search</a>{% endif %}
+    </form>
+
     {% for entry in entries %}
         <div class="card mb-3">
             <div class="card-body d-flex justify-content-between align-items-start">
@@ -25,25 +32,30 @@
                 <form method="post" action="{% url 'watch_history_remove' entry.pk %}">
                     {% csrf_token %}
                     <input type="hidden" name="page" value="{{ entries.number }}">
+                    <input type="hidden" name="q" value="{{ history_query }}">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Remove</button>
                 </form>
             </div>
         </div>
     {% empty %}
-        <p>Your watch history is empty.</p>
+        {% if history_query %}
+            <p>No watch history matches “{{ history_query }}”.</p>
+        {% else %}
+            <p>Your watch history is empty.</p>
+        {% endif %}
     {% endfor %}
 
     {% if entries.has_other_pages %}
         <nav class="mt-4" aria-label="Watch history pages">
             <div class="d-flex justify-content-between align-items-center gap-3">
                 {% if entries.has_previous %}
-                    <a class="btn btn-outline-secondary btn-sm" href="?page={{ entries.previous_page_number }}">Previous</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}page={{ entries.previous_page_number }}">Previous</a>
                 {% else %}
                     <span></span>
                 {% endif %}
                 <span class="video-meta">Page {{ entries.number }} of {{ entries.paginator.num_pages }}</span>
                 {% if entries.has_next %}
-                    <a class="btn btn-outline-secondary btn-sm" href="?page={{ entries.next_page_number }}">Next</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}page={{ entries.next_page_number }}">Next</a>
                 {% else %}
                     <span></span>
                 {% endif %}

@@ -5,10 +5,10 @@
   ],
   "packageRules": [
     {
-      "description": "Keep Django on the 5.2 LTS release line",
+      "description": "Keep Django on the supported 6.1 release line",
       "matchManagers": ["pip_requirements"],
       "matchPackageNames": ["Django"],
-      "allowedVersions": ">=5.2,<5.3"
+      "allowedVersions": ">=6.1,<6.2"
     },
     {
       "description": "Require manual review for major dependency upgrades",

@@ -157,3 +157,82 @@ class WatchHistoryTests(TestCase):
         self.assertRedirects(response, reverse("watch_history"))
         self.assertFalse(WatchHistory.objects.filter(user=self.viewer).exists())
         self.assertTrue(WatchHistory.objects.filter(user=self.other_viewer).exists())
+
+    def test_history_search_matches_video_titles_case_insensitively(self):
+        match = self._history_video("Finger Lakes Adventure")
+        other = self._history_video("Mountain Drive")
+        WatchHistory.objects.create(user=self.viewer, video=match)
+        WatchHistory.objects.create(user=self.viewer, video=other)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_history"), {"q": "finger lakes"})
+
+        self.assertContains(response, match.title)
+        self.assertNotContains(response, other.title)
+        self.assertEqual(response.context["history_query"], "finger lakes")
+
+    def test_history_search_filters_before_pagination_and_preserves_query(self):
+        for index in range(25):
+            video = self._history_video(f"Trail history {index:02d}")
+            WatchHistory.objects.create(user=self.viewer, video=video)
+        other = self._history_video("Different history")
+        WatchHistory.objects.create(user=self.viewer, video=other)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_history"), {"q": "trail"})
+
+        self.assertEqual(response.context["entries"].paginator.count, 25)
+        self.assertEqual(response.context["entries"].paginator.num_pages, 2)
+        self.assertContains(response, "?q=trail&page=2")
+
+    def test_history_search_keeps_visibility_and_user_boundaries(self):
+        hidden = self._history_video("Secret trail", publication_status=Video.PublicationStatus.DRAFT)
+        visible = self._history_video("Visible trail")
+        WatchHistory.objects.create(user=self.viewer, video=hidden)
+        own = WatchHistory.objects.create(user=self.viewer, video=visible)
+        WatchHistory.objects.create(user=self.other_viewer, video=visible)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_history"), {"q": "trail"})
+
+        self.assertEqual(list(response.context["entries"].object_list), [own])
+        self.assertNotContains(response, hidden.title)
+
+    def test_history_remove_preserves_search_query_and_page(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_history_remove", kwargs={"pk": entry.pk}),
+            {"page": "2", "q": "history & test"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("watch_history") + "?q=history+%26+test&page=2",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
+
+    def test_whitespace_only_history_search_is_unfiltered(self):
+        WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_history"), {"q": "   "})
+
+        self.assertEqual(response.context["history_query"], "")
+        self.assertEqual(response.context["entries"].paginator.count, 1)
+        self.assertContains(response, self.video.title)
+
+    def test_clear_history_still_clears_full_viewer_history_after_filtering(self):
+        matching = self._history_video("Trail match")
+        nonmatching = self._history_video("Different title")
+        WatchHistory.objects.create(user=self.viewer, video=matching)
+        WatchHistory.objects.create(user=self.viewer, video=nonmatching)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(reverse("watch_history_clear"))
+
+        self.assertRedirects(response, reverse("watch_history"))
+        self.assertFalse(WatchHistory.objects.filter(user=self.viewer).exists())
+

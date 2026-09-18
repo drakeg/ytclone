@@ -29,6 +29,43 @@ Every sprint follows this checklist:
 
 A sprint is not closed until its local test instructions are complete and reproducible.
 
+## Active sprint: Development Workflow Reconciliation
+
+Goal: restore a trustworthy contributor handoff after the feature work merged
+through PR #201 by reconciling documentation, local FFmpeg test behavior, and
+dependency-update automation with the current repository.
+
+Acceptance criteria:
+
+- The README, roadmap, and development handoff reflect current capabilities,
+  migration state, test coverage, and next sprint candidates.
+- Docker and non-Docker verification paths document the real FFmpeg smoke-test
+  requirements.
+- Hosts with an installed but incompatible FFmpeg binary skip the environment-
+  specific smoke test without hiding application regressions.
+- Dependabot discovers the Terraform manifests and Renovate's Django policy
+  matches the supported release line.
+- Focused regressions, the full Django suite, and Terraform checks pass; Docker
+  verification is recorded when the daemon is available.
+
+Out of scope: product features, UI changes, migrations, media-pipeline changes,
+external services, AWS resources, paid services, and Terraform resource changes.
+
+Verification before closure:
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test video.test_shorts_ffmpeg_smoke
+python manage.py test --parallel 4
+docker compose config --quiet
+docker compose run --build --rm test
+cd terraform/environments/dev
+terraform fmt -check -recursive ../..
+terraform init -backend=false
+terraform validate
+```
+
 ## Completed sprint: Shorts Feed Controller Extraction
 
 Goal: move the remaining inline Shorts feed JavaScript into a namespaced static

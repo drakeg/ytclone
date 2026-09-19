@@ -1,6 +1,45 @@
 {% extends 'base.html' %}
 {% block title %}My playlists · VideoShare{% endblock %}
 {% block content %}
-<header class="page-header"><div><p class="eyebrow">Your library</p><h1>My playlists</h1><p>Organize favorites, research, and whatever you want to watch next.</p></div><a class="btn btn-primary" href="{% url 'playlist_create' %}">Create playlist</a></header>
-<div class="video-grid">{% for playlist in playlists %}<article class="card"><div class="card-body"><p class="eyebrow">{{ playlist.get_visibility_display }}</p><h2 class="h4"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h2><p>{{ playlist.description|default:"A personal video collection."|truncatewords:22 }}</p><p class="video-meta">{{ playlist.items.count }} video{{ playlist.items.count|pluralize }}</p></div></article>{% empty %}<div class="empty-state">You have not created any playlists yet.</div>{% endfor %}</div>
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Your library</p>
+        <h1>My playlists</h1>
+        <p>Organize favorites, research, and whatever you want to watch next.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'playlist_create' %}">Create playlist</a>
+</header>
+
+<div class="video-grid">
+    {% for playlist in playlists %}
+        <article class="card">
+            <div class="card-body">
+                <p class="eyebrow">{{ playlist.get_visibility_display }}</p>
+                <h2 class="h4"><a href="{% url 'playlist_detail' playlist.pk %}">{{ playlist.name }}</a></h2>
+                <p>{{ playlist.description|default:"A personal video collection."|truncatewords:22 }}</p>
+                <p class="video-meta">{{ playlist.items.count }} video{{ playlist.items.count|pluralize }}</p>
+            </div>
+        </article>
+    {% empty %}
+        <div class="empty-state">You have not created any playlists yet.</div>
+    {% endfor %}
+</div>
+
+{% if playlists.has_other_pages %}
+    <nav class="mt-4" aria-label="Playlist library pages">
+        <div class="d-flex justify-content-between align-items-center gap-3">
+            {% if playlists.has_previous %}
+                <a class="btn btn-outline-secondary" href="?page={{ playlists.previous_page_number }}">Previous</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+            <span class="video-meta">Page {{ playlists.number }} of {{ playlists.paginator.num_pages }}</span>
+            {% if playlists.has_next %}
+                <a class="btn btn-outline-secondary" href="?page={{ playlists.next_page_number }}">Next</a>
+            {% else %}
+                <span></span>
+            {% endif %}
+        </div>
+    </nav>
+{% endif %}
 {% endblock %}

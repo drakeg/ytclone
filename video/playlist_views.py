@@ -11,6 +11,16 @@ from .services.playlist_ordering import move_playlist_item
 PLAYLIST_PAGE_SIZE = 24
 
 
+@login_required
+def playlist_list(request):
+    playlists = (
+        request.user.playlists.prefetch_related("items__video")
+        .order_by("-updated_at", "-pk")
+    )
+    page = Paginator(playlists, PLAYLIST_PAGE_SIZE).get_page(request.GET.get("page"))
+    return render(request, "videos/playlist_list.html", {"playlists": page})
+
+
 def playlist_detail(request, pk):
     playlist = get_object_or_404(
         Playlist.objects.select_related("owner"),

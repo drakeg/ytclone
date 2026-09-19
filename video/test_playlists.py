@@ -202,3 +202,58 @@ class PlaylistTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["visible_items"].number, 1)
+
+    def test_playlist_list_requires_login(self):
+        response = self.client.get(reverse("playlist_list"))
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/login/", response.url)
+
+    def test_playlist_list_only_contains_current_users_playlists(self):
+        own = Playlist.objects.create(owner=self.owner, name="Owner library")
+        Playlist.objects.create(owner=self.other_user, name="Other library")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"))
+
+        self.assertEqual(list(response.context["playlists"].object_list), [own])
+        self.assertContains(response, own.name)
+        self.assertNotContains(response, "Other library")
+
+    def test_playlist_list_paginates_owned_playlists(self):
+        playlists = [
+            Playlist.objects.create(owner=self.owner, name=f"Collection {index:02d}")
+            for index in range(PLAYLIST_PAGE_SIZE + 2)
+        ]
+        self.client.force_login(self.owner)
+
+        first_page = self.client.get(reverse("playlist_list"))
+        second_page = self.client.get(reverse("playlist_list"), {"page": 2})
+
+        self.assertEqual(len(first_page.context["playlists"]), PLAYLIST_PAGE_SIZE)
+        self.assertEqual(first_page.context["playlists"].paginator.count, PLAYLIST_PAGE_SIZE + 2)
+        self.assertEqual(len(second_page.context["playlists"]), 2)
+        self.assertContains(first_page, "?page=2")
+        self.assertContains(second_page, "?page=1")
+        self.assertContains(first_page, playlists[-1].name)
+        self.assertContains(second_page, playlists[0].name)
+
+    def test_invalid_playlist_list_page_falls_back_safely(self):
+        Playlist.objects.create(owner=self.owner, name="Safe library")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"page": "nope"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["playlists"].number, 1)
+
+    def test_out_of_range_playlist_list_page_uses_last_page(self):
+        for index in range(PLAYLIST_PAGE_SIZE + 1):
+            Playlist.objects.create(owner=self.owner, name=f"Page {index:02d}")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"page": 999})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["playlists"].number, 2)
+

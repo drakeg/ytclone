@@ -14,6 +14,7 @@ NOTIFICATION_PAGE_SIZE = 24
 NOTIFICATION_FILTER_ALL = "all"
 NOTIFICATION_FILTER_UNREAD = "unread"
 NOTIFICATION_FILTERS = {NOTIFICATION_FILTER_ALL, NOTIFICATION_FILTER_UNREAD}
+NOTIFICATION_KINDS = {value for value, _label in Notification.Kind.choices}
 
 
 def _notification_filter(value):
@@ -22,10 +23,23 @@ def _notification_filter(value):
     return NOTIFICATION_FILTER_ALL
 
 
-def _notification_list_url(*, page=None, notification_filter=NOTIFICATION_FILTER_ALL):
+def _notification_kind(value):
+    if value in NOTIFICATION_KINDS:
+        return value
+    return ""
+
+
+def _notification_list_url(
+    *,
+    page=None,
+    notification_filter=NOTIFICATION_FILTER_ALL,
+    notification_kind="",
+):
     params = {}
     if notification_filter != NOTIFICATION_FILTER_ALL:
         params["filter"] = notification_filter
+    if notification_kind:
+        params["kind"] = notification_kind
     if page:
         params["page"] = page
     url = reverse("notification_list")
@@ -37,11 +51,14 @@ def _notification_list_url(*, page=None, notification_filter=NOTIFICATION_FILTER
 @login_required
 def notification_list(request):
     selected_filter = _notification_filter(request.GET.get("filter"))
+    selected_kind = _notification_kind(request.GET.get("kind"))
     notifications = request.user.notifications.select_related(
         "actor", "video", "channel"
     )
     if selected_filter == NOTIFICATION_FILTER_UNREAD:
         notifications = notifications.filter(read_at__isnull=True)
+    if selected_kind:
+        notifications = notifications.filter(kind=selected_kind)
 
     page = Paginator(notifications, NOTIFICATION_PAGE_SIZE).get_page(
         request.GET.get("page")
@@ -52,6 +69,8 @@ def notification_list(request):
         {
             "notifications": page,
             "notification_filter": selected_filter,
+            "notification_kind": selected_kind,
+            "notification_kind_choices": Notification.Kind.choices,
         },
     )
 
@@ -70,6 +89,7 @@ def notification_mark_read(request, pk):
         _notification_list_url(
             page=request.POST.get("page"),
             notification_filter=_notification_filter(request.POST.get("filter")),
+            notification_kind=_notification_kind(request.POST.get("kind")),
         )
     )
 

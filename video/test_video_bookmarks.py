@@ -275,3 +275,106 @@ class VideoBookmarkTests(TestCase):
             fetch_redirect_response=False,
         )
         self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
+
+    def test_saved_moments_support_bounded_sort_options(self):
+        alpha_video = Video.objects.create(
+            title="Alpha video",
+            description="Video",
+            thumbnail="videos/a.jpg",
+            video_file="videos/a.mp4",
+            author=self.owner,
+        )
+        high_timestamp = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=90, label="High"
+        )
+        low_timestamp = VideoBookmark.objects.create(
+            user=self.viewer, video=alpha_video, position_seconds=5, label="Low"
+        )
+        self.client.force_login(self.viewer)
+
+        title_response = self.client.get(
+            reverse("video_bookmark_list"), {"sort": "title"}
+        )
+        self.assertEqual(
+            list(title_response.context["bookmarks"].object_list),
+            [low_timestamp, high_timestamp],
+        )
+        self.assertEqual(title_response.context["bookmark_sort"], "title")
+
+        timestamp_response = self.client.get(
+            reverse("video_bookmark_list"), {"sort": "timestamp"}
+        )
+        self.assertEqual(
+            list(timestamp_response.context["bookmarks"].object_list),
+            [low_timestamp, high_timestamp],
+        )
+
+    def test_invalid_saved_moments_sort_falls_back_to_newest(self):
+        older = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Older"
+        )
+        newer = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=6, label="Newer"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("video_bookmark_list"), {"sort": "not-a-sort"}
+        )
+
+        self.assertEqual(response.context["bookmark_sort"], "newest")
+        self.assertEqual(
+            list(response.context["bookmarks"].object_list),
+            [newer, older],
+        )
+
+    def test_saved_moments_sort_composes_with_search_and_pagination(self):
+        for index in range(SAVED_MOMENTS_PAGE_SIZE + 1):
+            VideoBookmark.objects.create(
+                user=self.viewer,
+                video=self.video,
+                position_seconds=index,
+                label=f"Needle {index:02d}",
+            )
+        VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=100, label="Different"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("video_bookmark_list"),
+            {"q": "needle", "sort": "timestamp"},
+        )
+
+        page = response.context["bookmarks"]
+        self.assertEqual(page.paginator.count, SAVED_MOMENTS_PAGE_SIZE + 1)
+        self.assertEqual(page.object_list[0].position_seconds, 0)
+        self.assertContains(response, "q=needle&amp;sort=timestamp&amp;page=2")
+
+    def test_list_removal_preserves_search_sort_and_page(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Needle",
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("video_bookmark_delete", args=[bookmark.pk]),
+            {
+                "source": "list",
+                "page": "2",
+                "q": "needle & setup",
+                "sort": "timestamp",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("video_bookmark_list")
+            + "?q=needle+%26+setup&sort=timestamp&page=2",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
+

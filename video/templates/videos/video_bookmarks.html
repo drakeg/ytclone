@@ -8,11 +8,22 @@
         <div><p class="eyebrow">Your space</p><h1 id="bookmarks-heading">Saved moments</h1></div>
     </div>
 
-    <form method="get" class="d-flex gap-2 mb-4" role="search">
-        <label class="visually-hidden" for="saved-moments-search">Search saved moments</label>
-        <input class="form-control" id="saved-moments-search" name="q" type="search" maxlength="120" value="{{ bookmark_query }}" placeholder="Search labels or video titles">
-        <button class="btn btn-primary" type="submit">Search</button>
-        {% if bookmark_query %}<a class="btn btn-outline-secondary" href="{% url 'video_bookmark_list' %}">Clear</a>{% endif %}
+    <form method="get" class="d-flex gap-2 mb-4 align-items-end" role="search">
+        <div class="flex-grow-1">
+            <label class="visually-hidden" for="saved-moments-search">Search saved moments</label>
+            <input class="form-control" id="saved-moments-search" name="q" type="search" maxlength="120" value="{{ bookmark_query }}" placeholder="Search labels or video titles">
+        </div>
+        <div>
+            <label class="form-label" for="saved-moments-sort">Sort</label>
+            <select class="form-select" id="saved-moments-sort" name="sort">
+                <option value="newest"{% if bookmark_sort == "newest" %} selected{% endif %}>Newest saved</option>
+                <option value="oldest"{% if bookmark_sort == "oldest" %} selected{% endif %}>Oldest saved</option>
+                <option value="title"{% if bookmark_sort == "title" %} selected{% endif %}>Video title</option>
+                <option value="timestamp"{% if bookmark_sort == "timestamp" %} selected{% endif %}>Playback timestamp</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Apply</button>
+        {% if bookmark_query or bookmark_sort != "newest" %}<a class="btn btn-outline-secondary" href="{% url 'video_bookmark_list' %}">Clear</a>{% endif %}
     </form>
 
     <div class="content-stack">
@@ -23,7 +34,7 @@
                     <p class="mb-1"><strong>{{ bookmark.timestamp_display }}</strong> · {{ bookmark.label }}</p>
                     <p class="video-meta mb-0">By {{ bookmark.video.author }} · Saved {{ bookmark.updated_at|timesince }} ago</p>
                 </div>
-                <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+                <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><input type="hidden" name="sort" value="{{ bookmark_sort }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
             </article>
         {% empty %}
             {% if bookmark_query %}
@@ -35,9 +46,9 @@
     </div>
     {% if bookmarks.paginator.num_pages > 1 %}
         <nav class="d-flex justify-content-between align-items-center gap-3 mt-4" aria-label="Saved moments pages">
-            <div>{% if bookmarks.has_previous %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}page={{ bookmarks.previous_page_number }}">Previous</a>{% endif %}</div>
+            <div>{% if bookmarks.has_previous %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}{% if bookmark_sort != 'newest' %}sort={{ bookmark_sort|urlencode }}&amp;{% endif %}page={{ bookmarks.previous_page_number }}">Previous</a>{% endif %}</div>
             <span class="video-meta">Page {{ bookmarks.number }} of {{ bookmarks.paginator.num_pages }}</span>
-            <div>{% if bookmarks.has_next %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}page={{ bookmarks.next_page_number }}">Next</a>{% endif %}</div>
+            <div>{% if bookmarks.has_next %}<a class="btn btn-outline-secondary" href="?{% if bookmark_query %}q={{ bookmark_query|urlencode }}&amp;{% endif %}{% if bookmark_sort != 'newest' %}sort={{ bookmark_sort|urlencode }}&amp;{% endif %}page={{ bookmarks.next_page_number }}">Next</a>{% endif %}</div>
         </nav>
     {% endif %}
 </section>

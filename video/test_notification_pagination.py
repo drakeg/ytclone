@@ -160,3 +160,106 @@ class NotificationPaginationTests(TestCase):
         response = self.client.get(reverse("notification_list") + "?filter=unread")
 
         self.assertEqual(response.context["notifications"].paginator.count, 2)
+
+    def test_kind_filter_limits_notifications_before_pagination(self):
+        likes = self.create_notifications(25)
+        upload = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.UPLOAD,
+        )
+
+        response = self.client.get(
+            reverse("notification_list"), {"kind": Notification.Kind.LIKE}
+        )
+        page = response.context["notifications"]
+
+        self.assertEqual(response.context["notification_kind"], Notification.Kind.LIKE)
+        self.assertEqual(page.paginator.count, 25)
+        self.assertEqual(page.paginator.num_pages, 2)
+        self.assertIn(likes[-1], page.object_list)
+        self.assertNotIn(upload, page.object_list)
+        self.assertContains(response, "kind=like&amp;page=2")
+
+    def test_kind_filter_composes_with_unread_filter(self):
+        read_like = self.create_notifications(1)[0]
+        read_like.read_at = timezone.now()
+        read_like.save(update_fields=["read_at"])
+        unread_like = self.create_notifications(1)[0]
+        Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.UPLOAD,
+        )
+
+        response = self.client.get(
+            reverse("notification_list"),
+            {"filter": "unread", "kind": Notification.Kind.LIKE},
+        )
+
+        self.assertEqual(response.context["notification_filter"], "unread")
+        self.assertEqual(response.context["notification_kind"], Notification.Kind.LIKE)
+        self.assertEqual(list(response.context["notifications"].object_list), [unread_like])
+
+    def test_invalid_kind_falls_back_to_all_activity(self):
+        self.create_notifications(1)
+        Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.COMMENT,
+        )
+
+        response = self.client.get(reverse("notification_list"), {"kind": "unknown"})
+
+        self.assertEqual(response.context["notification_kind"], "")
+        self.assertEqual(response.context["notifications"].paginator.count, 2)
+
+    def test_mark_read_preserves_kind_filter_unread_filter_and_page(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_mark_read", kwargs={"pk": notification.pk}),
+            {"page": "2", "filter": "unread", "kind": Notification.Kind.LIKE},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list") + "?filter=unread&kind=like&page=2",
+            fetch_redirect_response=False,
+        )
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+
+    def test_kind_filter_remains_private_to_viewer(self):
+        own = self.create_notifications(2)
+        self.create_notifications(3, recipient=self.other)
+
+        response = self.client.get(
+            reverse("notification_list"), {"kind": Notification.Kind.LIKE}
+        )
+
+        self.assertEqual(response.context["notifications"].paginator.count, 2)
+        self.assertEqual(list(response.context["notifications"].object_list), list(reversed(own)))
+
+    def test_mark_all_read_ignores_active_kind_scope(self):
+        like = self.create_notifications(1)[0]
+        upload = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.UPLOAD,
+        )
+        other = Notification.objects.create(
+            recipient=self.other,
+            actor=self.actor,
+            kind=Notification.Kind.UPLOAD,
+        )
+
+        self.client.post(reverse("notification_mark_all_read"))
+
+        like.refresh_from_db()
+        upload.refresh_from_db()
+        other.refresh_from_db()
+        self.assertTrue(like.is_read)
+        self.assertTrue(upload.is_read)
+        self.assertFalse(other.is_read)
+

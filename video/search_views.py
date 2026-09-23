@@ -10,7 +10,12 @@ from .services.search import (
     search_content,
     search_suggestions,
 )
-from .services.search_history import clear_search_history, recent_searches, record_search
+from .services.search_history import (
+    clear_search_history,
+    recent_searches,
+    record_search,
+    remove_search_history_entry,
+)
 
 
 VIDEO_PAGE_SIZE = 12
@@ -32,9 +37,13 @@ def search(request):
     if request.method == "POST":
         if not request.user.is_authenticated:
             return HttpResponseForbidden()
-        if request.POST.get("action") != "clear_history":
+        action = request.POST.get("action")
+        if action == "clear_history":
+            clear_search_history(request.user)
+        elif action == "remove_history":
+            remove_search_history_entry(request.user, request.POST.get("history_id"))
+        else:
             return HttpResponseNotAllowed(["GET"])
-        clear_search_history(request.user)
         return redirect("search")
 
     results = search_content(

@@ -212,3 +212,90 @@ class WatchLaterTests(TestCase):
         self.assertEqual(response.context["videos"].paginator.count, 1)
         self.assertContains(response, self.video.title)
 
+    def test_watch_later_supports_bounded_sort_options(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        alpha = Video.objects.create(
+            title="Alpha video",
+            description="Description",
+            thumbnail="videos/thumbnails/alpha.jpg",
+            video_file="videos/files/alpha.mp4",
+            author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video, position=0)
+        PlaylistItem.objects.create(playlist=playlist, video=alpha, position=1)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"sort": "title"})
+
+        self.assertEqual(list(response.context["videos"].object_list), [alpha, self.video])
+        self.assertEqual(response.context["sort"], "title")
+
+    def test_invalid_watch_later_sort_falls_back_to_newest(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video, position=0)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"sort": "bogus"})
+
+        self.assertEqual(response.context["sort"], "newest")
+        self.assertContains(response, self.video.title)
+
+    def test_watch_later_sort_composes_with_search_and_pagination(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        for index in range(25):
+            video = Video.objects.create(
+                title=f"Trail video {index:02d}",
+                description="Description",
+                thumbnail=f"videos/thumbnails/sort-{index}.jpg",
+                video_file=f"videos/files/sort-{index}.mp4",
+                author=self.creator,
+            )
+            PlaylistItem.objects.create(playlist=playlist, video=video, position=index)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("watch_later"),
+            {"q": "trail", "sort": "title"},
+        )
+
+        self.assertEqual(response.context["videos"].paginator.count, 25)
+        self.assertEqual(response.context["videos"].object_list[0].title, "Trail video 00")
+        self.assertContains(response, "q=trail&sort=title&page=2")
+
+    def test_watch_later_remove_preserves_query_sort_and_page(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_later_remove", args=[self.video.pk]),
+            {
+                "source": "watch_later",
+                "q": "Save me",
+                "sort": "title",
+                "page": "2",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f'{reverse("watch_later")}?q=Save+me&sort=title&page=2',
+            fetch_redirect_response=False,
+        )
+

@@ -7,23 +7,34 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .models import Video
-from .services.watch_later import remove_from_watch_later, save_for_later, watch_later_videos
+from .services.watch_later import (
+    WATCH_LATER_SORTS,
+    remove_from_watch_later,
+    save_for_later,
+    watch_later_videos,
+)
 
 
 WATCH_LATER_PAGE_SIZE = 24
 
 
+def _clean_sort(value):
+    value = str(value or "newest")
+    return value if value in WATCH_LATER_SORTS else "newest"
+
+
 @login_required
 def watch_later(request):
     query = request.GET.get("q", "").strip()
+    sort = _clean_sort(request.GET.get("sort"))
     videos = Paginator(
-        watch_later_videos(request.user, query),
+        watch_later_videos(request.user, query, sort),
         WATCH_LATER_PAGE_SIZE,
     ).get_page(request.GET.get("page"))
     return render(
         request,
         "videos/watch_later.html",
-        {"videos": videos, "query": query},
+        {"videos": videos, "query": query, "sort": sort},
     )
 
 
@@ -44,9 +55,12 @@ def watch_later_remove(request, pk):
     if request.POST.get("source") == "watch_later":
         params = {}
         query = request.POST.get("q", "").strip()
+        sort = _clean_sort(request.POST.get("sort"))
         page = request.POST.get("page", "").strip()
         if query:
             params["q"] = query
+        if sort != "newest":
+            params["sort"] = sort
         if page:
             params["page"] = page
         url = reverse("watch_later")

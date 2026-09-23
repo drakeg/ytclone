@@ -4,6 +4,11 @@ from ..models import Playlist, PlaylistItem, Video
 
 
 WATCH_LATER_NAME = "Watch Later"
+WATCH_LATER_SORTS = {
+    "newest": ("-playlist_items__added_at", "-playlist_items__pk"),
+    "oldest": ("playlist_items__added_at", "playlist_items__pk"),
+    "title": ("title", "-playlist_items__added_at", "-playlist_items__pk"),
+}
 
 
 def get_watch_later_playlist(user, *, create=False):
@@ -57,19 +62,19 @@ def remove_from_watch_later(user, video):
     return bool(deleted)
 
 
-def watch_later_videos(user, query=""):
+def watch_later_videos(user, query="", sort="newest"):
     playlist = get_watch_later_playlist(user)
     if playlist is None:
         return Video.objects.none()
 
+    normalized_sort = sort if sort in WATCH_LATER_SORTS else "newest"
     videos = (
         Video.objects.visible_to(user)
         .filter(playlist_items__playlist=playlist)
         .select_related("author", "category", "channel")
         .prefetch_related("hashtags")
-        .order_by("-playlist_items__added_at", "-playlist_items__pk")
     )
     normalized_query = query.strip()
     if normalized_query:
         videos = videos.filter(title__icontains=normalized_query)
-    return videos
+    return videos.order_by(*WATCH_LATER_SORTS[normalized_sort])

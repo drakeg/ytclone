@@ -257,3 +257,65 @@ class PlaylistTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context["playlists"].number, 2)
 
+    def test_playlist_library_search_matches_name_or_description_case_insensitively(self):
+        name_match = Playlist.objects.create(owner=self.owner, name="Finger Lakes Trips")
+        description_match = Playlist.objects.create(
+            owner=self.owner,
+            name="Weekend ideas",
+            description="Favorite FINGER LAKES stops",
+        )
+        Playlist.objects.create(owner=self.owner, name="Unrelated")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"q": "finger lakes"})
+
+        results = list(response.context["playlists"].object_list)
+        self.assertCountEqual(results, [name_match, description_match])
+        self.assertEqual(response.context["query"], "finger lakes")
+        self.assertNotContains(response, "Unrelated")
+
+    def test_playlist_library_search_remains_owner_scoped(self):
+        own = Playlist.objects.create(owner=self.owner, name="Travel plans")
+        Playlist.objects.create(owner=self.other_user, name="Travel secrets")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"q": "travel"})
+
+        self.assertEqual(list(response.context["playlists"].object_list), [own])
+        self.assertNotContains(response, "Travel secrets")
+
+    def test_playlist_library_search_filters_before_pagination_and_preserves_query(self):
+        for index in range(PLAYLIST_PAGE_SIZE + 1):
+            Playlist.objects.create(owner=self.owner, name=f"Trip collection {index:02d}")
+        Playlist.objects.create(owner=self.owner, name="Recipes")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"q": "trip"})
+
+        page = response.context["playlists"]
+        self.assertEqual(page.paginator.count, PLAYLIST_PAGE_SIZE + 1)
+        self.assertEqual(page.paginator.num_pages, 2)
+        self.assertContains(response, "q=trip&amp;page=2")
+
+    def test_blank_playlist_library_query_is_unfiltered(self):
+        playlists = [
+            Playlist.objects.create(owner=self.owner, name="One"),
+            Playlist.objects.create(owner=self.owner, name="Two"),
+        ]
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"q": "   "})
+
+        self.assertEqual(response.context["query"], "")
+        self.assertCountEqual(response.context["playlists"].object_list, playlists)
+
+    def test_playlist_library_search_has_query_specific_empty_state(self):
+        Playlist.objects.create(owner=self.owner, name="Existing")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"q": "missing"})
+
+        self.assertContains(response, "No playlists match")
+        self.assertContains(response, "missing")
+        self.assertNotContains(response, "You have not created any playlists yet.")
+

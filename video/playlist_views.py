@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
@@ -9,16 +10,28 @@ from .services.playlist_ordering import move_playlist_item
 
 
 PLAYLIST_PAGE_SIZE = 24
+PLAYLIST_QUERY_MAX_LENGTH = 120
+
+
+def _clean_playlist_query(value):
+    return (value or "").strip()[:PLAYLIST_QUERY_MAX_LENGTH]
 
 
 @login_required
 def playlist_list(request):
-    playlists = (
-        request.user.playlists.prefetch_related("items__video")
-        .order_by("-updated_at", "-pk")
-    )
+    query = _clean_playlist_query(request.GET.get("q"))
+    playlists = request.user.playlists.prefetch_related("items__video")
+    if query:
+        playlists = playlists.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
+    playlists = playlists.order_by("-updated_at", "-pk")
     page = Paginator(playlists, PLAYLIST_PAGE_SIZE).get_page(request.GET.get("page"))
-    return render(request, "videos/playlist_list.html", {"playlists": page})
+    return render(
+        request,
+        "videos/playlist_list.html",
+        {"playlists": page, "query": query},
+    )
 
 
 def playlist_detail(request, pk):

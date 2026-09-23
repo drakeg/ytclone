@@ -10,6 +10,13 @@
     <a class="btn btn-primary" href="{% url 'playlist_create' %}">Create playlist</a>
 </header>
 
+<form method="get" class="d-flex gap-2 mb-4" role="search">
+    <label class="visually-hidden" for="playlist-library-search">Search playlists</label>
+    <input class="form-control" id="playlist-library-search" type="search" name="q" value="{{ query }}" maxlength="120" placeholder="Search your playlists">
+    <button class="btn btn-outline-primary" type="submit">Search</button>
+    {% if query %}<a class="btn btn-outline-secondary" href="{% url 'playlist_list' %}">Clear</a>{% endif %}
+</form>
+
 <div class="video-grid">
     {% for playlist in playlists %}
         <article class="card">
@@ -21,7 +28,11 @@
             </div>
         </article>
     {% empty %}
-        <div class="empty-state">You have not created any playlists yet.</div>
+        {% if query %}
+            <div class="empty-state">No playlists match “{{ query }}”.</div>
+        {% else %}
+            <div class="empty-state">You have not created any playlists yet.</div>
+        {% endif %}
     {% endfor %}
 </div>
 
@@ -29,13 +40,13 @@
     <nav class="mt-4" aria-label="Playlist library pages">
         <div class="d-flex justify-content-between align-items-center gap-3">
             {% if playlists.has_previous %}
-                <a class="btn btn-outline-secondary" href="?page={{ playlists.previous_page_number }}">Previous</a>
+                <a class="btn btn-outline-secondary" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ playlists.previous_page_number }}">Previous</a>
             {% else %}
                 <span></span>
             {% endif %}
             <span class="video-meta">Page {{ playlists.number }} of {{ playlists.paginator.num_pages }}</span>
             {% if playlists.has_next %}
-                <a class="btn btn-outline-secondary" href="?page={{ playlists.next_page_number }}">Next</a>
+                <a class="btn btn-outline-secondary" href="?{% if query %}q={{ query|urlencode }}&amp;{% endif %}page={{ playlists.next_page_number }}">Next</a>
             {% else %}
                 <span></span>
             {% endif %}

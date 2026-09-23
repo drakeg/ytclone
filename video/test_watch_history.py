@@ -236,3 +236,75 @@ class WatchHistoryTests(TestCase):
         self.assertRedirects(response, reverse("watch_history"))
         self.assertFalse(WatchHistory.objects.filter(user=self.viewer).exists())
 
+    def test_watch_history_supports_bounded_sort_options(self):
+        alpha = self._history_video("Alpha history")
+        zulu = self._history_video("Zulu history")
+        alpha_entry = WatchHistory.objects.create(user=self.viewer, video=alpha)
+        zulu_entry = WatchHistory.objects.create(user=self.viewer, video=zulu)
+        self.client.force_login(self.viewer)
+
+        title_response = self.client.get(
+            reverse("watch_history"), {"sort": "title"}
+        )
+
+        self.assertEqual(
+            list(title_response.context["entries"].object_list),
+            [alpha_entry, zulu_entry],
+        )
+        self.assertEqual(title_response.context["history_sort"], "title")
+
+    def test_invalid_watch_history_sort_falls_back_to_recent(self):
+        older = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        newer_video = self._history_video("Newer history")
+        newer = WatchHistory.objects.create(user=self.viewer, video=newer_video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("watch_history"), {"sort": "not-a-sort"}
+        )
+
+        self.assertEqual(response.context["history_sort"], "recent")
+        self.assertEqual(
+            list(response.context["entries"].object_list),
+            [newer, older],
+        )
+
+    def test_watch_history_sort_composes_with_search_and_pagination(self):
+        for index in range(25):
+            video = self._history_video(f"Trail history {index:02d}")
+            WatchHistory.objects.create(user=self.viewer, video=video)
+        other = self._history_video("Different history")
+        WatchHistory.objects.create(user=self.viewer, video=other)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("watch_history"),
+            {"q": "trail", "sort": "title"},
+        )
+
+        page = response.context["entries"]
+        self.assertEqual(page.paginator.count, 25)
+        self.assertEqual(page.object_list[0].video.title, "Trail history 00")
+        self.assertContains(response, "q=trail&sort=title&page=2")
+
+    def test_watch_history_remove_preserves_query_sort_and_page(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_history_remove", kwargs={"pk": entry.pk}),
+            {
+                "page": "2",
+                "q": "history & test",
+                "sort": "title",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("watch_history")
+            + "?q=history+%26+test&sort=title&page=2",
+            fetch_redirect_response=False,
+        )
+        self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
+

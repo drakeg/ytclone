@@ -71,3 +71,65 @@ class PrivateSearchHistoryTests(TestCase):
         )
         self.client.force_login(self.viewer)
         self.assertEqual(self.client.post(self.search_url, {"action": "other"}).status_code, 405)
+
+    def test_viewer_can_remove_one_recent_search_without_clearing_others(self):
+        removed = record_search(self.viewer, "remove me")
+        kept = record_search(self.viewer, "keep me")
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            self.search_url,
+            {"action": "remove_history", "history_id": removed.pk},
+        )
+
+        self.assertRedirects(response, self.search_url)
+        self.assertFalse(SearchHistory.objects.filter(pk=removed.pk).exists())
+        self.assertTrue(SearchHistory.objects.filter(pk=kept.pk).exists())
+
+    def test_viewer_cannot_remove_another_users_search_history(self):
+        other_entry = record_search(self.other, "private other search")
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            self.search_url,
+            {"action": "remove_history", "history_id": other_entry.pk},
+        )
+
+        self.assertRedirects(response, self.search_url)
+        self.assertTrue(SearchHistory.objects.filter(pk=other_entry.pk).exists())
+
+    def test_recent_search_ui_has_owner_entry_remove_control(self):
+        entry = record_search(self.viewer, "Finger Lakes")
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(self.search_url)
+
+        self.assertContains(response, 'value="remove_history"')
+        self.assertContains(response, f'value="{entry.pk}"')
+        self.assertContains(response, "Remove Finger Lakes from recent searches")
+
+    def test_anonymous_individual_removal_is_forbidden(self):
+        entry = record_search(self.viewer, "private search")
+
+        response = self.client.post(
+            self.search_url,
+            {"action": "remove_history", "history_id": entry.pk},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(SearchHistory.objects.filter(pk=entry.pk).exists())
+
+    def test_missing_or_invalid_history_id_is_safe(self):
+        kept = record_search(self.viewer, "keep me")
+        self.client.force_login(self.viewer)
+
+        missing = self.client.post(self.search_url, {"action": "remove_history"})
+        invalid = self.client.post(
+            self.search_url,
+            {"action": "remove_history", "history_id": "not-an-id"},
+        )
+
+        self.assertRedirects(missing, self.search_url)
+        self.assertRedirects(invalid, self.search_url)
+        self.assertTrue(SearchHistory.objects.filter(pk=kept.pk).exists())
+

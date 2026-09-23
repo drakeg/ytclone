@@ -33,6 +33,19 @@ def recent_searches(user, limit=SEARCH_HISTORY_LIMIT):
     return SearchHistory.objects.filter(user=user).order_by("-searched_at", "-pk")[:limit]
 
 
+def remove_search_history_entry(user, entry_id):
+    if not getattr(user, "is_authenticated", False):
+        return 0
+    try:
+        entry_id = int(entry_id)
+    except (TypeError, ValueError):
+        return 0
+    if entry_id < 1:
+        return 0
+    deleted, unused = SearchHistory.objects.filter(user=user, pk=entry_id).delete()
+    return deleted
+
+
 def clear_search_history(user):
     if not getattr(user, "is_authenticated", False):
         return 0

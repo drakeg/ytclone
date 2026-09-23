@@ -12,11 +12,21 @@
         {% endif %}
     </div>
 
-    <form method="get" class="d-flex gap-2 mb-4" role="search">
-        <label class="visually-hidden" for="watch-history-search">Search watch history</label>
-        <input class="form-control" id="watch-history-search" name="q" type="search" maxlength="120" value="{{ history_query }}" placeholder="Search watched video titles">
-        <button class="btn btn-primary" type="submit">Search</button>
-        {% if history_query %}<a class="btn btn-outline-secondary" href="{% url 'watch_history' %}">Clear search</a>{% endif %}
+    <form method="get" class="d-flex gap-2 mb-4 align-items-end" role="search">
+        <div class="flex-grow-1">
+            <label class="visually-hidden" for="watch-history-search">Search watch history</label>
+            <input class="form-control" id="watch-history-search" name="q" type="search" maxlength="120" value="{{ history_query }}" placeholder="Search watched video titles">
+        </div>
+        <div>
+            <label class="form-label" for="watch-history-sort">Sort</label>
+            <select class="form-select" id="watch-history-sort" name="sort">
+                <option value="recent"{% if history_sort == "recent" %} selected{% endif %}>Recently watched</option>
+                <option value="oldest"{% if history_sort == "oldest" %} selected{% endif %}>Oldest watched</option>
+                <option value="title"{% if history_sort == "title" %} selected{% endif %}>Video title</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" type="submit">Apply</button>
+        {% if history_query or history_sort != "recent" %}<a class="btn btn-outline-secondary" href="{% url 'watch_history' %}">Clear</a>{% endif %}
     </form>
 
     {% for entry in entries %}
@@ -33,6 +43,7 @@
                     {% csrf_token %}
                     <input type="hidden" name="page" value="{{ entries.number }}">
                     <input type="hidden" name="q" value="{{ history_query }}">
+                    <input type="hidden" name="sort" value="{{ history_sort }}">
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Remove</button>
                 </form>
             </div>
@@ -49,13 +60,13 @@
         <nav class="mt-4" aria-label="Watch history pages">
             <div class="d-flex justify-content-between align-items-center gap-3">
                 {% if entries.has_previous %}
-                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}page={{ entries.previous_page_number }}">Previous</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}{% if history_sort != 'recent' %}sort={{ history_sort|urlencode }}&{% endif %}page={{ entries.previous_page_number }}">Previous</a>
                 {% else %}
                     <span></span>
                 {% endif %}
                 <span class="video-meta">Page {{ entries.number }} of {{ entries.paginator.num_pages }}</span>
                 {% if entries.has_next %}
-                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}page={{ entries.next_page_number }}">Next</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="?{% if history_query %}q={{ history_query|urlencode }}&{% endif %}{% if history_sort != 'recent' %}sort={{ history_sort|urlencode }}&{% endif %}page={{ entries.next_page_number }}">Next</a>
                 {% else %}
                     <span></span>
                 {% endif %}

@@ -50,14 +50,19 @@
     </form>
 
     {% if notifications %}
-        <form id="notification-bulk-form" method="post" action="{% url 'notification_bulk_delete' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <form id="notification-bulk-form" data-bulk-selection data-item-name="notification_ids" method="post" action="{% url 'notification_bulk_delete' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
             {% csrf_token %}
             <input type="hidden" name="page" value="{{ notifications.number }}">
             <input type="hidden" name="filter" value="{{ notification_filter }}">
             <input type="hidden" name="kind" value="{{ notification_kind }}">
             <input type="hidden" name="date" value="{{ notification_date }}">
             <input type="hidden" name="q" value="{{ notification_query }}">
-            <button class="btn btn-outline-danger" type="submit">Delete selected</button>
+            <div class="form-check me-2">
+                <input class="form-check-input" type="checkbox" id="notification-bulk-form-select-all" data-bulk-select-all>
+                <label class="form-check-label" for="notification-bulk-form-select-all">Select all on this page</label>
+            </div>
+            <span class="text-body-secondary" data-bulk-selection-status aria-live="polite">0 selected</span>
+            <button class="btn btn-outline-danger" type="submit" data-bulk-submit disabled>Delete selected</button>
         </form>
     {% endif %}
 

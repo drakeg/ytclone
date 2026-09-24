@@ -896,3 +896,31 @@ Verification:
 - Homepage verified at 1440 × 900 and 390 × 844 without overflow or browser errors
 - Video detail verified at desktop and phone widths with responsive playback, creator, and comment layouts
 - Local Docker engine access remained unavailable, so container execution remains a local handoff check
+
+
+## Current sprint: Notification Inbox Routing and Bulk Cleanup
+
+Goal: make the modular notification inbox implementation the canonical routed code path and add recipient-scoped bulk cleanup.
+
+Planned/delivered scope:
+- Route notification list and read actions through `video.notification_views`
+- Remove legacy duplicate notification handlers from `video.views`
+- Add POST-only selected-notification deletion
+- Preserve search, read-state, type, date, and page state after deletion
+- Keep deletion recipient-scoped and ignore malformed/forged selections
+- Preserve existing Mark read and Mark all as read behavior
+- Add focused regression coverage for routing, privacy, state preservation, and malformed input
+
+Out of scope:
+- Automatic retention/expiry
+- New notification event types
+- External delivery channels
+- Schema, migration, dependency, AWS, paid-service, worker, queue, or Terraform changes
+
+Verification:
+- `python manage.py check`
+- `python manage.py makemigrations --check --dry-run`
+- `python manage.py test video.test_notifications video.test_notification_pagination`
+- `python manage.py test --parallel 4`
+- `docker compose config --quiet`
+- `docker compose run --build --rm test`

@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <header class="py-4 d-flex justify-content-between align-items-center">
@@ -134,4 +135,8 @@
             </div>
         </nav>
     {% endif %}
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'video/bulk_selection.js' %}" defer></script>
 {% endblock %}

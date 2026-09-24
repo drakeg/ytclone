@@ -11,26 +11,37 @@ from .services.playlist_ordering import move_playlist_item
 
 PLAYLIST_PAGE_SIZE = 24
 PLAYLIST_QUERY_MAX_LENGTH = 120
+PLAYLIST_SORTS = {
+    "recent": ("-updated_at", "-pk"),
+    "oldest": ("updated_at", "pk"),
+    "name": ("name", "-updated_at", "-pk"),
+}
 
 
 def _clean_playlist_query(value):
     return (value or "").strip()[:PLAYLIST_QUERY_MAX_LENGTH]
 
 
+def _clean_playlist_sort(value):
+    value = str(value or "recent")
+    return value if value in PLAYLIST_SORTS else "recent"
+
+
 @login_required
 def playlist_list(request):
     query = _clean_playlist_query(request.GET.get("q"))
+    sort = _clean_playlist_sort(request.GET.get("sort"))
     playlists = request.user.playlists.prefetch_related("items__video")
     if query:
         playlists = playlists.filter(
             Q(name__icontains=query) | Q(description__icontains=query)
         )
-    playlists = playlists.order_by("-updated_at", "-pk")
+    playlists = playlists.order_by(*PLAYLIST_SORTS[sort])
     page = Paginator(playlists, PLAYLIST_PAGE_SIZE).get_page(request.GET.get("page"))
     return render(
         request,
         "videos/playlist_list.html",
-        {"playlists": page, "query": query},
+        {"playlists": page, "query": query, "sort": sort},
     )
 
 

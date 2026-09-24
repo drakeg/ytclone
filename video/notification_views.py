@@ -15,6 +15,13 @@ NOTIFICATION_FILTER_ALL = "all"
 NOTIFICATION_FILTER_UNREAD = "unread"
 NOTIFICATION_FILTERS = {NOTIFICATION_FILTER_ALL, NOTIFICATION_FILTER_UNREAD}
 NOTIFICATION_KINDS = {value for value, _label in Notification.Kind.choices}
+NOTIFICATION_DATE_ANY = "any"
+NOTIFICATION_DATE_FILTERS = {
+    NOTIFICATION_DATE_ANY: None,
+    "today": 1,
+    "7d": 7,
+    "30d": 30,
+}
 
 
 def _notification_filter(value):
@@ -29,17 +36,26 @@ def _notification_kind(value):
     return ""
 
 
+def _notification_date(value):
+    if value in NOTIFICATION_DATE_FILTERS:
+        return value
+    return NOTIFICATION_DATE_ANY
+
+
 def _notification_list_url(
     *,
     page=None,
     notification_filter=NOTIFICATION_FILTER_ALL,
     notification_kind="",
+    notification_date=NOTIFICATION_DATE_ANY,
 ):
     params = {}
     if notification_filter != NOTIFICATION_FILTER_ALL:
         params["filter"] = notification_filter
     if notification_kind:
         params["kind"] = notification_kind
+    if notification_date != NOTIFICATION_DATE_ANY:
+        params["date"] = notification_date
     if page:
         params["page"] = page
     url = reverse("notification_list")
@@ -52,6 +68,7 @@ def _notification_list_url(
 def notification_list(request):
     selected_filter = _notification_filter(request.GET.get("filter"))
     selected_kind = _notification_kind(request.GET.get("kind"))
+    selected_date = _notification_date(request.GET.get("date"))
     notifications = request.user.notifications.select_related(
         "actor", "video", "channel"
     )
@@ -59,6 +76,10 @@ def notification_list(request):
         notifications = notifications.filter(read_at__isnull=True)
     if selected_kind:
         notifications = notifications.filter(kind=selected_kind)
+    days = NOTIFICATION_DATE_FILTERS[selected_date]
+    if days is not None:
+        cutoff = timezone.now() - timezone.timedelta(days=days)
+        notifications = notifications.filter(created_at__gte=cutoff)
 
     page = Paginator(notifications, NOTIFICATION_PAGE_SIZE).get_page(
         request.GET.get("page")
@@ -71,6 +92,7 @@ def notification_list(request):
             "notification_filter": selected_filter,
             "notification_kind": selected_kind,
             "notification_kind_choices": Notification.Kind.choices,
+            "notification_date": selected_date,
         },
     )
 
@@ -90,6 +112,7 @@ def notification_mark_read(request, pk):
             page=request.POST.get("page"),
             notification_filter=_notification_filter(request.POST.get("filter")),
             notification_kind=_notification_kind(request.POST.get("kind")),
+            notification_date=_notification_date(request.POST.get("date")),
         )
     )
 

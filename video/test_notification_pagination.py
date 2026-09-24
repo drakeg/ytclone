@@ -263,3 +263,92 @@ class NotificationPaginationTests(TestCase):
         self.assertTrue(upload.is_read)
         self.assertFalse(other.is_read)
 
+    def test_date_filter_limits_notifications_before_pagination(self):
+        recent = self.create_notifications(25)
+        old = self.create_notifications(1)[0]
+        Notification.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=8)
+        )
+
+        response = self.client.get(reverse("notification_list"), {"date": "7d"})
+        page = response.context["notifications"]
+
+        self.assertEqual(response.context["notification_date"], "7d")
+        self.assertEqual(page.paginator.count, 25)
+        self.assertNotIn(old, page.object_list)
+        self.assertIn(recent[-1], page.object_list)
+        self.assertContains(response, "date=7d&amp;page=2")
+
+    def test_date_filter_composes_with_unread_and_kind(self):
+        matching = self.create_notifications(1)[0]
+        read_like = self.create_notifications(1)[0]
+        read_like.read_at = timezone.now()
+        read_like.save(update_fields=["read_at"])
+        old_like = self.create_notifications(1)[0]
+        Notification.objects.filter(pk=old_like.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=8)
+        )
+        Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.UPLOAD,
+        )
+
+        response = self.client.get(
+            reverse("notification_list"),
+            {"filter": "unread", "kind": Notification.Kind.LIKE, "date": "7d"},
+        )
+
+        self.assertEqual(list(response.context["notifications"].object_list), [matching])
+        self.assertEqual(response.context["notification_date"], "7d")
+
+    def test_invalid_date_filter_falls_back_to_any_time(self):
+        old = self.create_notifications(1)[0]
+        Notification.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=90)
+        )
+
+        response = self.client.get(reverse("notification_list"), {"date": "unknown"})
+
+        self.assertEqual(response.context["notification_date"], "any")
+        self.assertEqual(response.context["notifications"].paginator.count, 1)
+
+    def test_mark_read_preserves_date_filter_with_existing_filters_and_page(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_mark_read", kwargs={"pk": notification.pk}),
+            {
+                "page": "2",
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list")
+            + "?filter=unread&kind=like&date=7d&page=2",
+            fetch_redirect_response=False,
+        )
+        notification.refresh_from_db()
+        self.assertTrue(notification.is_read)
+
+    def test_mark_all_read_ignores_active_date_scope(self):
+        recent = self.create_notifications(1)[0]
+        old = self.create_notifications(1)[0]
+        Notification.objects.filter(pk=old.pk).update(
+            created_at=timezone.now() - timezone.timedelta(days=90)
+        )
+        other = self.create_notifications(1, recipient=self.other)[0]
+
+        self.client.post(reverse("notification_mark_all_read"))
+
+        recent.refresh_from_db()
+        old.refresh_from_db()
+        other.refresh_from_db()
+        self.assertTrue(recent.is_read)
+        self.assertTrue(old.is_read)
+        self.assertFalse(other.is_read)
+

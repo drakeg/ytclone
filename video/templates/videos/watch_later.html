@@ -29,7 +29,14 @@
 </form>
 
 {% if videos %}
-    {% include 'videos/_video_cards.html' with videos=videos %}
+    <form id="watch-later-bulk-form" method="post" action="{% url 'watch_later_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="page" value="{{ videos.number }}">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <button class="btn btn-outline-danger" type="submit">Remove selected</button>
+    </form>
+    {% include 'videos/_video_cards.html' with videos=videos bulk_select_form_id='watch-later-bulk-form' %}
     {% if videos.paginator.num_pages > 1 %}
         <nav class="mt-4" aria-label="Watch Later pages">
             <div class="d-flex justify-content-between align-items-center gap-3">

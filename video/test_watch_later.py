@@ -349,3 +349,183 @@ class WatchLaterTests(TestCase):
         self.assertContains(response, 'name="sort" value="oldest"')
         self.assertContains(response, 'name="page" value="1"')
 
+
+
+    def test_bulk_remove_removes_selected_visible_videos(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        second = Video.objects.create(
+            title="Second saved",
+            description="Description",
+            thumbnail="videos/thumbnails/second-saved.jpg",
+            video_file="videos/files/second-saved.mp4",
+            author=self.creator,
+        )
+        keep = Video.objects.create(
+            title="Keep saved",
+            description="Description",
+            thumbnail="videos/thumbnails/keep-saved.jpg",
+            video_file="videos/files/keep-saved.mp4",
+            author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        PlaylistItem.objects.create(playlist=playlist, video=second)
+        PlaylistItem.objects.create(playlist=playlist, video=keep)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_later_bulk_remove"),
+            {"video_ids": [str(self.video.pk), str(second.pk)]},
+        )
+
+        self.assertRedirects(response, reverse("watch_later"))
+        self.assertFalse(
+            PlaylistItem.objects.filter(
+                playlist=playlist,
+                video_id__in=[self.video.pk, second.pk],
+            ).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(playlist=playlist, video=keep).exists()
+        )
+
+    def test_bulk_remove_is_post_only_and_scoped_to_viewer_and_visibility(self):
+        viewer_playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        other_playlist = Playlist.objects.create(
+            owner=self.other,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        hidden = Video.objects.create(
+            title="Hidden saved",
+            description="Description",
+            thumbnail="videos/thumbnails/hidden-bulk.jpg",
+            video_file="videos/files/hidden-bulk.mp4",
+            author=self.creator,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        PlaylistItem.objects.create(playlist=viewer_playlist, video=self.video)
+        PlaylistItem.objects.create(playlist=viewer_playlist, video=hidden)
+        PlaylistItem.objects.create(playlist=other_playlist, video=self.video)
+        self.client.force_login(self.viewer)
+        url = reverse("watch_later_bulk_remove")
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(
+            url,
+            {"video_ids": [str(self.video.pk), str(hidden.pk)]},
+        )
+
+        self.assertFalse(
+            PlaylistItem.objects.filter(
+                playlist=viewer_playlist, video=self.video
+            ).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(
+                playlist=viewer_playlist, video=hidden
+            ).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(
+                playlist=other_playlist, video=self.video
+            ).exists()
+        )
+
+    def test_bulk_remove_ignores_empty_malformed_duplicate_and_unsaved_ids(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        unsaved = Video.objects.create(
+            title="Not saved",
+            description="Description",
+            thumbnail="videos/thumbnails/not-saved.jpg",
+            video_file="videos/files/not-saved.mp4",
+            author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+        url = reverse("watch_later_bulk_remove")
+
+        empty = self.client.post(url, {})
+        self.assertRedirects(empty, reverse("watch_later"))
+        self.assertTrue(
+            PlaylistItem.objects.filter(playlist=playlist, video=self.video).exists()
+        )
+
+        response = self.client.post(
+            url,
+            {
+                "video_ids": [
+                    str(self.video.pk),
+                    str(self.video.pk),
+                    "bad-id",
+                    "",
+                    str(unsaved.pk),
+                ]
+            },
+        )
+        self.assertRedirects(response, reverse("watch_later"))
+        self.assertFalse(
+            PlaylistItem.objects.filter(playlist=playlist, video=self.video).exists()
+        )
+        self.assertFalse(
+            PlaylistItem.objects.filter(playlist=playlist, video=unsaved).exists()
+        )
+
+    def test_bulk_remove_preserves_query_sort_and_page(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_later_bulk_remove"),
+            {
+                "video_ids": [str(self.video.pk)],
+                "q": "Save me",
+                "sort": "title",
+                "page": "2",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            f'{reverse("watch_later")}?q=Save+me&sort=title&page=2',
+            fetch_redirect_response=False,
+        )
+
+    def test_watch_later_renders_bulk_controls_without_affecting_other_video_cards(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        watch_later_response = self.client.get(reverse("watch_later"))
+        browse_response = self.client.get(reverse("video_list"))
+
+        self.assertContains(
+            watch_later_response,
+            reverse("watch_later_bulk_remove"),
+        )
+        self.assertContains(
+            watch_later_response,
+            f'name="video_ids" value="{self.video.pk}"',
+        )
+        self.assertContains(watch_later_response, "Remove selected")
+        self.assertNotContains(browse_response, 'name="video_ids"')

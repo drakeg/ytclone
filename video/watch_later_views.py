@@ -6,9 +6,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from .models import Video
+from .models import PlaylistItem, Video
 from .services.watch_later import (
     WATCH_LATER_SORTS,
+    get_watch_later_playlist,
     remove_from_watch_later,
     save_for_later,
     watch_later_videos,
@@ -67,3 +68,37 @@ def watch_later_remove(request, pk):
         return redirect(f"{url}?{urlencode(params)}" if params else url)
 
     return redirect(request.POST.get("next") or "watch_later")
+
+
+@login_required
+@require_POST
+def watch_later_bulk_remove(request):
+    selected_ids = []
+    for raw_id in request.POST.getlist("video_ids"):
+        try:
+            selected_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    playlist = get_watch_later_playlist(request.user)
+    if playlist is not None and selected_ids:
+        visible_ids = Video.objects.visible_to(request.user).filter(
+            pk__in=set(selected_ids)
+        ).values_list("pk", flat=True)
+        PlaylistItem.objects.filter(
+            playlist=playlist,
+            video_id__in=visible_ids,
+        ).delete()
+
+    params = {}
+    query = request.POST.get("q", "").strip()
+    sort = _clean_sort(request.POST.get("sort"))
+    page = request.POST.get("page", "").strip()
+    if query:
+        params["q"] = query
+    if sort != "newest":
+        params["sort"] = sort
+    if page:
+        params["page"] = page
+    url = reverse("watch_later")
+    return redirect(f"{url}?{urlencode(params)}" if params else url)

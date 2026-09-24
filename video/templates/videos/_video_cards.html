@@ -2,6 +2,12 @@
 <div class="video-grid">
     {% for video in videos %}
         <article class="video-card">
+            {% if bulk_select_form_id %}
+                <div class="form-check p-2">
+                    <input class="form-check-input" type="checkbox" name="video_ids" value="{{ video.pk }}" id="video-select-{{ video.pk }}" form="{{ bulk_select_form_id }}">
+                    <label class="visually-hidden" for="video-select-{{ video.pk }}">Select {{ video.title }}</label>
+                </div>
+            {% endif %}
             <div class="thumbnail">
                 <a href="{% url 'video_detail' video.pk %}">
                     <img src="{{ video.thumbnail.url }}" alt="Thumbnail for {{ video.title }}" loading="lazy">

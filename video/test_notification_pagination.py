@@ -352,3 +352,111 @@ class NotificationPaginationTests(TestCase):
         self.assertTrue(old.is_read)
         self.assertFalse(other.is_read)
 
+
+
+    def test_search_matches_actor_and_stays_private_to_viewer(self):
+        matching = self.create_notifications(1)[0]
+        other_actor = User.objects.create_user(username="different-actor", password="password123")
+        Notification.objects.create(
+            recipient=self.recipient,
+            actor=other_actor,
+            kind=Notification.Kind.LIKE,
+        )
+        Notification.objects.create(
+            recipient=self.other,
+            actor=self.actor,
+            kind=Notification.Kind.LIKE,
+        )
+
+        response = self.client.get(reverse("notification_list"), {"q": "actor-pagination"})
+
+        self.assertEqual(response.context["notification_query"], "actor-pagination")
+        self.assertEqual(list(response.context["notifications"].object_list), [matching])
+
+    def test_search_matches_video_title_and_channel_name_case_insensitively(self):
+        from .models import Channel, Video
+
+        channel = Channel.objects.create(
+            owner=self.recipient,
+            name="Road Adventures",
+            description="Travel",
+        )
+        video = Video.objects.create(
+            title="Solar Upgrade Walkthrough",
+            description="Description",
+            thumbnail="videos/thumbnails/search.jpg",
+            video_file="videos/files/search.mp4",
+            author=self.recipient,
+            channel=channel,
+        )
+        video_notification = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.LIKE,
+            video=video,
+        )
+        channel_notification = Notification.objects.create(
+            recipient=self.recipient,
+            actor=self.actor,
+            kind=Notification.Kind.SUBSCRIPTION,
+            channel=channel,
+        )
+
+        by_video = self.client.get(reverse("notification_list"), {"q": "solar upgrade"})
+        by_channel = self.client.get(reverse("notification_list"), {"q": "ROAD adventures"})
+
+        self.assertEqual(list(by_video.context["notifications"].object_list), [video_notification])
+        self.assertEqual(list(by_channel.context["notifications"].object_list), [channel_notification])
+
+    def test_search_composes_with_filters_and_pagination(self):
+        self.create_notifications(25)
+        unrelated_actor = User.objects.create_user(username="unrelated", password="password123")
+        Notification.objects.create(
+            recipient=self.recipient,
+            actor=unrelated_actor,
+            kind=Notification.Kind.LIKE,
+        )
+
+        response = self.client.get(
+            reverse("notification_list"),
+            {
+                "q": "actor-pagination",
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+            },
+        )
+
+        self.assertEqual(response.context["notifications"].paginator.count, 25)
+        self.assertContains(
+            response,
+            "filter=unread&amp;q=actor-pagination&amp;kind=like&amp;date=7d&amp;page=2",
+        )
+
+    def test_mark_read_preserves_search_with_existing_filters_and_page(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_mark_read", kwargs={"pk": notification.pk}),
+            {
+                "page": "2",
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+                "q": "actor pagination",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list")
+            + "?filter=unread&kind=like&date=7d&q=actor+pagination&page=2",
+            fetch_redirect_response=False,
+        )
+
+    def test_search_empty_state_distinguishes_no_matches(self):
+        self.create_notifications(1)
+
+        response = self.client.get(reverse("notification_list"), {"q": "nothing-here"})
+
+        self.assertContains(response, 'No notifications match "nothing-here".')

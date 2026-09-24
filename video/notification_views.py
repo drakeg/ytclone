@@ -2,6 +2,7 @@ from urllib.parse import urlencode
 
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -48,6 +49,7 @@ def _notification_list_url(
     notification_filter=NOTIFICATION_FILTER_ALL,
     notification_kind="",
     notification_date=NOTIFICATION_DATE_ANY,
+    notification_query="",
 ):
     params = {}
     if notification_filter != NOTIFICATION_FILTER_ALL:
@@ -56,6 +58,8 @@ def _notification_list_url(
         params["kind"] = notification_kind
     if notification_date != NOTIFICATION_DATE_ANY:
         params["date"] = notification_date
+    if notification_query:
+        params["q"] = notification_query
     if page:
         params["page"] = page
     url = reverse("notification_list")
@@ -69,6 +73,7 @@ def notification_list(request):
     selected_filter = _notification_filter(request.GET.get("filter"))
     selected_kind = _notification_kind(request.GET.get("kind"))
     selected_date = _notification_date(request.GET.get("date"))
+    query = request.GET.get("q", "").strip()
     notifications = request.user.notifications.select_related(
         "actor", "video", "channel"
     )
@@ -76,6 +81,14 @@ def notification_list(request):
         notifications = notifications.filter(read_at__isnull=True)
     if selected_kind:
         notifications = notifications.filter(kind=selected_kind)
+    if query:
+        notifications = notifications.filter(
+            Q(actor__username__icontains=query)
+            | Q(actor__first_name__icontains=query)
+            | Q(actor__last_name__icontains=query)
+            | Q(video__title__icontains=query)
+            | Q(channel__name__icontains=query)
+        )
     days = NOTIFICATION_DATE_FILTERS[selected_date]
     if days is not None:
         cutoff = timezone.now() - timezone.timedelta(days=days)
@@ -93,6 +106,7 @@ def notification_list(request):
             "notification_kind": selected_kind,
             "notification_kind_choices": Notification.Kind.choices,
             "notification_date": selected_date,
+            "notification_query": query,
         },
     )
 
@@ -113,6 +127,7 @@ def notification_mark_read(request, pk):
             notification_filter=_notification_filter(request.POST.get("filter")),
             notification_kind=_notification_kind(request.POST.get("kind")),
             notification_date=_notification_date(request.POST.get("date")),
+            notification_query=request.POST.get("q", "").strip(),
         )
     )
 

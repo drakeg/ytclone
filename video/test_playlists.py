@@ -319,3 +319,62 @@ class PlaylistTests(TestCase):
         self.assertContains(response, "missing")
         self.assertNotContains(response, "You have not created any playlists yet.")
 
+    def test_playlist_library_supports_bounded_sort_options(self):
+        zulu = Playlist.objects.create(owner=self.owner, name="Zulu")
+        alpha = Playlist.objects.create(owner=self.owner, name="Alpha")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"sort": "name"})
+
+        self.assertEqual(
+            list(response.context["playlists"].object_list),
+            [alpha, zulu],
+        )
+        self.assertEqual(response.context["sort"], "name")
+
+    def test_invalid_playlist_library_sort_falls_back_to_recent(self):
+        older = Playlist.objects.create(owner=self.owner, name="Older")
+        newer = Playlist.objects.create(owner=self.owner, name="Newer")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"sort": "bogus"})
+
+        self.assertEqual(response.context["sort"], "recent")
+        self.assertEqual(
+            list(response.context["playlists"].object_list),
+            [newer, older],
+        )
+
+    def test_playlist_library_sort_composes_with_search_and_pagination(self):
+        for index in range(PLAYLIST_PAGE_SIZE + 1):
+            Playlist.objects.create(
+                owner=self.owner,
+                name=f"Trip collection {index:02d}",
+            )
+        Playlist.objects.create(owner=self.owner, name="Recipes")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(
+            reverse("playlist_list"),
+            {"q": "trip", "sort": "name"},
+        )
+
+        page = response.context["playlists"]
+        self.assertEqual(page.paginator.count, PLAYLIST_PAGE_SIZE + 1)
+        self.assertEqual(page.object_list[0].name, "Trip collection 00")
+        self.assertContains(response, "q=trip&amp;sort=name&amp;page=2")
+
+    def test_playlist_library_oldest_sort_is_owner_scoped(self):
+        older = Playlist.objects.create(owner=self.owner, name="First")
+        newer = Playlist.objects.create(owner=self.owner, name="Second")
+        Playlist.objects.create(owner=self.other_user, name="Other user")
+        self.client.force_login(self.owner)
+
+        response = self.client.get(reverse("playlist_list"), {"sort": "oldest"})
+
+        self.assertEqual(
+            list(response.context["playlists"].object_list),
+            [older, newer],
+        )
+        self.assertNotContains(response, "Other user")
+

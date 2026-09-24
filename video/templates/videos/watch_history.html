@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container py-4">
@@ -90,4 +91,8 @@
         </nav>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{% static 'video/bulk_selection.js' %}" defer></script>
 {% endblock %}

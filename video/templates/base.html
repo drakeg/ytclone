@@ -80,5 +80,6 @@
     <script src="{% static 'video/search_suggestions.js' %}" defer></script>
     {% if request.resolver_match.url_name == 'video_detail' %}<script src="{% static 'video/watch_autoplay_next.js' %}" defer></script>{% endif %}
     {% if request.resolver_match.url_name == 'shorts_feed' %}<script src="{% static 'video/shorts_feed.js' %}" defer></script><script src="{% static 'video/shorts_reply_ajax.js' %}" defer></script><script src="{% static 'video/shorts_reaction_ajax.js' %}" defer></script><script src="{% static 'video/shorts_playback_accessibility.js' %}" defer></script><script src="{% static 'video/shorts_share.js' %}" defer></script><script src="{% static 'video/shorts_subscription_ajax.js' %}" defer></script>{% endif %}
+    {% if request.resolver_match.url_name == 'video_bookmark_list' or request.resolver_match.url_name == 'watch_later' or request.resolver_match.url_name == 'watch_history' or request.resolver_match.url_name == 'notification_list' %}<script src="{% static 'video/bulk_selection.js' %}" defer></script>{% endif %}
 </body>
 </html>

@@ -26,13 +26,29 @@
         {% if bookmark_query or bookmark_sort != "newest" %}<a class="btn btn-outline-secondary" href="{% url 'video_bookmark_list' %}">Clear</a>{% endif %}
     </form>
 
+    {% if bookmarks %}
+        <form id="saved-moments-bulk-form" method="post" action="{% url 'video_bookmark_bulk_delete' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="page" value="{{ bookmarks.number }}">
+            <input type="hidden" name="q" value="{{ bookmark_query }}">
+            <input type="hidden" name="sort" value="{{ bookmark_sort }}">
+            <button class="btn btn-outline-danger" type="submit">Remove selected</button>
+        </form>
+    {% endif %}
+
     <div class="content-stack">
         {% for bookmark in bookmarks %}
             <article class="surface-card p-3 d-flex justify-content-between align-items-start gap-3">
-                <div>
+                <div class="d-flex gap-3 align-items-start">
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="bookmark_ids" value="{{ bookmark.pk }}" id="bookmark-select-{{ bookmark.pk }}" form="saved-moments-bulk-form">
+                        <label class="visually-hidden" for="bookmark-select-{{ bookmark.pk }}">Select {{ bookmark.label }}</label>
+                    </div>
+                    <div>
                     <h2 class="h5 mb-1"><a href="{% url 'video_detail' bookmark.video.pk %}#bookmark-{{ bookmark.pk }}">{{ bookmark.video.title }}</a></h2>
                     <p class="mb-1"><strong>{{ bookmark.timestamp_display }}</strong> · {{ bookmark.label }}</p>
                     <p class="video-meta mb-0">By {{ bookmark.video.author }} · Saved {{ bookmark.updated_at|timesince }} ago</p>
+                    </div>
                 </div>
                 <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><input type="hidden" name="sort" value="{{ bookmark_sort }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
             </article>

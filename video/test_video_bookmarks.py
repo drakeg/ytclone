@@ -415,3 +415,118 @@ class VideoBookmarkTests(TestCase):
         self.assertContains(response, 'name="sort" value="oldest"')
         self.assertContains(response, f'action="{reverse("video_bookmark_delete", args=[bookmark.pk])}"')
 
+
+
+    def test_bulk_delete_removes_selected_visible_owned_bookmarks(self):
+        first = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="First"
+        )
+        second = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=10, label="Second"
+        )
+        keep = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=15, label="Keep"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("video_bookmark_bulk_delete"),
+            {"bookmark_ids": [str(first.pk), str(second.pk)]},
+        )
+
+        self.assertRedirects(response, reverse("video_bookmark_list"))
+        self.assertFalse(VideoBookmark.objects.filter(pk__in=[first.pk, second.pk]).exists())
+        self.assertTrue(VideoBookmark.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_delete_is_post_only_and_owner_visibility_scoped(self):
+        visible = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Visible"
+        )
+        other = VideoBookmark.objects.create(
+            user=self.other, video=self.video, position_seconds=6, label="Other"
+        )
+        hidden_video = Video.objects.create(
+            title="Hidden bulk",
+            description="Draft",
+            thumbnail="videos/hidden-bulk.jpg",
+            video_file="videos/hidden-bulk.mp4",
+            author=self.owner,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        hidden = VideoBookmark.objects.create(
+            user=self.viewer, video=hidden_video, position_seconds=7, label="Hidden"
+        )
+        self.client.force_login(self.viewer)
+        url = reverse("video_bookmark_bulk_delete")
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(
+            url,
+            {"bookmark_ids": [str(visible.pk), str(other.pk), str(hidden.pk)]},
+        )
+
+        self.assertFalse(VideoBookmark.objects.filter(pk=visible.pk).exists())
+        self.assertTrue(VideoBookmark.objects.filter(pk=other.pk).exists())
+        self.assertTrue(VideoBookmark.objects.filter(pk=hidden.pk).exists())
+
+    def test_bulk_delete_safely_ignores_empty_malformed_and_duplicate_ids(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Mine"
+        )
+        keep = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=6, label="Keep"
+        )
+        self.client.force_login(self.viewer)
+        url = reverse("video_bookmark_bulk_delete")
+
+        empty = self.client.post(url, {})
+        self.assertRedirects(empty, reverse("video_bookmark_list"))
+        self.assertTrue(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
+
+        response = self.client.post(
+            url,
+            {"bookmark_ids": [str(bookmark.pk), str(bookmark.pk), "bad-id", ""]},
+        )
+        self.assertRedirects(response, reverse("video_bookmark_list"))
+        self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
+        self.assertTrue(VideoBookmark.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_delete_preserves_search_sort_and_page_state(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Needle"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("video_bookmark_bulk_delete"),
+            {
+                "bookmark_ids": [str(bookmark.pk)],
+                "page": "2",
+                "q": "needle & setup",
+                "sort": "timestamp",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("video_bookmark_list")
+            + "?q=needle+%26+setup&sort=timestamp&page=2",
+            fetch_redirect_response=False,
+        )
+
+    def test_saved_moments_list_renders_bulk_selection_controls(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Needle"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("video_bookmark_list"),
+            {"q": "needle", "sort": "oldest"},
+        )
+
+        self.assertContains(response, reverse("video_bookmark_bulk_delete"))
+        self.assertContains(response, f'name="bookmark_ids" value="{bookmark.pk}"')
+        self.assertContains(response, 'name="q" value="needle"')
+        self.assertContains(response, 'name="sort" value="oldest"')
+        self.assertContains(response, "Remove selected")

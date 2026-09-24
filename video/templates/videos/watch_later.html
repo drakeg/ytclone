@@ -29,12 +29,17 @@
 </form>
 
 {% if videos %}
-    <form id="watch-later-bulk-form" method="post" action="{% url 'watch_later_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+    <form id="watch-later-bulk-form" data-bulk-selection data-item-name="video_ids" method="post" action="{% url 'watch_later_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
         {% csrf_token %}
         <input type="hidden" name="page" value="{{ videos.number }}">
         <input type="hidden" name="q" value="{{ query }}">
         <input type="hidden" name="sort" value="{{ sort }}">
-        <button class="btn btn-outline-danger" type="submit">Remove selected</button>
+        <div class="form-check me-2">
+                <input class="form-check-input" type="checkbox" id="watch-later-bulk-form-select-all" data-bulk-select-all>
+                <label class="form-check-label" for="watch-later-bulk-form-select-all">Select all on this page</label>
+            </div>
+            <span class="text-body-secondary" data-bulk-selection-status aria-live="polite">0 selected</span>
+            <button class="btn btn-outline-danger" type="submit" data-bulk-submit disabled>Remove selected</button>
     </form>
     {% include 'videos/_video_cards.html' with videos=videos bulk_select_form_id='watch-later-bulk-form' %}
     {% if videos.paginator.num_pages > 1 %}

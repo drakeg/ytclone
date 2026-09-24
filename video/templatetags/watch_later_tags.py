@@ -14,4 +14,7 @@ def watch_later_action(context, video):
         "video": video,
         "request": request,
         "saved_for_later": bool(user and user.is_authenticated and is_saved_for_later(user, video)),
+        "query": context.get("query", ""),
+        "sort": context.get("sort", ""),
+        "videos": context.get("videos"),
     }

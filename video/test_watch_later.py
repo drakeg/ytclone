@@ -299,3 +299,53 @@ class WatchLaterTests(TestCase):
             fetch_redirect_response=False,
         )
 
+    def test_watch_later_oldest_sort_orders_oldest_saved_first(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        older = Video.objects.create(
+            title="Older saved video",
+            description="Description",
+            thumbnail="videos/thumbnails/older.jpg",
+            video_file="videos/files/older.mp4",
+            author=self.creator,
+        )
+        newer = Video.objects.create(
+            title="Newer saved video",
+            description="Description",
+            thumbnail="videos/thumbnails/newer.jpg",
+            video_file="videos/files/newer.mp4",
+            author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=older, position=0)
+        PlaylistItem.objects.create(playlist=playlist, video=newer, position=1)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(reverse("watch_later"), {"sort": "oldest"})
+
+        self.assertEqual(response.context["sort"], "oldest")
+        self.assertEqual(
+            list(response.context["videos"].object_list),
+            [older, newer],
+        )
+
+    def test_watch_later_remove_control_preserves_query_sort_and_page(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("watch_later"),
+            {"q": "Save me", "sort": "oldest", "page": "2"},
+        )
+
+        self.assertContains(response, 'name="q" value="Save me"')
+        self.assertContains(response, 'name="sort" value="oldest"')
+        self.assertContains(response, 'name="page" value="1"')
+

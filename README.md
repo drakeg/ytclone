@@ -294,3 +294,8 @@ workflow. Current work is reducing Shorts template risk through focused static
 controllers. Continue selecting one bounded sprint at a time through the
 documentation-first process. Higher-cost AWS services will be introduced only
 when usage justifies them.
+
+
+## Development workflow
+
+Repository-wide sprint, coding, testing, CI, documentation, and Definition of Done standards are maintained in [docs/development-standards.md](docs/development-standards.md). Individual sprint specifications live under `docs/` and supplement that baseline.

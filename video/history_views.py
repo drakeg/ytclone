@@ -79,3 +79,29 @@ def watch_history_remove(request, pk):
 def watch_history_clear(request):
     request.user.watch_history.all().delete()
     return redirect("watch_history")
+
+
+@login_required
+@require_POST
+def watch_history_bulk_remove(request):
+    selected_ids = []
+    for raw_id in request.POST.getlist("history_ids"):
+        try:
+            selected_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if selected_ids:
+        visible_video_ids = Video.objects.visible_to(request.user).values_list("pk", flat=True)
+        request.user.watch_history.filter(
+            pk__in=set(selected_ids),
+            video_id__in=visible_video_ids,
+        ).delete()
+
+    return redirect(
+        _history_url(
+            page=request.POST.get("page"),
+            query=_clean_query(request.POST.get("q")),
+            sort=_clean_sort(request.POST.get("sort")),
+        )
+    )

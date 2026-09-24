@@ -29,15 +29,31 @@
         {% if history_query or history_sort != "recent" %}<a class="btn btn-outline-secondary" href="{% url 'watch_history' %}">Clear</a>{% endif %}
     </form>
 
+    {% if entries %}
+        <form id="watch-history-bulk-form" method="post" action="{% url 'watch_history_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="page" value="{{ entries.number }}">
+            <input type="hidden" name="q" value="{{ history_query }}">
+            <input type="hidden" name="sort" value="{{ history_sort }}">
+            <button type="submit" class="btn btn-outline-danger">Remove selected</button>
+        </form>
+    {% endif %}
+
     {% for entry in entries %}
         <div class="card mb-3">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
+            <div class="card-body d-flex justify-content-between align-items-start gap-3">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="history_ids" value="{{ entry.pk }}" id="history-select-{{ entry.pk }}" form="watch-history-bulk-form">
+                        <label class="visually-hidden" for="history-select-{{ entry.pk }}">Select {{ entry.video.title }}</label>
+                    </div>
+                    <div>
                     <h5 class="card-title">
                         <a href="{% url 'video_detail' entry.video.pk %}">{{ entry.video.title }}</a>
                     </h5>
                     <p class="card-text mb-1">By {{ entry.video.author }}</p>
                     <small class="text-muted">Watched {{ entry.watched_at|timesince }} ago</small>
+                    </div>
                 </div>
                 <form method="post" action="{% url 'watch_history_remove' entry.pk %}">
                     {% csrf_token %}

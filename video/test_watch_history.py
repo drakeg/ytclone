@@ -308,3 +308,98 @@ class WatchHistoryTests(TestCase):
         )
         self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
 
+
+
+    def test_bulk_remove_deletes_selected_visible_entries(self):
+        second_video = self._history_video("Second selected")
+        keep_video = self._history_video("Keep selected")
+        first = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        second = WatchHistory.objects.create(user=self.viewer, video=second_video)
+        keep = WatchHistory.objects.create(user=self.viewer, video=keep_video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_history_bulk_remove"),
+            {"history_ids": [str(first.pk), str(second.pk)]},
+        )
+
+        self.assertRedirects(response, reverse("watch_history"))
+        self.assertFalse(WatchHistory.objects.filter(pk__in=[first.pk, second.pk]).exists())
+        self.assertTrue(WatchHistory.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_remove_is_post_only_and_user_visibility_scoped(self):
+        own = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        other = WatchHistory.objects.create(user=self.other_viewer, video=self.video)
+        hidden_video = self._history_video(
+            "Hidden selected",
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        hidden = WatchHistory.objects.create(user=self.viewer, video=hidden_video)
+        self.client.force_login(self.viewer)
+        url = reverse("watch_history_bulk_remove")
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(
+            url,
+            {"history_ids": [str(own.pk), str(other.pk), str(hidden.pk)]},
+        )
+
+        self.assertFalse(WatchHistory.objects.filter(pk=own.pk).exists())
+        self.assertTrue(WatchHistory.objects.filter(pk=other.pk).exists())
+        self.assertTrue(WatchHistory.objects.filter(pk=hidden.pk).exists())
+
+    def test_bulk_remove_ignores_empty_malformed_and_duplicate_ids(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        keep_video = self._history_video("Keep malformed")
+        keep = WatchHistory.objects.create(user=self.viewer, video=keep_video)
+        self.client.force_login(self.viewer)
+        url = reverse("watch_history_bulk_remove")
+
+        empty = self.client.post(url, {})
+        self.assertRedirects(empty, reverse("watch_history"))
+        self.assertTrue(WatchHistory.objects.filter(pk=entry.pk).exists())
+
+        response = self.client.post(
+            url,
+            {"history_ids": [str(entry.pk), str(entry.pk), "bad-id", ""]},
+        )
+
+        self.assertRedirects(response, reverse("watch_history"))
+        self.assertFalse(WatchHistory.objects.filter(pk=entry.pk).exists())
+        self.assertTrue(WatchHistory.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_remove_preserves_search_sort_and_page(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_history_bulk_remove"),
+            {
+                "history_ids": [str(entry.pk)],
+                "page": "2",
+                "q": "history & test",
+                "sort": "title",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("watch_history")
+            + "?q=history+%26+test&sort=title&page=2",
+            fetch_redirect_response=False,
+        )
+
+    def test_watch_history_page_renders_bulk_selection_controls(self):
+        entry = WatchHistory.objects.create(user=self.viewer, video=self.video)
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("watch_history"),
+            {"q": "history", "sort": "oldest"},
+        )
+
+        self.assertContains(response, reverse("watch_history_bulk_remove"))
+        self.assertContains(response, f'name="history_ids" value="{entry.pk}"')
+        self.assertContains(response, 'name="q" value="history"')
+        self.assertContains(response, 'name="sort" value="oldest"')
+        self.assertContains(response, "Remove selected")

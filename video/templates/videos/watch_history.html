@@ -30,7 +30,7 @@
     </form>
 
     {% if entries %}
-        <form id="watch-history-bulk-form" method="post" action="{% url 'watch_history_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <form id="watch-history-bulk-form" data-bulk-selection data-item-name="history_ids" method="post" action="{% url 'watch_history_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
             {% csrf_token %}
             <input type="hidden" name="page" value="{{ entries.number }}">
             <input type="hidden" name="q" value="{{ history_query }}">

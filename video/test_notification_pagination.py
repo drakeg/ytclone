@@ -460,3 +460,105 @@ class NotificationPaginationTests(TestCase):
         response = self.client.get(reverse("notification_list"), {"q": "nothing-here"})
 
         self.assertContains(response, 'No notifications match "nothing-here".')
+
+
+    def test_notification_routes_use_modular_notification_views(self):
+        from django.urls import resolve
+        from . import notification_views
+
+        self.assertIs(resolve(reverse("notification_list")).func, notification_views.notification_list)
+        self.assertIs(resolve(reverse("notification_mark_all_read")).func, notification_views.notification_mark_all_read)
+
+    def test_bulk_delete_removes_selected_notifications_for_current_recipient(self):
+        selected = self.create_notifications(2)
+        keep = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_bulk_delete"),
+            {"notification_ids": [str(selected[0].pk), str(selected[1].pk)]},
+        )
+
+        self.assertRedirects(response, reverse("notification_list"))
+        self.assertFalse(Notification.objects.filter(pk__in=[item.pk for item in selected]).exists())
+        self.assertTrue(Notification.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_delete_is_post_only_and_recipient_scoped(self):
+        own = self.create_notifications(1)[0]
+        other = self.create_notifications(1, recipient=self.other)[0]
+        url = reverse("notification_bulk_delete")
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(
+            url,
+            {"notification_ids": [str(own.pk), str(other.pk)]},
+        )
+
+        self.assertFalse(Notification.objects.filter(pk=own.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=other.pk).exists())
+
+    def test_bulk_delete_ignores_empty_malformed_and_duplicate_ids(self):
+        notification = self.create_notifications(1)[0]
+        keep = self.create_notifications(1)[0]
+        url = reverse("notification_bulk_delete")
+
+        empty = self.client.post(url, {})
+        self.assertRedirects(empty, reverse("notification_list"))
+        self.assertTrue(Notification.objects.filter(pk=notification.pk).exists())
+
+        response = self.client.post(
+            url,
+            {
+                "notification_ids": [
+                    str(notification.pk),
+                    str(notification.pk),
+                    "bad-id",
+                    "",
+                ]
+            },
+        )
+
+        self.assertRedirects(response, reverse("notification_list"))
+        self.assertFalse(Notification.objects.filter(pk=notification.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=keep.pk).exists())
+
+    def test_bulk_delete_preserves_search_filters_and_page(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.post(
+            reverse("notification_bulk_delete"),
+            {
+                "notification_ids": [str(notification.pk)],
+                "page": "2",
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+                "q": "actor pagination",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list")
+            + "?filter=unread&kind=like&date=7d&q=actor+pagination&page=2",
+            fetch_redirect_response=False,
+        )
+
+    def test_notification_list_renders_bulk_delete_controls(self):
+        notification = self.create_notifications(1)[0]
+
+        response = self.client.get(
+            reverse("notification_list"),
+            {
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+                "q": "actor-pagination",
+            },
+        )
+
+        self.assertContains(response, reverse("notification_bulk_delete"))
+        self.assertContains(
+            response,
+            f'name="notification_ids" value="{notification.pk}"',
+        )
+        self.assertContains(response, "Delete selected")

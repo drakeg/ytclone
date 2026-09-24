@@ -139,3 +139,27 @@ def notification_mark_all_read(request):
         read_at=timezone.now()
     )
     return redirect("notification_list")
+
+
+@login_required
+@require_POST
+def notification_bulk_delete(request):
+    selected_ids = []
+    for raw_id in request.POST.getlist("notification_ids"):
+        try:
+            selected_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if selected_ids:
+        request.user.notifications.filter(pk__in=set(selected_ids)).delete()
+
+    return redirect(
+        _notification_list_url(
+            page=request.POST.get("page"),
+            notification_filter=_notification_filter(request.POST.get("filter")),
+            notification_kind=_notification_kind(request.POST.get("kind")),
+            notification_date=_notification_date(request.POST.get("date")),
+            notification_query=request.POST.get("q", "").strip(),
+        )
+    )

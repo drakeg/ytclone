@@ -378,3 +378,40 @@ class VideoBookmarkTests(TestCase):
         )
         self.assertFalse(VideoBookmark.objects.filter(pk=bookmark.pk).exists())
 
+    def test_saved_moments_oldest_sort_orders_oldest_first(self):
+        older = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=5, label="Older"
+        )
+        newer = VideoBookmark.objects.create(
+            user=self.viewer, video=self.video, position_seconds=6, label="Newer"
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("video_bookmark_list"), {"sort": "oldest"}
+        )
+
+        self.assertEqual(response.context["bookmark_sort"], "oldest")
+        self.assertEqual(
+            list(response.context["bookmarks"].object_list),
+            [older, newer],
+        )
+
+    def test_saved_moments_remove_form_preserves_active_sort(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Needle",
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.get(
+            reverse("video_bookmark_list"),
+            {"q": "needle", "sort": "oldest"},
+        )
+
+        self.assertContains(response, 'name="q" value="needle"')
+        self.assertContains(response, 'name="sort" value="oldest"')
+        self.assertContains(response, f'action="{reverse("video_bookmark_delete", args=[bookmark.pk])}"')
+

@@ -83,11 +83,12 @@ class InterfaceDesignTests(TestCase):
             "watch_history",
             "notification_list",
         ):
-            with self.subTest(route_name=route_name):
-                self.assertContains(
-                    self.client.get(reverse(route_name)),
-                    "video/bulk_selection.js",
-                )
+            response = self.client.get(reverse(route_name))
+            self.assertContains(
+                response,
+                "video/bulk_selection.js",
+                msg_prefix=f"{route_name} should load bulk selection behavior",
+            )
 
         self.assertNotContains(
             self.client.get(reverse("video_list")),

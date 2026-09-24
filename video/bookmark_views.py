@@ -87,3 +87,25 @@ def video_bookmark_delete(request, pk):
         )
 
     return redirect("video_detail", pk=video_pk)
+
+
+@login_required
+@require_POST
+def video_bookmark_bulk_delete(request):
+    selected_ids = []
+    for raw_id in request.POST.getlist("bookmark_ids"):
+        try:
+            selected_ids.append(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    if selected_ids:
+        get_visible_bookmarks(request.user).filter(pk__in=set(selected_ids)).delete()
+
+    return redirect(
+        _bookmark_list_url(
+            page=request.POST.get("page"),
+            query=_clean_query(request.POST.get("q")),
+            sort=_clean_sort(request.POST.get("sort")),
+        )
+    )

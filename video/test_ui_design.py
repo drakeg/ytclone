@@ -60,3 +60,36 @@ class InterfaceDesignTests(TestCase):
         self.assertIn("@media (max-width: 760px)", css)
         self.assertIn("@media (prefers-reduced-motion: reduce)", css)
         self.assertIn(".skip-link:focus", css)
+
+
+    def test_bulk_selection_script_has_accessible_selection_state(self):
+        script_path = finders.find("video/bulk_selection.js")
+        self.assertIsNotNone(script_path)
+        with open(script_path, encoding="utf-8") as script_file:
+            script = script_file.read()
+
+        self.assertIn("[data-bulk-selection]", script)
+        self.assertIn("data-bulk-selection-status", script)
+        self.assertIn("submit.disabled = selected === 0", script)
+        self.assertIn("selectAll.indeterminate", script)
+
+    def test_bulk_selection_script_loads_only_on_bulk_list_routes(self):
+        user = User.objects.create_user(username="bulk-viewer", password="password123")
+        self.client.force_login(user)
+
+        for route_name in (
+            "video_bookmark_list",
+            "watch_later",
+            "watch_history",
+            "notification_list",
+        ):
+            with self.subTest(route_name=route_name):
+                self.assertContains(
+                    self.client.get(reverse(route_name)),
+                    "video/bulk_selection.js",
+                )
+
+        self.assertNotContains(
+            self.client.get(reverse("video_list")),
+            "video/bulk_selection.js",
+        )

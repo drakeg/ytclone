@@ -15,12 +15,16 @@
     </header>
 
     <nav class="d-flex gap-2 mb-3" aria-label="Notification read filters">
-        <a class="btn btn-sm {% if notification_filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}{% endif %}">All</a>
-        <a class="btn btn-sm {% if notification_filter == 'unread' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?filter=unread{% if notification_kind %}&amp;kind={{ notification_kind|urlencode }}{% endif %}{% if notification_date != 'any' %}&amp;date={{ notification_date|urlencode }}{% endif %}">Unread{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</a>
+        <a class="btn btn-sm {% if notification_filter == 'all' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?{% if notification_query %}q={{ notification_query|urlencode }}&amp;{% endif %}{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}{% endif %}">All</a>
+        <a class="btn btn-sm {% if notification_filter == 'unread' %}btn-primary{% else %}btn-outline-secondary{% endif %}" href="?filter=unread{% if notification_query %}&amp;q={{ notification_query|urlencode }}{% endif %}{% if notification_kind %}&amp;kind={{ notification_kind|urlencode }}{% endif %}{% if notification_date != 'any' %}&amp;date={{ notification_date|urlencode }}{% endif %}">Unread{% if unread_notification_count %} ({{ unread_notification_count }}){% endif %}</a>
     </nav>
 
     <form method="get" class="d-flex gap-2 align-items-end mb-3">
         {% if notification_filter == 'unread' %}<input type="hidden" name="filter" value="unread">{% endif %}
+        <div class="flex-grow-1">
+            <label class="form-label" for="notification-search">Search</label>
+            <input class="form-control" id="notification-search" type="search" name="q" value="{{ notification_query }}" placeholder="Actor, video, or channel">
+        </div>
         <div>
             <label class="form-label" for="notification-kind">Activity type</label>
             <select class="form-select" id="notification-kind" name="kind">
@@ -40,7 +44,7 @@
             </select>
         </div>
         <button class="btn btn-outline-primary" type="submit">Apply</button>
-        {% if notification_kind or notification_date != 'any' %}
+        {% if notification_query or notification_kind or notification_date != 'any' %}
             <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread{% endif %}">Clear filters</a>
         {% endif %}
     </form>
@@ -71,13 +75,16 @@
                             <input type="hidden" name="filter" value="{{ notification_filter }}">
                             <input type="hidden" name="kind" value="{{ notification_kind }}">
                             <input type="hidden" name="date" value="{{ notification_date }}">
+                            <input type="hidden" name="q" value="{{ notification_query }}">
                             <button class="btn btn-sm btn-outline-secondary" type="submit">Mark read</button>
                         </form>
                     {% endif %}
                 </div>
             </article>
         {% empty %}
-            {% if notification_filter == 'unread' and notification_kind %}
+            {% if notification_query %}
+                <p class="text-body-secondary">No notifications match "{{ notification_query }}".</p>
+            {% elif notification_filter == 'unread' and notification_kind %}
                 <p class="text-body-secondary">You have no unread notifications of this activity type.</p>
             {% elif notification_filter == 'unread' %}
                 <p class="text-body-secondary">You have no unread notifications.</p>
@@ -93,13 +100,13 @@
         <nav class="d-flex justify-content-between align-items-center mt-4" aria-label="Notification pages">
             <div>
                 {% if notifications.has_previous %}
-                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}&amp;{% endif %}page={{ notifications.previous_page_number }}">Previous</a>
+                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}{% if notification_query %}q={{ notification_query|urlencode }}&amp;{% endif %}{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}&amp;{% endif %}page={{ notifications.previous_page_number }}">Previous</a>
                 {% endif %}
             </div>
             <span class="text-body-secondary">Page {{ notifications.number }} of {{ notifications.paginator.num_pages }}</span>
             <div>
                 {% if notifications.has_next %}
-                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}&amp;{% endif %}page={{ notifications.next_page_number }}">Next</a>
+                    <a class="btn btn-outline-secondary" href="?{% if notification_filter == 'unread' %}filter=unread&amp;{% endif %}{% if notification_query %}q={{ notification_query|urlencode }}&amp;{% endif %}{% if notification_kind %}kind={{ notification_kind|urlencode }}&amp;{% endif %}{% if notification_date != 'any' %}date={{ notification_date|urlencode }}&amp;{% endif %}page={{ notifications.next_page_number }}">Next</a>
                 {% endif %}
             </div>
         </nav>

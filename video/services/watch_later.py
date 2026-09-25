@@ -1,4 +1,4 @@
-from django.db.models import Max
+from django.db.models import F, Max
 
 from ..models import Playlist, PlaylistItem, Video
 
@@ -78,3 +78,28 @@ def watch_later_videos(user, query="", sort="newest"):
     if normalized_query:
         videos = videos.filter(title__icontains=normalized_query)
     return videos.order_by(*WATCH_LATER_SORTS[normalized_sort])
+
+
+def completed_watch_later_video_ids(user):
+    playlist = get_watch_later_playlist(user)
+    if playlist is None:
+        return Video.objects.none().values_list("pk", flat=True)
+
+    completed_history = user.watch_history.filter(
+        duration_seconds__gt=0,
+        playback_position_seconds__gt=0,
+    ).annotate(
+        remaining_seconds=F("duration_seconds") - F("playback_position_seconds")
+    ).filter(
+        remaining_seconds__lte=5
+    )
+
+    return (
+        Video.objects.visible_to(user)
+        .filter(
+            playlist_items__playlist=playlist,
+            history_entries__in=completed_history,
+        )
+        .values_list("pk", flat=True)
+        .distinct()
+    )

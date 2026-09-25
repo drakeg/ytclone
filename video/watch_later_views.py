@@ -9,6 +9,7 @@ from django.views.decorators.http import require_POST
 from .models import PlaylistItem, Video
 from .services.watch_later import (
     WATCH_LATER_SORTS,
+    completed_watch_later_video_ids,
     get_watch_later_playlist,
     remove_from_watch_later,
     save_for_later,
@@ -32,10 +33,16 @@ def watch_later(request):
         watch_later_videos(request.user, query, sort),
         WATCH_LATER_PAGE_SIZE,
     ).get_page(request.GET.get("page"))
+    completed_count = completed_watch_later_video_ids(request.user).count()
     return render(
         request,
         "videos/watch_later.html",
-        {"videos": videos, "query": query, "sort": sort},
+        {
+            "videos": videos,
+            "query": query,
+            "sort": sort,
+            "completed_watch_later_count": completed_count,
+        },
     )
 
 
@@ -88,6 +95,31 @@ def watch_later_bulk_remove(request):
         PlaylistItem.objects.filter(
             playlist=playlist,
             video_id__in=visible_ids,
+        ).delete()
+
+    params = {}
+    query = request.POST.get("q", "").strip()
+    sort = _clean_sort(request.POST.get("sort"))
+    page = request.POST.get("page", "").strip()
+    if query:
+        params["q"] = query
+    if sort != "newest":
+        params["sort"] = sort
+    if page:
+        params["page"] = page
+    url = reverse("watch_later")
+    return redirect(f"{url}?{urlencode(params)}" if params else url)
+
+
+@login_required
+@require_POST
+def watch_later_remove_completed(request):
+    playlist = get_watch_later_playlist(request.user)
+    if playlist is not None:
+        completed_ids = completed_watch_later_video_ids(request.user)
+        PlaylistItem.objects.filter(
+            playlist=playlist,
+            video_id__in=completed_ids,
         ).delete()
 
     params = {}

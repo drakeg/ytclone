@@ -30,6 +30,15 @@
 </form>
 
 {% if videos %}
+    {% if completed_watch_later_count %}
+        <form method="post" action="{% url 'watch_later_remove_completed' %}" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="page" value="{{ videos.number }}">
+            <input type="hidden" name="q" value="{{ query }}">
+            <input type="hidden" name="sort" value="{{ sort }}">
+            <button class="btn btn-outline-secondary" type="submit">Remove watched ({{ completed_watch_later_count }})</button>
+        </form>
+    {% endif %}
     <form id="watch-later-bulk-form" data-bulk-selection data-item-name="video_ids" method="post" action="{% url 'watch_later_bulk_remove' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
         {% csrf_token %}
         <input type="hidden" name="page" value="{{ videos.number }}">

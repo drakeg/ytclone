@@ -924,3 +924,18 @@ Verification:
 - `python manage.py test --parallel 4`
 - `docker compose config --quiet`
 - `docker compose run --build --rm test`
+
+
+## Current sprint: Watch Later Completion Cleanup
+
+Goal: let viewers remove completed videos from their private Watch Later queue using the same five-second completion threshold as Continue Watching.
+
+Delivered scope:
+- Reusable completed-Watch-Later query based on private WatchHistory progress
+- "Remove watched" action shown only when eligible visible items exist
+- POST-only cleanup scoped to the current viewer's Watch Later playlist
+- Incomplete, unknown-duration, inaccessible, and other-user items remain untouched
+- Search, sort, and page state preserved after cleanup
+- Focused regression coverage for threshold, privacy, visibility, state, and UI behavior
+
+No schema, migration, dependency, worker, queue, external-service, AWS, paid-service, or Terraform changes.

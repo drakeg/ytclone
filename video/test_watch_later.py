@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Playlist, PlaylistItem, Video
+from .models import Playlist, PlaylistItem, Video, WatchHistory
 from .services.watch_later import WATCH_LATER_NAME, get_watch_later_playlist, watch_later_videos
 
 
@@ -529,3 +529,166 @@ class WatchLaterTests(TestCase):
         )
         self.assertContains(watch_later_response, "Remove selected")
         self.assertNotContains(browse_response, 'name="video_ids"')
+
+
+    def test_remove_completed_uses_continue_watching_five_second_threshold(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        completed = self.video
+        incomplete = Video.objects.create(
+            title="Still watching",
+            description="Description",
+            thumbnail="videos/thumbnails/still-watching.jpg",
+            video_file="videos/files/still-watching.mp4",
+            author=self.creator,
+        )
+        unknown = Video.objects.create(
+            title="Unknown duration",
+            description="Description",
+            thumbnail="videos/thumbnails/unknown-duration.jpg",
+            video_file="videos/files/unknown-duration.mp4",
+            author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=completed)
+        PlaylistItem.objects.create(playlist=playlist, video=incomplete)
+        PlaylistItem.objects.create(playlist=playlist, video=unknown)
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=completed,
+            playback_position_seconds=115,
+            duration_seconds=120,
+        )
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=incomplete,
+            playback_position_seconds=114,
+            duration_seconds=120,
+        )
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=unknown,
+            playback_position_seconds=50,
+            duration_seconds=0,
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(reverse("watch_later_remove_completed"))
+
+        self.assertRedirects(response, reverse("watch_later"))
+        self.assertFalse(
+            PlaylistItem.objects.filter(playlist=playlist, video=completed).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(playlist=playlist, video=incomplete).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(playlist=playlist, video=unknown).exists()
+        )
+
+    def test_remove_completed_is_post_only_private_and_visibility_scoped(self):
+        viewer_playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        other_playlist = Playlist.objects.create(
+            owner=self.other,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        hidden = Video.objects.create(
+            title="Hidden completed",
+            description="Description",
+            thumbnail="videos/thumbnails/hidden-completed.jpg",
+            video_file="videos/files/hidden-completed.mp4",
+            author=self.creator,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        PlaylistItem.objects.create(playlist=viewer_playlist, video=self.video)
+        PlaylistItem.objects.create(playlist=viewer_playlist, video=hidden)
+        PlaylistItem.objects.create(playlist=other_playlist, video=self.video)
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=self.video,
+            playback_position_seconds=118,
+            duration_seconds=120,
+        )
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=hidden,
+            playback_position_seconds=118,
+            duration_seconds=120,
+        )
+        self.client.force_login(self.viewer)
+        url = reverse("watch_later_remove_completed")
+
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(url)
+
+        self.assertFalse(
+            PlaylistItem.objects.filter(
+                playlist=viewer_playlist, video=self.video
+            ).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(
+                playlist=viewer_playlist, video=hidden
+            ).exists()
+        )
+        self.assertTrue(
+            PlaylistItem.objects.filter(
+                playlist=other_playlist, video=self.video
+            ).exists()
+        )
+
+    def test_remove_completed_preserves_query_sort_and_page(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=self.video,
+            playback_position_seconds=118,
+            duration_seconds=120,
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("watch_later_remove_completed"),
+            {"q": "Save me", "sort": "title", "page": "2"},
+        )
+
+        self.assertRedirects(
+            response,
+            f'{reverse("watch_later")}?q=Save+me&sort=title&page=2',
+            fetch_redirect_response=False,
+        )
+
+    def test_remove_watched_action_renders_only_when_completed_items_exist(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer,
+            name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video)
+        self.client.force_login(self.viewer)
+
+        before = self.client.get(reverse("watch_later"))
+        self.assertNotContains(before, "Remove watched")
+
+        WatchHistory.objects.create(
+            user=self.viewer,
+            video=self.video,
+            playback_position_seconds=118,
+            duration_seconds=120,
+        )
+        after = self.client.get(reverse("watch_later"))
+
+        self.assertContains(after, "Remove watched (1)")
+        self.assertContains(after, reverse("watch_later_remove_completed"))

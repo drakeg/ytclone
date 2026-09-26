@@ -23,6 +23,7 @@
             <option value="newest"{% if sort == "newest" %} selected{% endif %}>Newest saved</option>
             <option value="oldest"{% if sort == "oldest" %} selected{% endif %}>Oldest saved</option>
             <option value="title"{% if sort == "title" %} selected{% endif %}>Video title</option>
+            <option value="manual"{% if sort == "manual" %} selected{% endif %}>Manual order</option>
         </select>
     </div>
     <button class="btn btn-outline-secondary" type="submit">Apply</button>
@@ -51,7 +52,7 @@
             <span class="text-body-secondary" data-bulk-selection-status aria-live="polite">0 selected</span>
             <button class="btn btn-outline-danger" type="submit" data-bulk-submit disabled>Remove selected</button>
     </form>
-    {% include 'videos/_video_cards.html' with videos=videos bulk_select_form_id='watch-later-bulk-form' %}
+    {% include 'videos/_video_cards.html' with videos=videos bulk_select_form_id='watch-later-bulk-form' manual_watch_later_order=sort current_query=query current_page=videos.number %}
     {% if videos.paginator.num_pages > 1 %}
         <nav class="mt-4" aria-label="Watch Later pages">
             <div class="d-flex justify-content-between align-items-center gap-3">

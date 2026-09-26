@@ -692,3 +692,115 @@ class WatchLaterTests(TestCase):
 
         self.assertContains(after, "Remove watched (1)")
         self.assertContains(after, reverse("watch_later_remove_completed"))
+
+
+    def test_manual_sort_and_move_controls(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer, name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        second = Video.objects.create(
+            title="Other queued video", description="Description",
+            thumbnail="videos/thumbnails/manual.jpg",
+            video_file="videos/files/manual.mp4", author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video, position=0)
+        PlaylistItem.objects.create(playlist=playlist, video=second, position=1)
+        self.client.force_login(self.viewer)
+        default = self.client.get(reverse("watch_later"))
+        manual = self.client.get(reverse("watch_later"), {"sort": "manual"})
+        self.assertNotContains(default, 'Move up')
+        self.assertEqual(list(manual.context["videos"].object_list), [self.video, second])
+        self.assertContains(manual, 'Move up')
+        self.assertContains(manual, reverse("watch_later_move", args=[second.pk, "up"]))
+
+        response = self.client.post(
+            reverse("watch_later_move", args=[second.pk, "up"]),
+            {"q": "queued & video", "page": "2"},
+        )
+        self.assertRedirects(
+            response,
+            f'{reverse("watch_later")}?q=queued+%26+video&sort=manual&page=2',
+            fetch_redirect_response=False,
+        )
+        reordered = self.client.get(reverse("watch_later"), {"sort": "manual"})
+        self.assertEqual(list(reordered.context["videos"].object_list), [second, self.video])
+
+    def test_manual_move_skips_hidden_items_and_preserves_them(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer, name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        hidden = Video.objects.create(
+            title="Hidden queued", description="Description",
+            thumbnail="videos/thumbnails/hidden-manual.jpg",
+            video_file="videos/files/hidden-manual.mp4", author=self.creator,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        later = Video.objects.create(
+            title="Later visible", description="Description",
+            thumbnail="videos/thumbnails/later-manual.jpg",
+            video_file="videos/files/later-manual.mp4", author=self.creator,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video, position=0)
+        hidden_item = PlaylistItem.objects.create(
+            playlist=playlist, video=hidden, position=1,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=later, position=2)
+        self.client.force_login(self.viewer)
+        self.client.post(reverse("watch_later_move", args=[later.pk, "up"]))
+        self.assertEqual(
+            list(self.client.get(
+                reverse("watch_later"), {"sort": "manual"}
+            ).context["videos"].object_list),
+            [later, self.video],
+        )
+        self.assertTrue(PlaylistItem.objects.filter(pk=hidden_item.pk).exists())
+
+    def test_manual_move_rejects_forged_unsaved_and_inaccessible_videos(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer, name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        other_playlist = Playlist.objects.create(
+            owner=self.other, name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        hidden = Video.objects.create(
+            title="Private queued", description="Description",
+            thumbnail="videos/thumbnails/private-manual.jpg",
+            video_file="videos/files/private-manual.mp4", author=self.creator,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=hidden, position=0)
+        PlaylistItem.objects.create(playlist=other_playlist, video=self.video, position=0)
+        self.client.force_login(self.viewer)
+        url = reverse("watch_later_move", args=[self.video.pk, "up"])
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.assertEqual(self.client.post(url).status_code, 404)
+        self.assertEqual(
+            self.client.post(
+                reverse("watch_later_move", args=[hidden.pk, "up"])
+            ).status_code, 404,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("watch_later_move", args=[hidden.pk, "sideways"])
+            ).status_code, 404,
+        )
+        self.assertEqual(other_playlist.items.count(), 1)
+
+    def test_manual_move_boundary_is_noop_and_other_sorts_remain_available(self):
+        playlist = Playlist.objects.create(
+            owner=self.viewer, name=WATCH_LATER_NAME,
+            visibility=Playlist.Visibility.PRIVATE,
+        )
+        PlaylistItem.objects.create(playlist=playlist, video=self.video, position=0)
+        self.client.force_login(self.viewer)
+        self.client.post(reverse("watch_later_move", args=[self.video.pk, "up"]))
+        self.client.post(reverse("watch_later_move", args=[self.video.pk, "down"]))
+        for sort in ("newest", "oldest", "title", "manual"):
+            with self.subTest(sort=sort):
+                response = self.client.get(reverse("watch_later"), {"sort": sort})
+                self.assertEqual(response.context["sort"], sort)
+                self.assertEqual(list(response.context["videos"].object_list), [self.video])

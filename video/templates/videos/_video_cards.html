@@ -24,6 +24,22 @@
                     </p>
                 {% endif %}
                 {% watch_later_action video %}
+                {% if manual_watch_later_order == 'manual' %}
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <form method="post" action="{% url 'watch_later_move' video.pk 'up' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="q" value="{{ current_query }}">
+                            <input type="hidden" name="page" value="{{ current_page }}">
+                            <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Move {{ video.title }} up">Move up</button>
+                        </form>
+                        <form method="post" action="{% url 'watch_later_move' video.pk 'down' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="q" value="{{ current_query }}">
+                            <input type="hidden" name="page" value="{{ current_page }}">
+                            <button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Move {{ video.title }} down">Move down</button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
         </article>
     {% empty %}

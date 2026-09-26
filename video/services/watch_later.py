@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.db.models import F, Max
 
 from ..models import Playlist, PlaylistItem, Video
@@ -8,6 +9,7 @@ WATCH_LATER_SORTS = {
     "newest": ("-playlist_items__added_at", "-playlist_items__pk"),
     "oldest": ("playlist_items__added_at", "playlist_items__pk"),
     "title": ("title", "-playlist_items__added_at", "-playlist_items__pk"),
+    "manual": ("playlist_items__position", "playlist_items__added_at", "playlist_items__pk"),
 }
 
 
@@ -103,3 +105,43 @@ def completed_watch_later_video_ids(user):
         .values_list("pk", flat=True)
         .distinct()
     )
+
+
+@transaction.atomic
+def move_watch_later_video(user, playlist, item, direction):
+    """Move among visible Watch Later entries without exposing hidden entries."""
+    if playlist.owner_id != user.pk or item.playlist_id != playlist.pk:
+        return False
+    if direction not in {"up", "down"}:
+        return False
+
+    ordered = list(
+        PlaylistItem.objects.select_for_update()
+        .filter(playlist=playlist)
+        .order_by("position", "added_at", "pk")
+    )
+    visible_ids = set(
+        Video.objects.visible_to(user)
+        .filter(pk__in=[entry.video_id for entry in ordered])
+        .values_list("pk", flat=True)
+    )
+    visible_indices = [
+        index for index, entry in enumerate(ordered)
+        if entry.video_id in visible_ids
+    ]
+    position = next(
+        (index for index, slot in enumerate(visible_indices)
+         if ordered[slot].pk == item.pk),
+        None,
+    )
+    if position is None:
+        return False
+    target = position - 1 if direction == "up" else position + 1
+    if target < 0 or target >= len(visible_indices):
+        return False
+    current_slot, target_slot = visible_indices[position], visible_indices[target]
+    ordered[current_slot], ordered[target_slot] = ordered[target_slot], ordered[current_slot]
+    for index, entry in enumerate(ordered):
+        entry.position = index
+    PlaylistItem.objects.bulk_update(ordered, ["position"])
+    return True

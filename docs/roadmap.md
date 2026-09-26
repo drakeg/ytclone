@@ -898,7 +898,7 @@ Verification:
 - Local Docker engine access remained unavailable, so container execution remains a local handoff check
 
 
-## Current sprint: Notification Inbox Routing and Bulk Cleanup
+## Completed sprint: Notification Inbox Routing and Bulk Cleanup
 
 Goal: make the modular notification inbox implementation the canonical routed code path and add recipient-scoped bulk cleanup.
 
@@ -926,7 +926,7 @@ Verification:
 - `docker compose run --build --rm test`
 
 
-## Current sprint: Watch Later Completion Cleanup
+## Completed sprint: Watch Later Completion Cleanup
 
 Goal: let viewers remove completed videos from their private Watch Later queue using the same five-second completion threshold as Continue Watching.
 
@@ -939,3 +939,18 @@ Delivered scope:
 - Focused regression coverage for threshold, privacy, visibility, state, and UI behavior
 
 No schema, migration, dependency, worker, queue, external-service, AWS, paid-service, or Terraform changes.
+
+
+## Current state — September 25, 2026
+
+Recent merged work through PR #223 has completed the low-cost collection-management and accessibility sequence:
+
+- Saved moments: search, sorting, bulk cleanup, and accessible bulk selection
+- Watch Later: search, sorting, bulk cleanup, accessible bulk selection, and completion-based cleanup
+- Watch History: search, sorting, bulk cleanup, and accessible bulk selection
+- Notifications: canonical modular routing, unread/type/date/search filtering, pagination, bulk cleanup, and accessible bulk selection
+- Shared bulk-list interaction: Select all, live selection counts, indeterminate state, and disabled destructive action until selection
+
+Verified CI baseline on the PR #223 head: 781 tests.
+
+Remaining low-cost product candidates include manual reordering for Saved moments or Watch Later and user-controlled notification retention/cleanup rules. Optional invitation email/reminder delivery and AWS hosting remain deferred because they introduce external-service or operating-cost considerations.

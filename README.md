@@ -10,7 +10,7 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Public user profiles and channels
 - Public, unlisted, and private playlists
 - Private watch history with remove and clear controls
-- Private, labeled video bookmarks with player seek controls
+- Private, labeled video bookmarks with player seek controls, search/sort, and bulk cleanup
 - Grouped search across videos, channels, and visible playlists
 - Search suggestions from visible titles, creators, categories, tags, hashtags,
   and playlists, plus private recent-search history
@@ -22,10 +22,10 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Private playback progress with Continue Watching and automatic resume
 - Visibility-safe watch recommendations and optional autoplay-next controls
 - Optional validated WebVTT captions
-- A private Watch Later queue and paginated watch history
+- A private Watch Later queue with bulk and completed-item cleanup, plus paginated watch history with selected-entry cleanup
 - Private creator analytics for uploads, views, reactions, and unique subscribers
 - Private creator watch-time analytics with per-video duration, completion, and retention aggregates
-- Private, paginated in-app notifications with unread filtering
+- Private, paginated in-app notifications with unread, activity-type, date, and text filtering plus bulk cleanup
 - Per-channel subscription upload-notification preferences
 - Explicit video-to-channel publishing with subscriber upload notifications
 - Owner-only per-channel analytics with isolated lifetime metrics

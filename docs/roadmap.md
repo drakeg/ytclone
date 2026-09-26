@@ -954,3 +954,10 @@ Recent merged work through PR #223 has completed the low-cost collection-managem
 Verified CI baseline on the PR #223 head: 781 tests.
 
 Remaining low-cost product candidates include manual reordering for Saved moments or Watch Later and user-controlled notification retention/cleanup rules. Optional invitation email/reminder delivery and AWS hosting remain deferred because they introduce external-service or operating-cost considerations.
+
+
+## Sprint in progress: Watch Later manual ordering
+
+Goal: give viewers an explicit Manual order option with Move up/down controls, using existing private Watch Later playlist positions. Other sort choices remain unchanged. Movement skips inaccessible entries, remains scoped to the current viewer, and preserves query/page state. No schema, paid services, external infrastructure, or drag-and-drop framework changes.
+
+Sprint plan, acceptance criteria, exclusions, and Docker/non-Docker verification: `docs/watch-later-manual-order-sprint.md`.

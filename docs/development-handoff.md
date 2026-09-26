@@ -4,14 +4,14 @@ This document lets a new development session or assistant continue the project
 without depending on prior chat history. Repository files and current GitHub
 state are authoritative when they differ from this dated snapshot.
 
-## Handoff snapshot — September 17, 2026
+## Handoff snapshot — September 25, 2026
 
 - Repository: `drakeg/ytclone`
 - Default branch: `main`
-- Latest merged work reviewed at handoff: [#201 — Saved moments search](https://github.com/drakeg/ytclone/pull/201)
-- Current continuation branch: `chore/development-workflow-reconciliation`
+- Latest merged work reviewed at handoff: [#223 — Watch Later completion cleanup](https://github.com/drakeg/ytclone/pull/223)
+- Current continuation branch: `docs/reconcile-development-handoff`
 - Latest migration on `main`: `video/0038_searchhistory`
-- Verified baseline test count on `main`: 688
+- Verified CI baseline on PR #223 head: 781 tests
 
 Before making changes, inspect GitHub rather than assuming this snapshot is still
 current. Update local `main` and branch from it. Never reconstruct
@@ -190,15 +190,19 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #201 was merged at this review. Synchronize the repository and
+Work through PR #223 was merged at this review. Synchronize the repository and
 re-read `docs/roadmap.md` and the relevant feature sprint documents before
-selecting new work. Good low-cost candidates include:
+selecting new work. Recent completed work includes Saved moments bulk cleanup,
+Watch Later bulk cleanup and completion cleanup, Watch History bulk cleanup,
+notification search/filter/date/bulk cleanup, and bulk-list accessibility
+hardening.
 
+Good low-cost candidates now include:
+
+- saved-moment manual reordering
+- Watch Later manual reordering
+- user-controlled notification retention/cleanup rules
 - optional channel-team invitation email delivery and scheduled reminders
-- saved-moment reordering or bulk cleanup
-- private notification search, date filters, or retention controls
-- Watch Later reordering or completion-based cleanup
-- further accessibility and visual verification across recently added list pages
 - low-cost AWS application hosting and deployment when operating cost is justified
 
 Select only one concern. Prefer a user-visible improvement that needs no paid

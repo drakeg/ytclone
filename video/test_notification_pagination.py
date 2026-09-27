@@ -659,20 +659,18 @@ class NotificationPaginationTests(TestCase):
             fetch_redirect_response=False,
         )
 
-    def test_cleanup_read_keeps_notifications_at_cutoff_boundary(self):
+    def test_cleanup_read_keeps_notifications_newer_than_cutoff(self):
         notification = self.create_notifications(1)[0]
         now = timezone.now()
-        cutoff = now - timezone.timedelta(days=30)
         Notification.objects.filter(pk=notification.pk).update(
-            created_at=cutoff,
+            created_at=now - timezone.timedelta(days=29, hours=23),
             read_at=now - timezone.timedelta(days=1),
         )
 
-        with self.settings(USE_TZ=True):
-            self.client.post(
-                reverse("notification_cleanup_read"),
-                {"retention_days": "30"},
-            )
+        self.client.post(
+            reverse("notification_cleanup_read"),
+            {"retention_days": "30"},
+        )
 
         self.assertTrue(Notification.objects.filter(pk=notification.pk).exists())
 

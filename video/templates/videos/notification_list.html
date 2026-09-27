@@ -50,6 +50,24 @@
         {% endif %}
     </form>
 
+    <form method="post" action="{% url 'notification_cleanup_read' %}" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="page" value="{{ notifications.number }}">
+        <input type="hidden" name="filter" value="{{ notification_filter }}">
+        <input type="hidden" name="kind" value="{{ notification_kind }}">
+        <input type="hidden" name="date" value="{{ notification_date }}">
+        <input type="hidden" name="q" value="{{ notification_query }}">
+        <div>
+            <label class="form-label" for="notification-retention-days">Clean up read notifications older than</label>
+            <select class="form-select" id="notification-retention-days" name="retention_days">
+                <option value="7">7 days</option>
+                <option value="30" selected>30 days</option>
+                <option value="90">90 days</option>
+            </select>
+        </div>
+        <button class="btn btn-outline-danger" type="submit">Clean up read notifications</button>
+    </form>
+
     {% if notifications %}
         <form id="notification-bulk-form" data-bulk-selection data-item-name="notification_ids" method="post" action="{% url 'notification_bulk_delete' %}" class="d-flex flex-wrap gap-2 align-items-center mb-3">
             {% csrf_token %}

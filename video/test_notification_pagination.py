@@ -562,3 +562,122 @@ class NotificationPaginationTests(TestCase):
             f'name="notification_ids" value="{notification.pk}"',
         )
         self.assertContains(response, "Delete selected")
+
+
+    def test_cleanup_read_deletes_only_old_read_notifications_for_viewer(self):
+        old_read = self.create_notifications(1)[0]
+        recent_read = self.create_notifications(1)[0]
+        old_unread = self.create_notifications(1)[0]
+        other_old_read = self.create_notifications(1, recipient=self.other)[0]
+        now = timezone.now()
+        Notification.objects.filter(pk=old_read.pk).update(
+            created_at=now - timezone.timedelta(days=31),
+            read_at=now - timezone.timedelta(days=20),
+        )
+        Notification.objects.filter(pk=recent_read.pk).update(
+            created_at=now - timezone.timedelta(days=10),
+            read_at=now - timezone.timedelta(days=5),
+        )
+        Notification.objects.filter(pk=old_unread.pk).update(
+            created_at=now - timezone.timedelta(days=60),
+            read_at=None,
+        )
+        Notification.objects.filter(pk=other_old_read.pk).update(
+            created_at=now - timezone.timedelta(days=60),
+            read_at=now - timezone.timedelta(days=30),
+        )
+
+        response = self.client.post(
+            reverse("notification_cleanup_read"),
+            {"retention_days": "30"},
+        )
+
+        self.assertRedirects(response, reverse("notification_list"))
+        self.assertFalse(Notification.objects.filter(pk=old_read.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=recent_read.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=old_unread.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=other_old_read.pk).exists())
+
+    def test_cleanup_read_supports_bounded_thresholds_and_rejects_get(self):
+        now = timezone.now()
+        for days in (7, 30, 90):
+            notification = self.create_notifications(1)[0]
+            Notification.objects.filter(pk=notification.pk).update(
+                created_at=now - timezone.timedelta(days=days + 1),
+                read_at=now - timezone.timedelta(days=1),
+            )
+            response = self.client.post(
+                reverse("notification_cleanup_read"),
+                {"retention_days": str(days)},
+            )
+            self.assertEqual(response.status_code, 302)
+            self.assertFalse(Notification.objects.filter(pk=notification.pk).exists())
+
+        self.assertEqual(
+            self.client.get(reverse("notification_cleanup_read")).status_code,
+            405,
+        )
+
+    def test_cleanup_read_invalid_threshold_falls_back_to_thirty_days(self):
+        now = timezone.now()
+        old_read = self.create_notifications(1)[0]
+        recent_read = self.create_notifications(1)[0]
+        Notification.objects.filter(pk=old_read.pk).update(
+            created_at=now - timezone.timedelta(days=31),
+            read_at=now - timezone.timedelta(days=2),
+        )
+        Notification.objects.filter(pk=recent_read.pk).update(
+            created_at=now - timezone.timedelta(days=8),
+            read_at=now - timezone.timedelta(days=2),
+        )
+
+        self.client.post(
+            reverse("notification_cleanup_read"),
+            {"retention_days": "999"},
+        )
+
+        self.assertFalse(Notification.objects.filter(pk=old_read.pk).exists())
+        self.assertTrue(Notification.objects.filter(pk=recent_read.pk).exists())
+
+    def test_cleanup_read_preserves_search_filters_and_page(self):
+        response = self.client.post(
+            reverse("notification_cleanup_read"),
+            {
+                "retention_days": "90",
+                "page": "2",
+                "filter": "unread",
+                "kind": Notification.Kind.LIKE,
+                "date": "7d",
+                "q": "actor pagination",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("notification_list")
+            + "?filter=unread&kind=like&date=7d&q=actor+pagination&page=2",
+            fetch_redirect_response=False,
+        )
+
+    def test_cleanup_read_keeps_notifications_newer_than_cutoff(self):
+        notification = self.create_notifications(1)[0]
+        now = timezone.now()
+        Notification.objects.filter(pk=notification.pk).update(
+            created_at=now - timezone.timedelta(days=29, hours=23),
+            read_at=now - timezone.timedelta(days=1),
+        )
+
+        self.client.post(
+            reverse("notification_cleanup_read"),
+            {"retention_days": "30"},
+        )
+
+        self.assertTrue(Notification.objects.filter(pk=notification.pk).exists())
+
+    def test_notification_list_renders_read_cleanup_controls(self):
+        response = self.client.get(reverse("notification_list"))
+
+        self.assertContains(response, reverse("notification_cleanup_read"))
+        self.assertContains(response, 'name="retention_days"')
+        self.assertContains(response, '<option value="30" selected>30 days</option>')
+        self.assertContains(response, "Clean up read notifications")

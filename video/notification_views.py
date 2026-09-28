@@ -23,6 +23,8 @@ NOTIFICATION_DATE_FILTERS = {
     "7d": 7,
     "30d": 30,
 }
+NOTIFICATION_RETENTION_DAYS = {7, 30, 90}
+NOTIFICATION_RETENTION_DEFAULT_DAYS = 30
 
 
 def _notification_filter(value):
@@ -153,6 +155,33 @@ def notification_bulk_delete(request):
 
     if selected_ids:
         request.user.notifications.filter(pk__in=set(selected_ids)).delete()
+
+    return redirect(
+        _notification_list_url(
+            page=request.POST.get("page"),
+            notification_filter=_notification_filter(request.POST.get("filter")),
+            notification_kind=_notification_kind(request.POST.get("kind")),
+            notification_date=_notification_date(request.POST.get("date")),
+            notification_query=request.POST.get("q", "").strip(),
+        )
+    )
+
+
+@login_required
+@require_POST
+def notification_cleanup_read(request):
+    try:
+        retention_days = int(request.POST.get("retention_days", ""))
+    except (TypeError, ValueError):
+        retention_days = NOTIFICATION_RETENTION_DEFAULT_DAYS
+    if retention_days not in NOTIFICATION_RETENTION_DAYS:
+        retention_days = NOTIFICATION_RETENTION_DEFAULT_DAYS
+
+    cutoff = timezone.now() - timezone.timedelta(days=retention_days)
+    request.user.notifications.filter(
+        read_at__isnull=False,
+        created_at__lt=cutoff,
+    ).delete()
 
     return redirect(
         _notification_list_url(

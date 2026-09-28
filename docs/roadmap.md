@@ -961,3 +961,10 @@ Remaining low-cost product candidates include manual reordering for Saved moment
 Goal: give viewers an explicit Manual order option with Move up/down controls, using existing private Watch Later playlist positions. Other sort choices remain unchanged. Movement skips inaccessible entries, remains scoped to the current viewer, and preserves query/page state. No schema, paid services, external infrastructure, or drag-and-drop framework changes.
 
 Sprint plan, acceptance criteria, exclusions, and Docker/non-Docker verification: `docs/watch-later-manual-order-sprint.md`.
+
+
+## Sprint in progress: Notification read-retention cleanup
+
+Goal: let viewers explicitly remove old read notifications using a bounded 7/30/90-day threshold while preserving all unread notifications and recipient privacy. This is an on-demand POST action only; no automatic retention worker, schema change, external service, or paid infrastructure is introduced.
+
+Sprint plan and verification commands: `docs/notification-read-retention-cleanup-sprint.md`.

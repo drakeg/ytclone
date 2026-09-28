@@ -60,12 +60,13 @@
         <div>
             <label class="form-label" for="notification-retention-days">Clean up read notifications older than</label>
             <select class="form-select" id="notification-retention-days" name="retention_days">
-                <option value="7">7 days</option>
-                <option value="30" selected>30 days</option>
-                <option value="90">90 days</option>
+                <option value="7">7 days ({{ notification_cleanup_count_7 }} eligible)</option>
+                <option value="30" selected>30 days ({{ notification_cleanup_count_30 }} eligible)</option>
+                <option value="90">90 days ({{ notification_cleanup_count_90 }} eligible)</option>
             </select>
         </div>
         <button class="btn btn-outline-danger" type="submit">Clean up read notifications</button>
+        <small class="text-body-secondary">Eligible counts cover your whole inbox, not only this page or active filters. Unread notifications are never included.</small>
     </form>
 
     {% if notifications %}

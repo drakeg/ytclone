@@ -679,5 +679,40 @@ class NotificationPaginationTests(TestCase):
 
         self.assertContains(response, reverse("notification_cleanup_read"))
         self.assertContains(response, 'name="retention_days"')
-        self.assertContains(response, '<option value="30" selected>30 days</option>')
+        self.assertContains(response, '<option value="30" selected>30 days (0 eligible)</option>')
         self.assertContains(response, "Clean up read notifications")
+
+
+    def test_cleanup_preview_counts_only_own_read_notifications_by_age(self):
+        old = self.create_notifications(1)[0]
+        mid = self.create_notifications(1)[0]
+        recent = self.create_notifications(1)[0]
+        unread = self.create_notifications(1)[0]
+        other = self.create_notifications(1, recipient=self.other)[0]
+        now = timezone.now()
+        for notification, age in ((old, 100), (mid, 40), (recent, 10)):
+            Notification.objects.filter(pk=notification.pk).update(
+                created_at=now - timezone.timedelta(days=age),
+                read_at=now - timezone.timedelta(days=1),
+            )
+        Notification.objects.filter(pk=unread.pk).update(
+            created_at=now - timezone.timedelta(days=100),
+            read_at=None,
+        )
+        Notification.objects.filter(pk=other.pk).update(
+            created_at=now - timezone.timedelta(days=100),
+            read_at=now - timezone.timedelta(days=1),
+        )
+
+        response = self.client.get(
+            reverse("notification_list"),
+            {"filter": "unread", "q": "no-match"},
+        )
+        self.assertEqual(response.context["notifications"].paginator.count, 0)
+        self.assertEqual(response.context["notification_cleanup_count_7"], 3)
+        self.assertEqual(response.context["notification_cleanup_count_30"], 2)
+        self.assertEqual(response.context["notification_cleanup_count_90"], 1)
+        self.assertContains(response, "7 days (3 eligible)")
+        self.assertContains(response, "30 days (2 eligible)")
+        self.assertContains(response, "90 days (1 eligible)")
+        self.assertContains(response, "Eligible counts cover your whole inbox")

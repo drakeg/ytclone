@@ -45,6 +45,14 @@ def _notification_date(value):
     return NOTIFICATION_DATE_ANY
 
 
+def _read_cleanup_candidates(user, days, *, now=None):
+    cutoff = (now or timezone.now()) - timezone.timedelta(days=days)
+    return user.notifications.filter(
+        read_at__isnull=False,
+        created_at__lt=cutoff,
+    )
+
+
 def _notification_list_url(
     *,
     page=None,
@@ -99,11 +107,19 @@ def notification_list(request):
     page = Paginator(notifications, NOTIFICATION_PAGE_SIZE).get_page(
         request.GET.get("page")
     )
+    cleanup_now = timezone.now()
+    cleanup_counts = {
+        days: _read_cleanup_candidates(request.user, days, now=cleanup_now).count()
+        for days in sorted(NOTIFICATION_RETENTION_DAYS)
+    }
     return render(
         request,
         "videos/notification_list.html",
         {
             "notifications": page,
+            "notification_cleanup_count_7": cleanup_counts[7],
+            "notification_cleanup_count_30": cleanup_counts[30],
+            "notification_cleanup_count_90": cleanup_counts[90],
             "notification_filter": selected_filter,
             "notification_kind": selected_kind,
             "notification_kind_choices": Notification.Kind.choices,
@@ -177,11 +193,7 @@ def notification_cleanup_read(request):
     if retention_days not in NOTIFICATION_RETENTION_DAYS:
         retention_days = NOTIFICATION_RETENTION_DEFAULT_DAYS
 
-    cutoff = timezone.now() - timezone.timedelta(days=retention_days)
-    request.user.notifications.filter(
-        read_at__isnull=False,
-        created_at__lt=cutoff,
-    ).delete()
+    _read_cleanup_candidates(request.user, retention_days).delete()
 
     return redirect(
         _notification_list_url(

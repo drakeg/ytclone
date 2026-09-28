@@ -968,3 +968,10 @@ Sprint plan, acceptance criteria, exclusions, and Docker/non-Docker verification
 Goal: let viewers explicitly remove old read notifications using a bounded 7/30/90-day threshold while preserving all unread notifications and recipient privacy. This is an on-demand POST action only; no automatic retention worker, schema change, external service, or paid infrastructure is introduced.
 
 Sprint plan and verification commands: `docs/notification-read-retention-cleanup-sprint.md`.
+
+
+## Sprint in progress: Notification cleanup preview
+
+Goal: show current-recipient eligible counts for 7-, 30-, and 90-day read-notification cleanup options before on-demand deletion. Counts use the same eligibility query as deletion and cover the complete private inbox independent of page and active filters. No schema, worker, or external-service changes.
+
+Plan and verification: `docs/notification-cleanup-preview-sprint.md`.

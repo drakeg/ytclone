@@ -984,8 +984,15 @@ Goal: add a durable per-user manual order for Saved moments while retaining exis
 This sprint adds migration `0039_videobookmark_sort_position`. Plan, acceptance criteria, and Docker/non-Docker verification are in `docs/saved-moments-manual-order-sprint.md`.
 
 
-## Sprint in progress: Optional channel-team invitation email
+## Completed sprint: Optional channel-team invitation email
 
 Goal: optionally send an email alongside the existing private in-app channel editor invitation. Delivery is disabled by default, can use Django's console backend locally at zero cost, and never becomes authoritative: email failures leave the in-app invitation and notification intact.
 
 No schema, worker, queue, scheduled reminder, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/optional-team-invitation-email-sprint.md`.
+
+
+## Sprint in progress: Channel team invitation reminders
+
+Goal: let channel owners explicitly resend a reminder for a pending, unexpired editor invitation. The action creates a fresh in-app invitation notification and reuses the existing optional email delivery path when enabled. It is owner-only and POST-only.
+
+No schema, migration, scheduler, background worker, queue, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/channel-team-invitation-reminder-sprint.md`.

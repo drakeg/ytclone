@@ -956,22 +956,29 @@ Verified CI baseline on the PR #223 head: 781 tests.
 Remaining low-cost product candidates include manual reordering for Saved moments or Watch Later and user-controlled notification retention/cleanup rules. Optional invitation email/reminder delivery and AWS hosting remain deferred because they introduce external-service or operating-cost considerations.
 
 
-## Sprint in progress: Watch Later manual ordering
+## Completed sprint: Watch Later manual ordering
 
 Goal: give viewers an explicit Manual order option with Move up/down controls, using existing private Watch Later playlist positions. Other sort choices remain unchanged. Movement skips inaccessible entries, remains scoped to the current viewer, and preserves query/page state. No schema, paid services, external infrastructure, or drag-and-drop framework changes.
 
 Sprint plan, acceptance criteria, exclusions, and Docker/non-Docker verification: `docs/watch-later-manual-order-sprint.md`.
 
 
-## Sprint in progress: Notification read-retention cleanup
+## Completed sprint: Notification read-retention cleanup
 
 Goal: let viewers explicitly remove old read notifications using a bounded 7/30/90-day threshold while preserving all unread notifications and recipient privacy. This is an on-demand POST action only; no automatic retention worker, schema change, external service, or paid infrastructure is introduced.
 
 Sprint plan and verification commands: `docs/notification-read-retention-cleanup-sprint.md`.
 
 
-## Sprint in progress: Notification cleanup preview
+## Completed sprint: Notification cleanup preview
 
 Goal: show current-recipient eligible counts for 7-, 30-, and 90-day read-notification cleanup options before on-demand deletion. Counts use the same eligibility query as deletion and cover the complete private inbox independent of page and active filters. No schema, worker, or external-service changes.
 
 Plan and verification: `docs/notification-cleanup-preview-sprint.md`.
+
+
+## Sprint in progress: Saved moments manual ordering
+
+Goal: add a durable per-user manual order for Saved moments while retaining existing newest, oldest, video-title, and playback-timestamp sorts. Existing bookmarks are backfilled in newest-first order, new bookmarks append, and move actions remain visibility-safe and private.
+
+This sprint adds migration `0039_videobookmark_sort_position`. Plan, acceptance criteria, and Docker/non-Docker verification are in `docs/saved-moments-manual-order-sprint.md`.

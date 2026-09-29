@@ -548,6 +548,7 @@ class VideoBookmarkTests(TestCase):
 
         self.assertEqual(first.sort_position, 0)
         self.assertEqual(second.sort_position, 1)
+        self.client.force_login(self.viewer)
         response = self.client.get(
             reverse("video_bookmark_list"),
             {"sort": "manual"},

@@ -977,8 +977,15 @@ Goal: show current-recipient eligible counts for 7-, 30-, and 90-day read-notifi
 Plan and verification: `docs/notification-cleanup-preview-sprint.md`.
 
 
-## Sprint in progress: Saved moments manual ordering
+## Completed sprint: Saved moments manual ordering
 
 Goal: add a durable per-user manual order for Saved moments while retaining existing newest, oldest, video-title, and playback-timestamp sorts. Existing bookmarks are backfilled in newest-first order, new bookmarks append, and move actions remain visibility-safe and private.
 
 This sprint adds migration `0039_videobookmark_sort_position`. Plan, acceptance criteria, and Docker/non-Docker verification are in `docs/saved-moments-manual-order-sprint.md`.
+
+
+## Sprint in progress: Optional channel-team invitation email
+
+Goal: optionally send an email alongside the existing private in-app channel editor invitation. Delivery is disabled by default, can use Django's console backend locally at zero cost, and never becomes authoritative: email failures leave the in-app invitation and notification intact.
+
+No schema, worker, queue, scheduled reminder, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/optional-team-invitation-email-sprint.md`.

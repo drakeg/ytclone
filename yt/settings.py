@@ -102,6 +102,27 @@ if env_bool("DJANGO_FAST_TEST_HASHER", False):
 LOGIN_REDIRECT_URL = "video_list"
 LOGOUT_REDIRECT_URL = "video_list"
 
+TEAM_INVITATION_EMAIL_ENABLED = env_bool(
+    "DJANGO_TEAM_INVITATION_EMAIL_ENABLED",
+    False,
+)
+EMAIL_BACKEND = os.getenv(
+    "DJANGO_EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend",
+).strip()
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    "noreply@localhost",
+).strip()
+EMAIL_HOST = os.getenv("DJANGO_EMAIL_HOST", "localhost").strip()
+EMAIL_PORT = int(os.getenv("DJANGO_EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.getenv("DJANGO_EMAIL_HOST_USER", "").strip()
+EMAIL_HOST_PASSWORD = os.getenv("DJANGO_EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("DJANGO_EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("DJANGO_EMAIL_USE_SSL", False)
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise RuntimeError("DJANGO_EMAIL_USE_TLS and DJANGO_EMAIL_USE_SSL cannot both be true.")
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = os.getenv("DJANGO_TIME_ZONE", "America/New_York")
 USE_I18N = True

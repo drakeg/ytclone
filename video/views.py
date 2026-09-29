@@ -610,6 +610,27 @@ def channel_team_remove(request, pk, membership_pk):
 
 @login_required
 @require_POST
+def channel_team_invitation_remind(request, pk, invitation_pk):
+    channel = get_object_or_404(Channel, pk=pk, owner=request.user)
+    invitation = get_object_or_404(
+        ChannelTeamInvitation,
+        pk=invitation_pk,
+        channel=channel,
+        status=ChannelTeamInvitation.Status.PENDING,
+        expires_at__gt=timezone.now(),
+    )
+    notify_team_invitation(invitation)
+    send_invitation_email(
+        invitation=invitation,
+        invite_url=request.build_absolute_uri(
+            reverse("channel_team_invitations")
+        ),
+    )
+    return redirect("channel_team", pk=channel.pk)
+
+
+@login_required
+@require_POST
 def channel_team_invitation_revoke(request, pk, invitation_pk):
     channel = get_object_or_404(Channel, pk=pk, owner=request.user)
     invitation = get_object_or_404(

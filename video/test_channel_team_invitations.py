@@ -223,3 +223,123 @@ class ChannelTeamInvitationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "already has a pending invitation")
         self.assertEqual(len(mail.outbox), 1)
+
+
+    def reminder_url(self, invitation):
+        return reverse(
+            "channel_team_invitation_remind",
+            args=[self.channel.pk, invitation.pk],
+        )
+
+    def test_owner_can_send_post_only_reminder_for_pending_invitation(self):
+        invitation = self.invite()
+        initial_count = self.invitee.notifications.filter(
+            kind="team_invite",
+            channel=self.channel,
+        ).count()
+
+        self.assertEqual(self.client.get(self.reminder_url(invitation)).status_code, 405)
+        response = self.client.post(self.reminder_url(invitation))
+
+        self.assertRedirects(response, self.team_url)
+        self.assertEqual(
+            self.invitee.notifications.filter(
+                kind="team_invite",
+                channel=self.channel,
+            ).count(),
+            initial_count + 1,
+        )
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, ChannelTeamInvitation.Status.PENDING)
+
+    def test_non_owner_cannot_send_invitation_reminder(self):
+        invitation = self.invite()
+        initial_count = self.invitee.notifications.filter(
+            kind="team_invite",
+            channel=self.channel,
+        ).count()
+        self.client.force_login(self.other)
+
+        response = self.client.post(self.reminder_url(invitation))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            self.invitee.notifications.filter(
+                kind="team_invite",
+                channel=self.channel,
+            ).count(),
+            initial_count,
+        )
+
+    def test_expired_invitation_cannot_be_reminded(self):
+        invitation = self.invite()
+        invitation.expires_at = timezone.now() - timedelta(seconds=1)
+        invitation.save(update_fields=["expires_at"])
+        initial_count = self.invitee.notifications.filter(
+            kind="team_invite",
+            channel=self.channel,
+        ).count()
+
+        response = self.client.post(self.reminder_url(invitation))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            self.invitee.notifications.filter(
+                kind="team_invite",
+                channel=self.channel,
+            ).count(),
+            initial_count,
+        )
+
+    @override_settings(
+        TEAM_INVITATION_EMAIL_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="videoshare@example.com",
+    )
+    def test_reminder_reuses_optional_invitation_email(self):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+        invitation = self.invite()
+        mail.outbox.clear()
+
+        response = self.client.post(self.reminder_url(invitation))
+
+        self.assertRedirects(response, self.team_url)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ["invitee@example.com"])
+        self.assertIn(self.channel.name, mail.outbox[0].subject)
+        self.assertNotIn(str(invitation.token), mail.outbox[0].body)
+
+    @override_settings(TEAM_INVITATION_EMAIL_ENABLED=True)
+    @patch("video.services.team_invitations.send_mail", side_effect=RuntimeError("mail unavailable"))
+    def test_reminder_email_failure_keeps_in_app_reminder_and_pending_state(self, mocked_send_mail):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+        invitation = self.invite()
+        mocked_send_mail.reset_mock()
+        initial_count = self.invitee.notifications.filter(
+            kind="team_invite",
+            channel=self.channel,
+        ).count()
+
+        response = self.client.post(self.reminder_url(invitation))
+
+        self.assertRedirects(response, self.team_url)
+        mocked_send_mail.assert_called_once()
+        self.assertEqual(
+            self.invitee.notifications.filter(
+                kind="team_invite",
+                channel=self.channel,
+            ).count(),
+            initial_count + 1,
+        )
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, ChannelTeamInvitation.Status.PENDING)
+
+    def test_team_page_renders_reminder_control_for_pending_invitation(self):
+        invitation = self.invite()
+
+        response = self.client.get(self.team_url)
+
+        self.assertContains(response, "Send reminder")
+        self.assertContains(response, self.reminder_url(invitation))

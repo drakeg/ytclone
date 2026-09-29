@@ -1,9 +1,11 @@
 from datetime import timedelta
 
 from django.contrib.auth.models import User
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from unittest.mock import patch
 
 from .forms import VideoUploadForm
 from .models import Channel, ChannelMembership, ChannelTeamInvitation
@@ -137,3 +139,87 @@ class ChannelTeamInvitationTests(TestCase):
 
         self.assertEqual(self.client.post(self.respond_url(invitation, "approve")).status_code, 404)
         self.assertFalse(ChannelMembership.objects.exists())
+
+
+    @override_settings(
+        TEAM_INVITATION_EMAIL_ENABLED=False,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    )
+    def test_invitation_email_is_disabled_by_default_behavior(self):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+
+        self.invite()
+
+        self.assertEqual(len(mail.outbox), 0)
+
+    @override_settings(
+        TEAM_INVITATION_EMAIL_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+        DEFAULT_FROM_EMAIL="videoshare@example.com",
+    )
+    def test_enabled_invitation_email_contains_channel_inviter_expiration_and_inbox_link(self):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+
+        invitation = self.invite()
+
+        self.assertEqual(len(mail.outbox), 1)
+        email = mail.outbox[0]
+        self.assertEqual(email.to, ["invitee@example.com"])
+        self.assertEqual(email.from_email, "videoshare@example.com")
+        self.assertIn(self.channel.name, email.subject)
+        self.assertIn(self.owner.username, email.body)
+        self.assertIn(self.channel.name, email.body)
+        self.assertIn(
+            reverse("channel_team_invitations"),
+            email.body,
+        )
+        self.assertNotIn(str(invitation.token), email.body)
+
+    @override_settings(
+        TEAM_INVITATION_EMAIL_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    )
+    def test_invitee_without_email_keeps_in_app_invitation_without_email(self):
+        invitation = self.invite()
+
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertEqual(invitation.status, ChannelTeamInvitation.Status.PENDING)
+
+    @override_settings(TEAM_INVITATION_EMAIL_ENABLED=True)
+    @patch("video.services.team_invitations.send_mail", side_effect=RuntimeError("mail unavailable"))
+    def test_email_failure_does_not_rollback_invitation(self, mocked_send_mail):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+
+        invitation = self.invite()
+
+        mocked_send_mail.assert_called_once()
+        invitation.refresh_from_db()
+        self.assertEqual(invitation.status, ChannelTeamInvitation.Status.PENDING)
+        self.assertTrue(
+            self.invitee.notifications.filter(
+                kind="team_invite",
+                channel=self.channel,
+            ).exists()
+        )
+
+    @override_settings(
+        TEAM_INVITATION_EMAIL_ENABLED=True,
+        EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    )
+    def test_duplicate_pending_invitation_does_not_emit_second_email(self):
+        self.invitee.email = "invitee@example.com"
+        self.invitee.save(update_fields=["email"])
+        self.invite()
+        self.assertEqual(len(mail.outbox), 1)
+
+        response = self.client.post(
+            self.team_url,
+            {"username": self.invitee.username},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "already has a pending invitation")
+        self.assertEqual(len(mail.outbox), 1)

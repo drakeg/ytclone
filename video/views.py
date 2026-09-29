@@ -57,6 +57,7 @@ from .services.team_invitations import (
     invite_editor,
     respond_to_invitation,
     revoke_invitation,
+    send_invitation_email,
 )
 
 
@@ -565,6 +566,12 @@ def channel_team(request, pk):
         try:
             invitation = invite_editor(channel=channel, invited_by=request.user, username=username)
             notify_team_invitation(invitation)
+            send_invitation_email(
+                invitation=invitation,
+                invite_url=request.build_absolute_uri(
+                    reverse("channel_team_invitations")
+                ),
+            )
             return redirect("channel_team", pk=channel.pk)
         except InvitationError as exc:
             error = str(exc)

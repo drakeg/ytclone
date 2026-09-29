@@ -1,6 +1,8 @@
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.mail import send_mail
 from django.db import transaction
 from django.utils import timezone
 
@@ -86,3 +88,39 @@ def revoke_invitation(*, invitation):
     invitation.responded_at = timezone.now()
     invitation.save(update_fields=["status", "responded_at"])
     return invitation
+
+
+def send_invitation_email(*, invitation, invite_url):
+    if not getattr(settings, "TEAM_INVITATION_EMAIL_ENABLED", False):
+        return False
+
+    recipient = (invitation.invitee.email or "").strip()
+    if not recipient:
+        return False
+
+    inviter_name = invitation.invited_by.get_full_name().strip() if invitation.invited_by else ""
+    if not inviter_name and invitation.invited_by:
+        inviter_name = invitation.invited_by.username
+    inviter_name = inviter_name or "A channel owner"
+    expiration = timezone.localtime(invitation.expires_at).strftime("%b %-d, %Y at %-I:%M %p %Z")
+
+    subject = f"Invitation to edit {invitation.channel.name} on VideoShare"
+    message = (
+        f"{inviter_name} invited you to become an editor for "
+        f"{invitation.channel.name} on VideoShare.\n\n"
+        f"This invitation expires {expiration}.\n\n"
+        f"Sign in and review your Team invites here:\n{invite_url}\n\n"
+        "If you were not expecting this invitation, you can ignore this email."
+    )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[recipient],
+            fail_silently=False,
+        )
+    except Exception:
+        return False
+    return True

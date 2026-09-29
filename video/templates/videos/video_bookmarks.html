@@ -21,6 +21,7 @@
                 <option value="oldest"{% if bookmark_sort == "oldest" %} selected{% endif %}>Oldest saved</option>
                 <option value="title"{% if bookmark_sort == "title" %} selected{% endif %}>Video title</option>
                 <option value="timestamp"{% if bookmark_sort == "timestamp" %} selected{% endif %}>Playback timestamp</option>
+                <option value="manual"{% if bookmark_sort == "manual" %} selected{% endif %}>Manual order</option>
             </select>
         </div>
         <button class="btn btn-primary" type="submit">Apply</button>
@@ -56,7 +57,13 @@
                     <p class="video-meta mb-0">By {{ bookmark.video.author }} · Saved {{ bookmark.updated_at|timesince }} ago</p>
                     </div>
                 </div>
-                <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><input type="hidden" name="sort" value="{{ bookmark_sort }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if bookmark_sort == "manual" %}
+                        <form method="post" action="{% url 'video_bookmark_move' bookmark.pk 'up' %}">{% csrf_token %}<input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Move {{ bookmark.label }} up">Move up</button></form>
+                        <form method="post" action="{% url 'video_bookmark_move' bookmark.pk 'down' %}">{% csrf_token %}<input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Move {{ bookmark.label }} down">Move down</button></form>
+                    {% endif %}
+                    <form method="post" action="{% url 'video_bookmark_delete' bookmark.pk %}">{% csrf_token %}<input type="hidden" name="source" value="list"><input type="hidden" name="page" value="{{ bookmarks.number }}"><input type="hidden" name="q" value="{{ bookmark_query }}"><input type="hidden" name="sort" value="{{ bookmark_sort }}"><button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+                </div>
             </article>
         {% empty %}
             {% if bookmark_query %}

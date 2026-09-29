@@ -530,3 +530,202 @@ class VideoBookmarkTests(TestCase):
         self.assertContains(response, 'name="q" value="needle"')
         self.assertContains(response, 'name="sort" value="oldest"')
         self.assertContains(response, "Remove selected")
+
+
+    def test_new_saved_moments_append_to_manual_order(self):
+        first = save_bookmark(
+            user=self.viewer,
+            video=self.video,
+            position=5,
+            label="First",
+        )
+        second = save_bookmark(
+            user=self.viewer,
+            video=self.video,
+            position=10,
+            label="Second",
+        )
+
+        self.assertEqual(first.sort_position, 0)
+        self.assertEqual(second.sort_position, 1)
+        self.client.force_login(self.viewer)
+        response = self.client.get(
+            reverse("video_bookmark_list"),
+            {"sort": "manual"},
+        )
+        self.assertEqual(
+            list(response.context["bookmarks"].object_list),
+            [first, second],
+        )
+
+    def test_manual_saved_moment_move_reorders_visible_bookmarks(self):
+        first = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="First",
+            sort_position=0,
+        )
+        second = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=10,
+            label="Second",
+            sort_position=1,
+        )
+        self.client.force_login(self.viewer)
+
+        response = self.client.post(
+            reverse("video_bookmark_move", args=[second.pk, "up"]),
+            {"q": "note & idea", "page": "2"},
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("video_bookmark_list")
+            + "?q=note+%26+idea&sort=manual&page=2",
+            fetch_redirect_response=False,
+        )
+        ordered = self.client.get(
+            reverse("video_bookmark_list"),
+            {"sort": "manual"},
+        )
+        self.assertEqual(
+            list(ordered.context["bookmarks"].object_list),
+            [second, first],
+        )
+
+    def test_manual_saved_moment_move_skips_hidden_records_without_deleting_them(self):
+        first = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="First",
+            sort_position=0,
+        )
+        hidden_video = Video.objects.create(
+            title="Hidden bookmark video",
+            description="Video",
+            thumbnail="videos/hidden-bookmark.jpg",
+            video_file="videos/hidden-bookmark.mp4",
+            author=self.owner,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        hidden = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=hidden_video,
+            position_seconds=5,
+            label="Hidden",
+            sort_position=1,
+        )
+        visible_video = Video.objects.create(
+            title="Second visible bookmark video",
+            description="Video",
+            thumbnail="videos/second-bookmark.jpg",
+            video_file="videos/second-bookmark.mp4",
+            author=self.owner,
+        )
+        second = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=visible_video,
+            position_seconds=10,
+            label="Second",
+            sort_position=2,
+        )
+        self.client.force_login(self.viewer)
+
+        self.client.post(
+            reverse("video_bookmark_move", args=[second.pk, "up"])
+        )
+
+        ordered = self.client.get(
+            reverse("video_bookmark_list"),
+            {"sort": "manual"},
+        )
+        self.assertEqual(
+            list(ordered.context["bookmarks"].object_list),
+            [second, first],
+        )
+        self.assertTrue(VideoBookmark.objects.filter(pk=hidden.pk).exists())
+
+    def test_manual_saved_moment_move_is_post_only_private_and_visibility_scoped(self):
+        own = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Own",
+            sort_position=0,
+        )
+        other = VideoBookmark.objects.create(
+            user=self.other,
+            video=self.video,
+            position_seconds=6,
+            label="Other",
+            sort_position=0,
+        )
+        hidden_video = Video.objects.create(
+            title="Hidden move video",
+            description="Video",
+            thumbnail="videos/hidden-move.jpg",
+            video_file="videos/hidden-move.mp4",
+            author=self.owner,
+            publication_status=Video.PublicationStatus.DRAFT,
+        )
+        hidden = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=hidden_video,
+            position_seconds=7,
+            label="Hidden",
+            sort_position=1,
+        )
+        self.client.force_login(self.viewer)
+
+        own_url = reverse("video_bookmark_move", args=[own.pk, "up"])
+        self.assertEqual(self.client.get(own_url).status_code, 405)
+        self.assertEqual(
+            self.client.post(
+                reverse("video_bookmark_move", args=[other.pk, "up"])
+            ).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("video_bookmark_move", args=[hidden.pk, "up"])
+            ).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("video_bookmark_move", args=[own.pk, "sideways"])
+            ).status_code,
+            404,
+        )
+
+    def test_manual_saved_moment_boundary_move_is_noop_and_controls_are_manual_only(self):
+        bookmark = VideoBookmark.objects.create(
+            user=self.viewer,
+            video=self.video,
+            position_seconds=5,
+            label="Only",
+            sort_position=0,
+        )
+        self.client.force_login(self.viewer)
+
+        self.client.post(
+            reverse("video_bookmark_move", args=[bookmark.pk, "up"])
+        )
+        self.client.post(
+            reverse("video_bookmark_move", args=[bookmark.pk, "down"])
+        )
+        bookmark.refresh_from_db()
+        self.assertEqual(bookmark.sort_position, 0)
+
+        newest = self.client.get(reverse("video_bookmark_list"))
+        manual = self.client.get(
+            reverse("video_bookmark_list"),
+            {"sort": "manual"},
+        )
+        self.assertNotContains(newest, "Move up")
+        self.assertNotContains(newest, "Move down")
+        self.assertContains(manual, "Move up")
+        self.assertContains(manual, "Move down")

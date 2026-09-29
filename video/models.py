@@ -137,7 +137,7 @@ class VideoChapter(models.Model):
 class VideoBookmark(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="video_bookmarks")
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name="bookmarks")
-    position_seconds = models.PositiveIntegerField(); label = models.CharField(max_length=120)
+    position_seconds = models.PositiveIntegerField(); label = models.CharField(max_length=120); sort_position = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True); updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         ordering = ["position_seconds", "pk"]

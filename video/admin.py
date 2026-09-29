@@ -34,7 +34,7 @@ class PlaylistItemAdmin(admin.ModelAdmin): list_display=("playlist","video","pos
 @admin.register(VideoChapter)
 class VideoChapterAdmin(admin.ModelAdmin): list_display=("video","start_seconds","title"); search_fields=("video__title","title")
 @admin.register(VideoBookmark)
-class VideoBookmarkAdmin(admin.ModelAdmin): list_display=("user","video","position_seconds","label","updated_at"); search_fields=("user__username","video__title","label")
+class VideoBookmarkAdmin(admin.ModelAdmin): list_display=("user","video","position_seconds","sort_position","label","updated_at"); search_fields=("user__username","video__title","label")
 @admin.register(WatchHistory)
 class WatchHistoryAdmin(admin.ModelAdmin): list_display=("user","video","watched_at","playback_position_seconds"); search_fields=("user__username","video__title"); readonly_fields=("user","video","watched_at","playback_position_seconds","duration_seconds")
 @admin.register(VideoWatchEvent)

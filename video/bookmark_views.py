@@ -3,12 +3,13 @@ from urllib.parse import urlencode
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .models import VideoBookmark
-from .services.bookmarks import get_visible_bookmarks
+from .services.bookmarks import get_visible_bookmarks, move_bookmark
 
 
 SAVED_MOMENTS_PAGE_SIZE = 24
@@ -18,6 +19,7 @@ SAVED_MOMENTS_SORTS = {
     "oldest": ("updated_at", "pk"),
     "title": ("video__title", "-updated_at", "-pk"),
     "timestamp": ("position_seconds", "-updated_at", "-pk"),
+    "manual": ("sort_position", "-updated_at", "-pk"),
 }
 
 
@@ -107,5 +109,29 @@ def video_bookmark_bulk_delete(request):
             page=request.POST.get("page"),
             query=_clean_query(request.POST.get("q")),
             sort=_clean_sort(request.POST.get("sort")),
+        )
+    )
+
+
+@login_required
+@require_POST
+def video_bookmark_move(request, pk, direction):
+    if direction not in {"up", "down"}:
+        raise Http404("Invalid move direction.")
+
+    bookmark = get_object_or_404(
+        get_visible_bookmarks(request.user),
+        pk=pk,
+    )
+    move_bookmark(
+        user=request.user,
+        bookmark=bookmark,
+        direction=direction,
+    )
+    return redirect(
+        _bookmark_list_url(
+            page=request.POST.get("page"),
+            query=_clean_query(request.POST.get("q")),
+            sort="manual",
         )
     )

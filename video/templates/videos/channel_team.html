@@ -15,7 +15,10 @@
         {% for invitation in invitations %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
             <span>{{ invitation.invitee.username }} · expires {{ invitation.expires_at|date:"M j, Y" }}</span>
-            <form method="post" action="{% url 'channel_team_invitation_revoke' channel.pk invitation.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button></form>
+            <div class="d-flex gap-2">
+                <form method="post" action="{% url 'channel_team_invitation_remind' channel.pk invitation.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Send reminder</button></form>
+                <form method="post" action="{% url 'channel_team_invitation_revoke' channel.pk invitation.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Revoke</button></form>
+            </div>
         </li>
         {% empty %}<li class="list-group-item">No pending invitations.</li>{% endfor %}
     </ul>

@@ -999,3 +999,12 @@ No schema, worker, queue, scheduled reminder, external email API, AWS, or paid-s
 Goal: let channel owners explicitly resend a reminder for a pending, unexpired editor invitation. The action creates a fresh in-app invitation notification and reuses the existing optional email delivery path when enabled. It is owner-only and POST-only.
 
 No schema, migration, scheduler, background worker, queue, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/channel-team-invitation-reminder-sprint.md`.
+
+
+## Sprint in progress: Creator payout readiness summary
+
+Goal: derive and display creator earned, pending, refunded/reversed, paid-out, and currently available balances from the existing immutable monetization ledger. This closes the payout-accounting visibility gap in issue #73 without initiating any payout.
+
+No schema, provider payout API, transfer, scheduler, worker, AWS resource, paid service, or live-payment activation is introduced. Future completed payouts are represented as `PAYOUT` ledger entries with negative creator-net amounts so available balance remains ledger-derived.
+
+Plan and verification: `docs/creator-payout-readiness-summary-sprint.md`.

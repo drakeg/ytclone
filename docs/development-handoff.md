@@ -4,14 +4,14 @@ This document lets a new development session or assistant continue the project
 without depending on prior chat history. Repository files and current GitHub
 state are authoritative when they differ from this dated snapshot.
 
-## Handoff snapshot — September 25, 2026
+## Handoff snapshot — October 3, 2026
 
 - Repository: `drakeg/ytclone`
 - Default branch: `main`
-- Latest merged work reviewed at handoff: [#223 — Watch Later completion cleanup](https://github.com/drakeg/ytclone/pull/223)
-- Current continuation branch: `docs/reconcile-development-handoff`
-- Latest migration on `main`: `video/0038_searchhistory`
-- Verified CI baseline on PR #223 head: 781 tests
+- Latest merged work reviewed at handoff: [#235 — Close out monetization V1 documentation](https://github.com/drakeg/ytclone/pull/235)
+- Current continuation branch: `main`
+- Latest migration on `main`: `video/0039_videobookmark_sort_position`
+- Current merged baseline includes PRs #231–#235; re-read live GitHub Actions before quoting a test count because the suite continues to grow.
 
 Before making changes, inspect GitHub rather than assuming this snapshot is still
 current. Update local `main` and branch from it. Never reconstruct

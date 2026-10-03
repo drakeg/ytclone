@@ -952,9 +952,9 @@ Merged product work through PR #230 has completed the low-cost collection-manage
 - Channel teams: private in-app invitations, optional zero-cost-by-default email delivery, and owner-triggered reminders
 - Video metadata: optional categories, inline category creation, structured tags, hashtag extraction/indexing, search integration, and topic discovery pages
 
-Issue #79 is complete and closed. Issue #73 remains the broad monetization specification tracker and should be reconciled against the already-delivered sandbox monetization implementation before selecting more payment work.
+Issue #79 and issue #73 are complete and closed. Monetization V1 now includes threshold-free creator eligibility, sandbox/test-mode tips and memberships, members-only authorization, Stripe test-mode onboarding and checkout, webhook reconciliation, refunds/reversals, cancellation lifecycle, creator earnings, and ledger-derived payout-readiness accounting.
 
-Open dependency maintenance is tracked separately in PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5). Do not describe either as merged until GitHub shows it on `main`.
+Dependency maintenance PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5) are merged into `main`.
 
 The next product sprint should be selected from current code and open issues rather than the older low-cost candidate list, which has now been completed. Continue to prefer user-visible work that adds no paid service or live-payment activation unless the owner explicitly approves those costs and operational changes.
 
@@ -1001,10 +1001,23 @@ Goal: let channel owners explicitly resend a reminder for a pending, unexpired e
 No schema, migration, scheduler, background worker, queue, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/channel-team-invitation-reminder-sprint.md`.
 
 
-## Sprint in progress: Creator payout readiness summary
+## Completed sprint: Creator payout readiness summary
 
 Goal: derive and display creator earned, pending, refunded/reversed, paid-out, and currently available balances from the existing immutable monetization ledger. This closes the payout-accounting visibility gap in issue #73 without initiating any payout.
 
 No schema, provider payout API, transfer, scheduler, worker, AWS resource, paid service, or live-payment activation is introduced. Future completed payouts are represented as `PAYOUT` ledger entries with negative creator-net amounts so available balance remains ledger-derived.
 
 Plan and verification: `docs/creator-payout-readiness-summary-sprint.md`.
+
+
+## Monetization V1 closeout — October 2, 2026
+
+Merged sequence:
+- PR #231 — Stripe 16 dependency update
+- PR #232 — Terraform 1.16.5 dependency update
+- PR #233 — roadmap and development-handoff reconciliation
+- PR #234 — creator payout-readiness summary
+
+Issue #73 is complete. The V1 safety gate remains in force: no live-payment activation, real payouts, provider payout execution, bank-account management, tax/reporting workflow, or paid infrastructure is authorized by this closeout.
+
+Any future move to live payments or real creator payouts must be planned as a separate explicitly approved project with provider, operational, security, accounting, and compliance review.

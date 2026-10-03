@@ -941,19 +941,22 @@ Delivered scope:
 No schema, migration, dependency, worker, queue, external-service, AWS, paid-service, or Terraform changes.
 
 
-## Current state — September 25, 2026
+## Current state — October 2, 2026
 
-Recent merged work through PR #223 has completed the low-cost collection-management and accessibility sequence:
+Merged product work through PR #230 has completed the low-cost collection-management, notification-retention, and channel-team invitation sequence:
 
-- Saved moments: search, sorting, bulk cleanup, and accessible bulk selection
-- Watch Later: search, sorting, bulk cleanup, accessible bulk selection, and completion-based cleanup
+- Saved moments: search, sorting, bulk cleanup, accessible bulk selection, and durable manual ordering
+- Watch Later: search, sorting, bulk cleanup, accessible bulk selection, completion cleanup, and manual ordering
 - Watch History: search, sorting, bulk cleanup, and accessible bulk selection
-- Notifications: canonical modular routing, unread/type/date/search filtering, pagination, bulk cleanup, and accessible bulk selection
-- Shared bulk-list interaction: Select all, live selection counts, indeterminate state, and disabled destructive action until selection
+- Notifications: canonical modular routing, unread/type/date/search filtering, pagination, bulk cleanup, accessible bulk selection, read-retention cleanup, and cleanup-preview counts
+- Channel teams: private in-app invitations, optional zero-cost-by-default email delivery, and owner-triggered reminders
+- Video metadata: optional categories, inline category creation, structured tags, hashtag extraction/indexing, search integration, and topic discovery pages
 
-Verified CI baseline on the PR #223 head: 781 tests.
+Issue #79 is complete and closed. Issue #73 remains the broad monetization specification tracker and should be reconciled against the already-delivered sandbox monetization implementation before selecting more payment work.
 
-Remaining low-cost product candidates include manual reordering for Saved moments or Watch Later and user-controlled notification retention/cleanup rules. Optional invitation email/reminder delivery and AWS hosting remain deferred because they introduce external-service or operating-cost considerations.
+Open dependency maintenance is tracked separately in PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5). Do not describe either as merged until GitHub shows it on `main`.
+
+The next product sprint should be selected from current code and open issues rather than the older low-cost candidate list, which has now been completed. Continue to prefer user-visible work that adds no paid service or live-payment activation unless the owner explicitly approves those costs and operational changes.
 
 
 ## Completed sprint: Watch Later manual ordering
@@ -991,7 +994,7 @@ Goal: optionally send an email alongside the existing private in-app channel edi
 No schema, worker, queue, scheduled reminder, external email API, AWS, or paid-service dependency is introduced. Plan and verification: `docs/optional-team-invitation-email-sprint.md`.
 
 
-## Sprint in progress: Channel team invitation reminders
+## Completed sprint: Channel team invitation reminders
 
 Goal: let channel owners explicitly resend a reminder for a pending, unexpired editor invitation. The action creates a fresh in-app invitation notification and reuses the existing optional email delivery path when enabled. It is owner-only and POST-only.
 

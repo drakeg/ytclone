@@ -184,31 +184,40 @@ docker compose exec -e DJANGO_ADMIN_USERNAME=your_username web python manage.py 
 - `0036_video_captions_file` — optional validated WebVTT caption storage
 - `0037_subscriptionnotificationpreference` — per-channel upload-notification preferences
 - `0038_searchhistory` — private recent-search history
+- `0039_videobookmark_sort_position` — durable per-user manual ordering for Saved moments
 
 Migration files are required source code. Any model change must include and test
 its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #223 was merged at this review. Synchronize the repository and
-re-read `docs/roadmap.md` and the relevant feature sprint documents before
-selecting new work. Recent completed work includes Saved moments bulk cleanup,
-Watch Later bulk cleanup and completion cleanup, Watch History bulk cleanup,
-notification search/filter/date/bulk cleanup, and bulk-list accessibility
-hardening.
+Work through PR #230 is merged in the current documented baseline. Synchronize
+the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
+and the relevant feature sprint documents before selecting new work.
 
-Good low-cost candidates now include:
+Recent completed work now includes:
 
-- saved-moment manual reordering
-- Watch Later manual reordering
-- user-controlled notification retention/cleanup rules
-- optional channel-team invitation email delivery and scheduled reminders
-- low-cost AWS application hosting and deployment when operating cost is justified
+- Saved moments and Watch Later manual ordering
+- Notification read-retention cleanup and cleanup-preview counts
+- Optional channel-team invitation email delivery
+- Owner-triggered channel-team invitation reminders
+- The full metadata scope from issue #79: optional categories, inline category
+  creation, structured tags, hashtags, search integration, and discovery pages
+
+Issue #79 is closed as completed. Issue #73 remains open as the broad
+monetization specification tracker; compare its acceptance criteria with the
+already-delivered sandbox monetization implementation before planning further
+payment work.
+
+Dependency maintenance PRs #231 (Stripe 16) and #232 (Terraform 1.16.5) are
+separate from the product roadmap and were still open at this documentation
+snapshot. Verify their live GitHub state rather than assuming they merged.
 
 Select only one concern. Prefer a user-visible improvement that needs no paid
-service unless the owner explicitly chooses infrastructure work. Record rejected
-alternatives and out-of-scope work in the sprint plan so later sessions do not
-silently expand scope.
+service, live payment activation, background infrastructure, or recurring cost
+unless the owner explicitly approves it. Record rejected alternatives and
+out-of-scope work in the sprint plan so later sessions do not silently expand
+scope.
 
 ## Suggested opening prompt for a new ChatGPT session
 

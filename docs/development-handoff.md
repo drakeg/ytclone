@@ -191,7 +191,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #230 is merged in the current documented baseline. Synchronize
+Work through PR #234 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -203,15 +203,21 @@ Recent completed work now includes:
 - Owner-triggered channel-team invitation reminders
 - The full metadata scope from issue #79: optional categories, inline category
   creation, structured tags, hashtags, search integration, and discovery pages
+- Monetization V1 from issue #73, including sandbox/test tips and memberships,
+  Stripe test-mode lifecycle, refunds/reversals, and payout-readiness accounting
 
-Issue #79 is closed as completed. Issue #73 remains open as the broad
-monetization specification tracker; compare its acceptance criteria with the
-already-delivered sandbox monetization implementation before planning further
-payment work.
+Issues #79 and #73 are closed as completed. Monetization V1 now includes the
+sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
+payout-readiness summary through PR #234.
 
-Dependency maintenance PRs #231 (Stripe 16) and #232 (Terraform 1.16.5) are
-separate from the product roadmap and were still open at this documentation
-snapshot. Verify their live GitHub state rather than assuming they merged.
+Dependency maintenance PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5) are
+merged. PR #233 reconciled the roadmap/handoff, and PR #234 completed payout
+readiness accounting visibility.
+
+Live-payment activation, real payouts, provider payout execution, bank-account
+management, tax/reporting workflow, and recurring paid infrastructure remain
+separate future work and require explicit owner approval before implementation
+or activation.
 
 Select only one concern. Prefer a user-visible improvement that needs no paid
 service, live payment activation, background infrastructure, or recurring cost

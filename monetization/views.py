@@ -14,6 +14,7 @@ from django.views.decorators.http import require_POST
 from video.models import Channel
 
 from . import stripe_gateway
+from .accounting import payout_readiness_summary
 from .forms import MembershipTierForm, TipForm
 from .models import (
     ChannelMembershipSubscription,
@@ -74,13 +75,13 @@ def creator_dashboard(request, pk):
     account = CreatorMonetizationAccount.objects.filter(channel=channel).first()
     tiers = list(account.membership_tiers.order_by("price_minor", "name")) if account else []
     transactions = list(account.transactions.select_related("payer").all()[:20] if account else [])
-    creator_net_minor = 0
+    payout_summary = None
     platform_fee_minor = 0
     if account:
+        payout_summary = payout_readiness_summary(account)
         totals = account.transactions.filter(status=MonetizationTransaction.Status.SUCCEEDED).aggregate(
-            creator_net=Sum("creator_net_minor"), platform_fee=Sum("platform_fee_minor")
+            platform_fee=Sum("platform_fee_minor")
         )
-        creator_net_minor = totals["creator_net"] or 0
         platform_fee_minor = totals["platform_fee"] or 0
 
     for tier in tiers:
@@ -95,7 +96,12 @@ def creator_dashboard(request, pk):
         "account": account,
         "tiers": tiers,
         "transactions": transactions,
-        "creator_net_display": _money(creator_net_minor),
+        "creator_net_display": _money(payout_summary.available_minor if payout_summary else 0),
+        "payout_summary": payout_summary,
+        "earned_display": _money(payout_summary.earned_minor if payout_summary else 0),
+        "pending_display": _money(payout_summary.pending_minor if payout_summary else 0),
+        "refunded_reversed_display": _money(payout_summary.refunded_reversed_minor if payout_summary else 0),
+        "paid_out_display": _money(payout_summary.paid_out_minor if payout_summary else 0),
         "platform_fee_display": _money(platform_fee_minor),
         "platform_fee_percent": settings.MONETIZATION_PLATFORM_FEE_BPS / 100,
         "payment_provider": settings.MONETIZATION_PAYMENT_PROVIDER,

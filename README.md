@@ -225,7 +225,7 @@ ffmpeg -hide_banner -encoders | grep -E 'libx264|aac'
 
 ### Terraform checks
 
-Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.3 matches CI.
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.5 matches CI.
 
 ```bash
 cd terraform/environments/dev
@@ -289,11 +289,14 @@ When `DJANGO_DEBUG=true`, the container starts Django's development server. With
 ## Current direction
 
 The latest development phase delivered administration and moderation, scheduled
-notifications, richer discovery and memberships, and the first-class Shorts
-workflow. Current work is reducing Shorts template risk through focused static
-controllers. Continue selecting one bounded sprint at a time through the
-documentation-first process. Higher-cost AWS services will be introduced only
-when usage justifies them.
+notifications, richer discovery and memberships, first-class Shorts, and
+Monetization V1 with sandbox/test-mode accounting through payout readiness.
+The previously tracked Shorts template/controller maintenance debt is complete;
+new work should be driven by current product requirements, observed regressions,
+profiling evidence, or accessibility findings. Continue selecting one bounded
+sprint at a time through the documentation-first process. Higher-cost AWS
+services and live-payment/payout activation remain explicitly deferred until
+they are justified and approved.
 
 
 ## Development workflow

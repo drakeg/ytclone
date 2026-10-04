@@ -211,3 +211,75 @@ class CommentReplyTests(TestCase):
         )
         reply.refresh_from_db()
         self.assertTrue(reply.is_hidden)
+
+
+    def test_video_detail_caps_visible_reply_preview_and_links_full_thread(self):
+        replies = [
+            self.create_reply(f"Reply {index}", author=self.other if index % 2 else self.replier)
+            for index in range(1, 6)
+        ]
+        hidden = self.create_reply("Hidden extra", hidden=True)
+
+        response = self.client.get(reverse("video_detail", kwargs={"pk": self.video.pk}))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "5 replies")
+        for reply in replies[:3]:
+            self.assertContains(response, reply.comment)
+        for reply in replies[3:]:
+            self.assertNotContains(response, reply.comment)
+        self.assertNotContains(response, hidden.comment)
+        self.assertContains(
+            response,
+            reverse("comment_thread", kwargs={"pk": self.parent.pk}),
+        )
+
+    def test_full_thread_shows_all_visible_replies_in_order(self):
+        replies = [self.create_reply(f"Thread reply {index}") for index in range(1, 6)]
+        hidden = self.create_reply("Thread hidden", hidden=True)
+
+        response = self.client.get(
+            reverse("comment_thread", kwargs={"pk": self.parent.pk})
+        )
+        content = response.content.decode()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.parent.comment)
+        for reply in replies:
+            self.assertContains(response, reply.comment)
+        self.assertNotContains(response, hidden.comment)
+        positions = [content.index(reply.comment) for reply in replies]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_full_thread_rejects_reply_hidden_parent_and_inaccessible_video(self):
+        reply = self.create_reply("Not a parent")
+        self.assertEqual(
+            self.client.get(reverse("comment_thread", kwargs={"pk": reply.pk})).status_code,
+            404,
+        )
+
+        self.parent.is_hidden = True
+        self.parent.save(update_fields=["is_hidden"])
+        self.assertEqual(
+            self.client.get(reverse("comment_thread", kwargs={"pk": self.parent.pk})).status_code,
+            404,
+        )
+
+        self.parent.is_hidden = False
+        self.parent.save(update_fields=["is_hidden"])
+        self.video.publication_status = Video.PublicationStatus.DRAFT
+        self.video.save(update_fields=["publication_status"])
+        self.assertEqual(
+            self.client.get(reverse("comment_thread", kwargs={"pk": self.parent.pk})).status_code,
+            404,
+        )
+
+    def test_unlisted_shared_thread_requires_matching_share_token(self):
+        self.video.publication_status = Video.PublicationStatus.UNLISTED
+        self.video.save(update_fields=["publication_status"])
+        url = reverse("comment_thread", kwargs={"pk": self.parent.pk})
+
+        self.assertEqual(self.client.get(url).status_code, 404)
+        response = self.client.get(f"{url}?share={self.video.share_token}")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.parent.comment)

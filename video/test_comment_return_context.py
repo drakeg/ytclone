@@ -165,9 +165,20 @@ class CommentReturnContextTests(TestCase):
         response = self.client.get(detail, {"comments_page": 2})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'name="next"', html=False)
+        expected = f"{detail}?comments_page=2"
         self.assertContains(
             response,
-            quote(f"{detail}?comments_page=2", safe=""),
+            f'name="next" value="{expected}"',
+            html=False,
+        )
+        self.assertContains(response, "?next=", html=False)
+        self.assertContains(
+            response,
+            reverse("comment_edit", kwargs={"pk": self.reply.pk}),
+            html=False,
+        )
+        self.assertContains(
+            response,
+            reverse("comment_delete", kwargs={"pk": self.reply.pk}),
             html=False,
         )

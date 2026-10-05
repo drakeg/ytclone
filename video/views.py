@@ -4,6 +4,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db.models import Count, F, Max, Prefetch, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -123,7 +124,9 @@ def creator_comment_list(request):
         request,
         "videos/creator_comment_list.html",
         {
-            "comments": comments,
+            "comments": comments_page,
+            "comments_page": comments_page,
+            "selected_comment_filter": selected_comment_filter,
             "comment_filters": COMMENT_FILTERS,
             "selected_filter": selected_filter,
         },
@@ -191,6 +194,14 @@ def _render_video_detail(request, video):
             Prefetch("replies", queryset=visible_replies, to_attr="visible_replies")
         )
         .order_by("pub_date", "pk")
+    )
+    selected_comment_filter = (
+        "questions" if request.GET.get("comments") == "questions" else "all"
+    )
+    if selected_comment_filter == "questions":
+        comments = comments.filter(question__isnull=False)
+    comments_page = Paginator(comments, 10).get_page(
+        request.GET.get("comments_page")
     )
     playlists = []
     bookmarks = []

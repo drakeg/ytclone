@@ -191,7 +191,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #234 is merged in the current documented baseline. Synchronize
+Work through PR #238 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -205,14 +205,17 @@ Recent completed work now includes:
   creation, structured tags, hashtags, search integration, and discovery pages
 - Monetization V1 from issue #73, including sandbox/test tips and memberships,
   Stripe test-mode lifecycle, refunds/reversals, and payout-readiness accounting
+- Comment scaling through PR #238: three-reply previews with full-thread views and
+  10-per-page top-level comment pagination with question filtering before paging
 
 Issues #79 and #73 are closed as completed. Monetization V1 now includes the
 sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
 payout-readiness summary through PR #234.
 
 Dependency maintenance PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5) are
-merged. PR #233 reconciled the roadmap/handoff, and PR #234 completed payout
-readiness accounting visibility.
+merged. PR #233 reconciled the roadmap/handoff, PR #234 completed payout
+readiness accounting visibility, and PRs #237–#238 completed comment-thread and
+top-level comment pagination.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

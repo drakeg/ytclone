@@ -124,9 +124,7 @@ def creator_comment_list(request):
         request,
         "videos/creator_comment_list.html",
         {
-            "comments": comments_page,
-            "comments_page": comments_page,
-            "selected_comment_filter": selected_comment_filter,
+            "comments": comments,
             "comment_filters": COMMENT_FILTERS,
             "selected_filter": selected_filter,
         },

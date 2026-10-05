@@ -33,6 +33,7 @@ from .services.chapters import replace_chapters
 from .services.bookmarks import BookmarkValidationError, get_visible_bookmarks, save_bookmark
 from .services.discovery import get_discovery_sections
 from .services.notifications import clear_team_invitation_notification, notify_comment, notify_new_upload, notify_reaction, notify_reply, notify_subscription, notify_team_invitation
+from .services.navigation import safe_return_url
 from .services.moderation import (
     COMMENT_FILTERS,
     bulk_moderate_comments,
@@ -383,7 +384,12 @@ def add_comment(request, pk):
         comment.author = request.user
         comment.save()
         notify_comment(comment)
-    return redirect("video_detail", pk=video.pk)
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("video_detail", kwargs={"pk": video.pk}),
+        )
+    )
 
 
 @login_required
@@ -405,7 +411,12 @@ def add_comment_reply(request, pk):
         reply.save()
         notify_comment(reply)
         notify_reply(reply)
-    return redirect("video_detail", pk=parent.video_id)
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("video_detail", kwargs={"pk": parent.video_id}),
+        )
+    )
 
 
 def _get_owned_visible_comment(user, pk):
@@ -424,13 +435,25 @@ def comment_edit(request, pk):
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
-            return redirect("video_detail", pk=comment.video_id)
+            return redirect(
+                safe_return_url(
+                    request,
+                    reverse("video_detail", kwargs={"pk": comment.video_id}),
+                )
+            )
     else:
         form = CommentForm(instance=comment)
     return render(
         request,
         "videos/comment_edit.html",
-        {"comment": comment, "form": form},
+        {
+            "comment": comment,
+            "form": form,
+            "return_to": safe_return_url(
+                request,
+                reverse("video_detail", kwargs={"pk": comment.video_id}),
+            ),
+        },
     )
 
 
@@ -440,11 +463,22 @@ def comment_delete(request, pk):
     video_pk = comment.video_id
     if request.method == "POST":
         comment.delete()
-        return redirect("video_detail", pk=video_pk)
+        return redirect(
+            safe_return_url(
+                request,
+                reverse("video_detail", kwargs={"pk": video_pk}),
+            )
+        )
     return render(
         request,
         "videos/comment_confirm_delete.html",
-        {"comment": comment},
+        {
+            "comment": comment,
+            "return_to": safe_return_url(
+                request,
+                reverse("video_detail", kwargs={"pk": video_pk}),
+            ),
+        },
     )
 
 

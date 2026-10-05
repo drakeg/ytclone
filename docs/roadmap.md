@@ -1023,7 +1023,7 @@ Issue #73 is complete. The V1 safety gate remains in force: no live-payment acti
 Any future move to live payments or real creator payouts must be planned as a separate explicitly approved project with provider, operational, security, accounting, and compliance review.
 
 
-## Sprint in progress: Comment reply thread pagination
+## Completed sprint: Comment reply thread pagination
 
 Goal: keep long comment threads usable by showing at most three visible replies per top-level comment on the video detail page while preserving a dedicated server-rendered route to the complete visible thread.
 
@@ -1038,10 +1038,19 @@ Delivered/target scope:
 Plan and verification: `docs/comment-reply-thread-pagination-sprint.md`.
 
 
-## Sprint in progress: Top-level comment pagination
+## Completed sprint: Top-level comment pagination
 
 Goal: paginate visible top-level comments at 10 per page, apply the All / Questions filter before pagination, and preserve bounded reply previews plus shared-video route safety.
 
 No schema, migration, dependency, JavaScript framework, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/top-level-comment-pagination-sprint.md`.
+
+
+## Comment pagination closeout — October 5, 2026
+
+Merged:
+- PR #237 — bounded reply previews plus full comment-thread view
+- PR #238 — top-level comment pagination with queryset-level question filtering
+
+PR #238 Django checks passed after the context-fix follow-up. The comment system now bounds both top-level comments and inline reply previews while preserving full-thread access, moderation rules, Q&A controls, and unlisted-share route safety.

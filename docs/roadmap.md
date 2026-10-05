@@ -1036,3 +1036,12 @@ Delivered/target scope:
 - no schema, JavaScript dependency, worker, queue, AWS resource, paid service, or live-payment change
 
 Plan and verification: `docs/comment-reply-thread-pagination-sprint.md`.
+
+
+## Sprint in progress: Top-level comment pagination
+
+Goal: paginate visible top-level comments at 10 per page, apply the All / Questions filter before pagination, and preserve bounded reply previews plus shared-video route safety.
+
+No schema, migration, dependency, JavaScript framework, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/top-level-comment-pagination-sprint.md`.

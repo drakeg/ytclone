@@ -230,7 +230,9 @@ def _render_video_detail(request, video):
         {
             "video": video,
             "form": CommentForm(),
-            "comments": comments,
+            "comments": comments_page,
+            "comments_page": comments_page,
+            "selected_comment_filter": selected_comment_filter,
             "playlists": playlists,
             "bookmarks": bookmarks,
             "bookmarks_enabled": video.is_visible_to(request.user),

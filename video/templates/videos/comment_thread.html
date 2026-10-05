@@ -26,8 +26,8 @@
         <p class="comment-body">{{ comment.comment }}</p>
         {% if user == comment.author %}
         <div class="d-flex gap-2">
-            <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a>
-            <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}?next={{ request.get_full_path|urlencode }}">Edit</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}?next={{ request.get_full_path|urlencode }}">Delete</a>
         </div>
         {% endif %}
 
@@ -49,8 +49,8 @@
             <p class="comment-body">{{ reply.comment }}</p>
             <div class="d-flex flex-wrap gap-2">
                 {% if user == reply.author %}
-                <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a>
-                <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}?next={{ request.get_full_path|urlencode }}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}?next={{ request.get_full_path|urlencode }}">Delete</a>
                 {% endif %}
                 {% if user == video.author and comment.question %}
                 <form method="post" action="{% url 'feature_question_answer' reply.pk %}">
@@ -67,6 +67,7 @@
         {% if user.is_authenticated %}
         <form class="comment-reply mt-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
             <label for="thread-reply-{{ comment.pk }}">Reply</label>
             <textarea id="thread-reply-{{ comment.pk }}" name="comment" rows="2" required></textarea>
             <button class="btn btn-sm btn-outline-primary mt-2" type="submit">Post reply</button>

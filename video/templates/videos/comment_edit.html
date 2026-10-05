@@ -9,9 +9,10 @@
     {% endif %}
     <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{{ return_to }}">
         {{ form.as_p }}
         <button class="btn btn-primary" type="submit">Save comment</button>
-        <a class="btn btn-outline-secondary" href="{% url 'video_detail' comment.video.pk %}">Cancel</a>
+        <a class="btn btn-outline-secondary" href="{{ return_to }}">Cancel</a>
     </form>
 </div>
 {% endblock %}

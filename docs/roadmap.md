@@ -1054,3 +1054,12 @@ Merged:
 - PR #238 — top-level comment pagination with queryset-level question filtering
 
 PR #238 Django checks passed after the context-fix follow-up. The comment system now bounds both top-level comments and inline reply previews while preserving full-thread access, moderation rules, Q&A controls, and unlisted-share route safety.
+
+
+## Sprint in progress: Comment return context
+
+Goal: preserve the current comment page, filter, or full-thread route after comment/reply creation, editing, and deletion while rejecting unsafe external return targets.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/comment-return-context-sprint.md`.

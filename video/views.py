@@ -4,6 +4,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.paginator import Paginator
 from django.db.models import Count, F, Max, Prefetch, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -192,6 +193,14 @@ def _render_video_detail(request, video):
         )
         .order_by("pub_date", "pk")
     )
+    selected_comment_filter = (
+        "questions" if request.GET.get("comments") == "questions" else "all"
+    )
+    if selected_comment_filter == "questions":
+        comments = comments.filter(question__isnull=False)
+    comments_page = Paginator(comments, 10).get_page(
+        request.GET.get("comments_page")
+    )
     playlists = []
     bookmarks = []
     history_entry = None
@@ -221,7 +230,9 @@ def _render_video_detail(request, video):
         {
             "video": video,
             "form": CommentForm(),
-            "comments": comments,
+            "comments": comments_page,
+            "comments_page": comments_page,
+            "selected_comment_filter": selected_comment_filter,
             "playlists": playlists,
             "bookmarks": bookmarks,
             "bookmarks_enabled": video.is_visible_to(request.user),

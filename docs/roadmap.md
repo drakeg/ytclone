@@ -1021,3 +1021,18 @@ Merged sequence:
 Issue #73 is complete. The V1 safety gate remains in force: no live-payment activation, real payouts, provider payout execution, bank-account management, tax/reporting workflow, or paid infrastructure is authorized by this closeout.
 
 Any future move to live payments or real creator payouts must be planned as a separate explicitly approved project with provider, operational, security, accounting, and compliance review.
+
+
+## Sprint in progress: Comment reply thread pagination
+
+Goal: keep long comment threads usable by showing at most three visible replies per top-level comment on the video detail page while preserving a dedicated server-rendered route to the complete visible thread.
+
+Delivered/target scope:
+- bounded three-reply previews with total visible reply counts
+- full-thread route for visible top-level comments
+- hidden replies excluded from counts, previews, and full threads
+- existing edit/delete/report, supporter-badge, and Q&A highlighting controls preserved
+- unlisted shared-video thread access remains gated by the matching share token
+- no schema, JavaScript dependency, worker, queue, AWS resource, paid service, or live-payment change
+
+Plan and verification: `docs/comment-reply-thread-pagination-sprint.md`.

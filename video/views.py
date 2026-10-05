@@ -4,7 +4,7 @@ import uuid
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.db.models import F, Max, Prefetch, Q
+from django.db.models import Count, F, Max, Prefetch, Q
 from django.http import Http404, HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -172,10 +172,21 @@ def shared_video_detail(request, token):
 
 
 def _render_video_detail(request, video):
-    visible_replies = Comment.objects.filter(is_hidden=False).select_related("author").order_by("pub_date", "pk")
+    visible_replies = (
+        Comment.objects.filter(is_hidden=False)
+        .select_related("author")
+        .order_by("pub_date", "pk")[:3]
+    )
     comments = (
         Comment.objects.filter(video=video, parent__isnull=True, is_hidden=False)
         .select_related("author")
+        .annotate(
+            visible_reply_count=Count(
+                "replies",
+                filter=Q(replies__is_hidden=False),
+                distinct=True,
+            )
+        )
         .prefetch_related(
             Prefetch("replies", queryset=visible_replies, to_attr="visible_replies")
         )
@@ -216,6 +227,44 @@ def _render_video_detail(request, video):
             "bookmarks_enabled": video.is_visible_to(request.user),
             "history_entry": history_entry,
             "may_edit_video": may_edit,
+        },
+    )
+
+
+def comment_thread(request, pk):
+    visible_replies = (
+        Comment.objects.filter(is_hidden=False)
+        .select_related("author")
+        .order_by("pub_date", "pk")
+    )
+    comment = get_object_or_404(
+        Comment.objects.filter(parent__isnull=True, is_hidden=False)
+        .select_related("author", "video", "video__author", "video__channel")
+        .prefetch_related(
+            Prefetch("replies", queryset=visible_replies, to_attr="visible_replies")
+        ),
+        pk=pk,
+    )
+    video = comment.video
+
+    has_access = video.is_visible_to(request.user)
+    if not has_access and video.publication_status == Video.PublicationStatus.UNLISTED:
+        share_token = request.GET.get("share", "")
+        has_access = (
+            share_token == str(video.share_token)
+            and video.deleted_at is None
+            and video.has_member_access(request.user)
+        )
+    if not has_access:
+        raise Http404("Comment thread not found")
+
+    return render(
+        request,
+        "videos/comment_thread.html",
+        {
+            "video": video,
+            "comment": comment,
+            "form": CommentForm(),
         },
     )
 

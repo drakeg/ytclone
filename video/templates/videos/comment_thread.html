@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load video_qa_tags %}
+
+{% block title %}Comment thread · {{ video.title }} · VideoShare{% endblock %}
+
+{% block content %}
+<header class="page-header">
+    <div>
+        <p class="eyebrow">Comment thread</p>
+        <h1>{{ video.title }}</h1>
+        <p><a href="{% if video.publication_status == 'unlisted' %}{% url 'shared_video_detail' video.share_token %}{% else %}{% url 'video_detail' video.pk %}{% endif %}#comments-heading">Back to video comments</a></p>
+    </div>
+</header>
+
+<section class="comments" aria-labelledby="thread-heading">
+    <h2 id="thread-heading" class="h4">Thread</h2>
+    <article class="comment">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <span class="comment-author">{{ comment.author }}</span>
+            <span class="comment-date">· {{ comment.pub_date|timesince }} ago</span>
+            {% if comment.question %}<span class="badge text-bg-primary">Question</span>{% endif %}
+            {% supporter_badge_for comment.author video as is_supporter %}
+            {% if is_supporter %}<span class="badge text-bg-warning">Paid member</span>{% endif %}
+            {% if user.is_authenticated and user != comment.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' comment.pk %}">Report</a>{% endif %}
+        </div>
+        <p class="comment-body">{{ comment.comment }}</p>
+        {% if user == comment.author %}
+        <div class="d-flex gap-2">
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' comment.pk %}">Edit</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' comment.pk %}">Delete</a>
+        </div>
+        {% endif %}
+
+        {% if comment.question.featured_reply %}
+        <div class="alert alert-info mt-3 mb-3">
+            <strong>Creator-highlighted answer</strong>
+            <div><strong>@{{ comment.question.featured_reply.author.username }}</strong></div>
+            <div>{{ comment.question.featured_reply.comment }}</div>
+        </div>
+        {% endif %}
+
+        {% for reply in comment.visible_replies %}
+        <article class="comment-reply">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <span class="comment-author">{{ reply.author }}</span>
+                <span class="comment-date">· {{ reply.pub_date|timesince }} ago</span>
+                {% if user.is_authenticated and user != reply.author %}<a class="btn btn-sm btn-outline-danger" href="{% url 'report_content' 'comment' reply.pk %}">Report</a>{% endif %}
+            </div>
+            <p class="comment-body">{{ reply.comment }}</p>
+            <div class="d-flex flex-wrap gap-2">
+                {% if user == reply.author %}
+                <a class="btn btn-sm btn-outline-secondary" href="{% url 'comment_edit' reply.pk %}">Edit</a>
+                <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}">Delete</a>
+                {% endif %}
+                {% if user == video.author and comment.question %}
+                <form method="post" action="{% url 'feature_question_answer' reply.pk %}">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-primary" type="submit">{% if comment.question.featured_reply_id == reply.pk %}Unhighlight answer{% else %}Highlight answer{% endif %}</button>
+                </form>
+                {% endif %}
+            </div>
+        </article>
+        {% empty %}
+        <div class="empty-state mt-3">No visible replies yet.</div>
+        {% endfor %}
+
+        {% if user.is_authenticated %}
+        <form class="comment-reply mt-3" method="post" action="{% url 'add_comment_reply' comment.pk %}">
+            {% csrf_token %}
+            <label for="thread-reply-{{ comment.pk }}">Reply</label>
+            <textarea id="thread-reply-{{ comment.pk }}" name="comment" rows="2" required></textarea>
+            <button class="btn btn-sm btn-outline-primary mt-2" type="submit">Post reply</button>
+        </form>
+        {% endif %}
+    </article>
+</section>
+{% endblock %}

@@ -8,8 +8,9 @@
     {% if comment.replies.exists %}<p>Replies in this thread will also be deleted.</p>{% endif %}
     <form method="post">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{{ return_to }}">
         <button class="btn btn-danger" type="submit">Delete comment</button>
-        <a class="btn btn-outline-secondary" href="{% url 'video_detail' comment.video.pk %}">Cancel</a>
+        <a class="btn btn-outline-secondary" href="{{ return_to }}">Cancel</a>
     </form>
 </div>
 {% endblock %}

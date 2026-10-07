@@ -1056,10 +1056,18 @@ Merged:
 PR #238 Django checks passed after the context-fix follow-up. The comment system now bounds both top-level comments and inline reply previews while preserving full-thread access, moderation rules, Q&A controls, and unlisted-share route safety.
 
 
-## Sprint in progress: Comment return context
+## Completed sprint: Comment return context
 
 Goal: preserve the current comment page, filter, or full-thread route after comment/reply creation, editing, and deletion while rejecting unsafe external return targets.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/comment-return-context-sprint.md`.
+
+
+## Comment return context closeout — October 6, 2026
+
+Merged:
+- PR #240 — preserve comment page/filter/thread return context across comment and reply creation, editing, and deletion with same-host redirect validation
+
+The final Django checks passed after replacing a brittle encoding-specific test assertion. Comment navigation now preserves the originating location without introducing an open-redirect path.

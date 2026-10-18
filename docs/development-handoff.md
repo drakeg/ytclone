@@ -4,18 +4,36 @@ This document lets a new development session or assistant continue the project
 without depending on prior chat history. Repository files and current GitHub
 state are authoritative when they differ from this dated snapshot.
 
-## Handoff snapshot — October 3, 2026
+## Handoff snapshot — October 18, 2026
 
 - Repository: `drakeg/ytclone`
 - Default branch: `main`
-- Latest merged work reviewed at handoff: [#235 — Close out monetization V1 documentation](https://github.com/drakeg/ytclone/pull/235)
+- Latest merged work reviewed at handoff: [#246 — Pillow 13 dependency update](https://github.com/drakeg/ytclone/pull/246)
 - Current continuation branch: `main`
 - Latest migration on `main`: `video/0039_videobookmark_sort_position`
-- Current merged baseline includes PRs #231–#235; re-read live GitHub Actions before quoting a test count because the suite continues to grow.
+- Current merged baseline includes dependency/runtime updates through PR #246; re-read live GitHub Actions before quoting a test count because the suite continues to grow.
 
 Before making changes, inspect GitHub rather than assuming this snapshot is still
 current. Update local `main` and branch from it. Never reconstruct
 already-completed work from this document.
+
+## Current runtime baseline
+
+- Python 3.15 in the Docker image and Django CI
+- Django 6.1.2
+- Pillow 13.0.0
+- python-dotenv 1.2.4
+- Stripe 16.x
+- Terraform 1.16.6 in Terraform CI
+
+Recent dependency maintenance:
+- PR #242 — python-dotenv 1.2.4
+- PR #243 — Python 3.15 runtime baseline
+- PR #244 — Terraform 1.16.6
+- PR #245 — Django 6.1.2
+- PR #246 — Pillow 13
+
+All relevant CI checks for PRs #242–#246 passed before merge.
 
 ## Product and architecture
 
@@ -191,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #240 is merged in the current documented baseline. Synchronize
+Work through PR #246 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -216,9 +234,10 @@ payout-readiness summary through PR #234.
 
 Dependency maintenance PR #231 (Stripe 16) and PR #232 (Terraform 1.16.5) are
 merged. PR #233 reconciled the roadmap/handoff, PR #234 completed payout
-readiness accounting visibility, and PRs #237–#238 completed comment-thread and
-top-level comment pagination. PR #240 completed safe comment return-context
-preservation.
+readiness accounting visibility, PRs #237–#238 completed comment-thread and
+top-level comment pagination, and PR #240 completed safe comment return-context
+preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django,
+and Pillow to the current documented runtime baseline.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

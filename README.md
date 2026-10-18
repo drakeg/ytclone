@@ -56,6 +56,19 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 - Optional private S3 media storage
 - Terraform modules for private media storage and AWS budget alerts
 
+## Runtime baseline
+
+The current supported repository baseline is:
+
+- Python 3.15 in Docker and Django CI
+- Django 6.1.2
+- Pillow 13.0.0
+- python-dotenv 1.2.4
+- Stripe 16.x
+- Terraform 1.16.6 for infrastructure validation
+
+Dependency updates should keep Docker, CI, requirements, and contributor documentation aligned.
+
 ## Local development with Docker
 
 1. Copy the environment template:
@@ -225,7 +238,7 @@ ffmpeg -hide_banner -encoders | grep -E 'libx264|aac'
 
 ### Terraform checks
 
-Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.5 matches CI.
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.6 matches CI.
 
 ```bash
 cd terraform/environments/dev

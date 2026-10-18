@@ -1071,3 +1071,17 @@ Merged:
 - PR #240 — preserve comment page/filter/thread return context across comment and reply creation, editing, and deletion with same-host redirect validation
 
 The final Django checks passed after replacing a brittle encoding-specific test assertion. Comment navigation now preserves the originating location without introducing an open-redirect path.
+
+
+## Runtime baseline reconciliation — October 18, 2026
+
+Merged dependency/runtime sequence:
+- PR #242 — python-dotenv 1.2.4
+- PR #243 — Python 3.15 runtime baseline
+- PR #244 — Terraform 1.16.6
+- PR #245 — Django 6.1.2
+- PR #246 — Pillow 13
+
+Relevant Django and Terraform checks passed. The contributor baseline is now Python 3.15, Django 6.1.2, Pillow 13.0.0, python-dotenv 1.2.4, Stripe 16.x, and Terraform 1.16.6.
+
+This reconciliation changes documentation only; it does not alter runtime behavior beyond the already-merged dependency updates.

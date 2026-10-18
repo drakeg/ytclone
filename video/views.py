@@ -192,13 +192,19 @@ def _render_video_detail(request, video):
         .prefetch_related(
             Prefetch("replies", queryset=visible_replies, to_attr="visible_replies")
         )
-        .order_by("pub_date", "pk")
     )
     selected_comment_filter = (
         "questions" if request.GET.get("comments") == "questions" else "all"
     )
+    selected_comment_sort = (
+        "newest" if request.GET.get("comments_sort") == "newest" else "oldest"
+    )
     if selected_comment_filter == "questions":
         comments = comments.filter(question__isnull=False)
+    if selected_comment_sort == "newest":
+        comments = comments.order_by("-pub_date", "-pk")
+    else:
+        comments = comments.order_by("pub_date", "pk")
     comments_page = Paginator(comments, 10).get_page(
         request.GET.get("comments_page")
     )
@@ -234,6 +240,7 @@ def _render_video_detail(request, video):
             "comments": comments_page,
             "comments_page": comments_page,
             "selected_comment_filter": selected_comment_filter,
+            "selected_comment_sort": selected_comment_sort,
             "playlists": playlists,
             "bookmarks": bookmarks,
             "bookmarks_enabled": video.is_visible_to(request.user),

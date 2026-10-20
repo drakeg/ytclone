@@ -1102,3 +1102,12 @@ Merged:
 - PR #248 — Oldest/Newest top-level comment sorting with filter, pagination, and shared-route preservation
 
 The merged implementation preserves oldest-first as the default, applies sorting before pagination, keeps Questions filtering compatible with both sort modes, and leaves reply ordering unchanged.
+
+
+## Sprint in progress: Creator comment moderation pagination
+
+Goal: paginate the creator moderation queue at 25 comments per page, apply status filters before pagination, and preserve the creator's current filter/page after valid bulk moderation actions.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/creator-comment-moderation-pagination-sprint.md`.

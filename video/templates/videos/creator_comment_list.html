@@ -16,6 +16,7 @@
     {% if comments %}
         <form method="post" action="{% url 'creator_comment_bulk_moderation' %}">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
             <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
                 <label for="moderation-action" class="fw-semibold">Set selected to</label>
                 <select id="moderation-action" name="action" class="form-select w-auto" required>
@@ -53,6 +54,19 @@
                 </table>
             </div>
         </form>
+        {% if comments_page.paginator.num_pages > 1 %}
+            <nav aria-label="Comment moderation pages">
+                <ul class="pagination">
+                    {% if comments_page.has_previous %}
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}&amp;page={{ comments_page.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Page {{ comments_page.number }} of {{ comments_page.paginator.num_pages }}</span></li>
+                    {% if comments_page.has_next %}
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}&amp;page={{ comments_page.next_page_number }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
     {% else %}
         <div class="alert alert-light border" role="status">No comments match this moderation status.</div>
     {% endif %}

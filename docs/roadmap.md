@@ -1085,3 +1085,12 @@ Merged dependency/runtime sequence:
 Relevant Django and Terraform checks passed. The contributor baseline is now Python 3.15, Django 6.1.2, Pillow 13.0.0, python-dotenv 1.2.4, Stripe 16.x, and Terraform 1.16.6.
 
 This reconciliation changes documentation only; it does not alter runtime behavior beyond the already-merged dependency updates.
+
+
+## Sprint in progress: Comment sort toggle
+
+Goal: add Oldest / Newest sorting for top-level video comments while preserving the current oldest-first default, applying sorting before pagination, and keeping filter/shared-route state correct.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/comment-sort-toggle-sprint.md`.

@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #246 is merged in the current documented baseline. Synchronize
+Work through PR #248 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -227,6 +227,8 @@ Recent completed work now includes:
   10-per-page top-level comment pagination with question filtering before paging
 - Comment navigation through PR #240: safe return-context preservation across
   create, reply, edit, and delete flows for paginated pages and full threads
+- Comment sorting through PR #248: oldest/newest top-level ordering applied before
+  pagination with Questions filtering and shared-route state preservation
 
 Issues #79 and #73 are closed as completed. Monetization V1 now includes the
 sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
@@ -237,7 +239,8 @@ merged. PR #233 reconciled the roadmap/handoff, PR #234 completed payout
 readiness accounting visibility, PRs #237–#238 completed comment-thread and
 top-level comment pagination, and PR #240 completed safe comment return-context
 preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django,
-and Pillow to the current documented runtime baseline.
+and Pillow to the current documented runtime baseline. PR #248 added top-level
+comment sorting while preserving pagination/filter behavior.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

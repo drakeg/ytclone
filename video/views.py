@@ -121,11 +121,13 @@ def creator_comment_list(request):
     comments, selected_filter = get_creator_comments(
         request.user, request.GET.get("status", "all")
     )
+    comments_page = Paginator(comments, 25).get_page(request.GET.get("page"))
     return render(
         request,
         "videos/creator_comment_list.html",
         {
-            "comments": comments,
+            "comments": comments_page,
+            "comments_page": comments_page,
             "comment_filters": COMMENT_FILTERS,
             "selected_filter": selected_filter,
         },
@@ -143,7 +145,12 @@ def creator_comment_bulk_moderation(request):
         )
     except ValueError as error:
         return HttpResponseBadRequest(str(error))
-    return redirect("creator_comment_list")
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("creator_comment_list"),
+        )
+    )
 
 
 @login_required

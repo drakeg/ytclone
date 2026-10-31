@@ -23,13 +23,13 @@ already-completed work from this document.
 - Django 6.1.2
 - Pillow 13.0.0
 - python-dotenv 1.2.4
-- Stripe 16.x
-- Terraform 1.16.6 in Terraform CI
+- Stripe 16.1.0
+- Terraform 1.17.1 in Terraform CI
 
 Recent dependency maintenance:
 - PR #242 — python-dotenv 1.2.4
 - PR #243 — Python 3.15 runtime baseline
-- PR #244 — Terraform 1.16.6
+- PR #244 — Terraform 1.17.1
 - PR #245 — Django 6.1.2
 - PR #246 — Pillow 13
 
@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #248 is merged in the current documented baseline. Synchronize
+Work through PR #252 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -229,6 +229,8 @@ Recent completed work now includes:
   create, reply, edit, and delete flows for paginated pages and full threads
 - Comment sorting through PR #248: oldest/newest top-level ordering applied before
   pagination with Questions filtering and shared-route state preservation
+- Creator moderation through PR #250: 25-per-page comment moderation with status
+  filtering before pagination and safe filter/page preservation after bulk actions
 
 Issues #79 and #73 are closed as completed. Monetization V1 now includes the
 sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
@@ -240,7 +242,9 @@ readiness accounting visibility, PRs #237–#238 completed comment-thread and
 top-level comment pagination, and PR #240 completed safe comment return-context
 preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django,
 and Pillow to the current documented runtime baseline. PR #248 added top-level
-comment sorting while preserving pagination/filter behavior.
+comment sorting while preserving pagination/filter behavior. PR #250 paginated
+the creator moderation queue, PR #251 updated Terraform to 1.17.1, and PR #252
+updated Stripe to 16.1.0.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

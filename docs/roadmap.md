@@ -1104,10 +1104,22 @@ Merged:
 The merged implementation preserves oldest-first as the default, applies sorting before pagination, keeps Questions filtering compatible with both sort modes, and leaves reply ordering unchanged.
 
 
-## Sprint in progress: Creator comment moderation pagination
+## Completed sprint: Creator comment moderation pagination
 
 Goal: paginate the creator moderation queue at 25 comments per page, apply status filters before pagination, and preserve the creator's current filter/page after valid bulk moderation actions.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/creator-comment-moderation-pagination-sprint.md`.
+
+
+## Moderation and runtime closeout — October 31, 2026
+
+Merged:
+- PR #250 — creator comment moderation pagination at 25 items per page with filter/page preservation after safe bulk actions
+- PR #251 — Terraform 1.17.1
+- PR #252 — Stripe 16.1.0
+
+Relevant CI passed before merge: Django checks for #250–#252 and Terraform validation for #251. The documented runtime baseline is now Terraform 1.17.1 and Stripe 16.1.0.
+
+This closeout changes documentation only; no live-payment activation, infrastructure provisioning, schema change, or application behavior is introduced.

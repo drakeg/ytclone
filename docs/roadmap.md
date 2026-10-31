@@ -1123,3 +1123,12 @@ Merged:
 Relevant CI passed before merge: Django checks for #250–#252 and Terraform validation for #251. The documented runtime baseline is now Terraform 1.17.1 and Stripe 16.1.0.
 
 This closeout changes documentation only; no live-payment activation, infrastructure provisioning, schema change, or application behavior is introduced.
+
+
+## Sprint in progress: Creator comment moderation search
+
+Goal: add owner/editor-scoped search across comment text, author username, and video title while preserving status filters, pagination, and safe bulk-action return context.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/creator-comment-moderation-search-sprint.md`.

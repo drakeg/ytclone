@@ -24,16 +24,27 @@ def creator_comment_queryset(user):
     ).select_related("author", "parent", "video", "video__channel").distinct()
 
 
-def get_creator_comments(user, requested_filter):
+def get_creator_comments(user, requested_filter, requested_query=""):
     selected_filter = (
         requested_filter if requested_filter in FILTER_VALUES else "all"
     )
+    selected_query = (requested_query or "").strip()
     comments = creator_comment_queryset(user)
     if selected_filter == "visible":
         comments = comments.filter(is_hidden=False)
     elif selected_filter == "hidden":
         comments = comments.filter(is_hidden=True)
-    return comments.order_by("-pub_date", "-pk"), selected_filter
+    if selected_query:
+        comments = comments.filter(
+            Q(comment__icontains=selected_query)
+            | Q(author__username__icontains=selected_query)
+            | Q(video__title__icontains=selected_query)
+        )
+    return (
+        comments.order_by("-pub_date", "-pk"),
+        selected_filter,
+        selected_query,
+    )
 
 
 def bulk_moderate_comments(user, comment_ids, action):

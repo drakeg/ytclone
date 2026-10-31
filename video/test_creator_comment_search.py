@@ -175,7 +175,11 @@ class CreatorCommentSearchTests(TestCase):
             f'href="{base}?status=visible&amp;query=battery"',
             html=False,
         )
-        self.assertNotContains(response, "query=battery&amp;page=4", html=False)
+        self.assertContains(
+            response,
+            f'href="{base}?status=hidden&amp;query=battery"',
+            html=False,
+        )
 
     def test_search_form_preserves_status_and_resets_page(self):
         response = self.client.get(

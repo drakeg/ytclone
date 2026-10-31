@@ -64,8 +64,8 @@ The current supported repository baseline is:
 - Django 6.1.2
 - Pillow 13.0.0
 - python-dotenv 1.2.4
-- Stripe 16.x
-- Terraform 1.16.6 for infrastructure validation
+- Stripe 16.1.0
+- Terraform 1.17.1 for infrastructure validation
 
 Dependency updates should keep Docker, CI, requirements, and contributor documentation aligned.
 
@@ -238,7 +238,7 @@ ffmpeg -hide_banner -encoders | grep -E 'libx264|aac'
 
 ### Terraform checks
 
-Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.16.6 matches CI.
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.17.1 matches CI.
 
 ```bash
 cd terraform/environments/dev

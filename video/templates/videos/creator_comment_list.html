@@ -7,9 +7,25 @@
         <p class="text-muted mb-0">Review comments on your active videos. Hidden comments can be restored.</p>
     </div>
 
+    <form class="row g-2 align-items-end mb-3" method="get" action="{% url 'creator_comment_list' %}">
+        <input type="hidden" name="status" value="{{ selected_filter }}">
+        <div class="col-sm-8 col-lg-6">
+            <label class="form-label" for="moderation-search">Search comments</label>
+            <input class="form-control" id="moderation-search" type="search" name="query" value="{{ selected_query }}" placeholder="Comment text, author, or video">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </div>
+        {% if selected_query %}
+            <div class="col-auto">
+                <a class="btn btn-outline-secondary" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}">Clear</a>
+            </div>
+        {% endif %}
+    </form>
+
     <nav class="nav nav-pills gap-2 mb-4" aria-label="Comment status filters">
         {% for value, label in comment_filters %}
-            <a class="nav-link{% if selected_filter == value %} active{% endif %}" href="{% url 'creator_comment_list' %}?status={{ value }}">{{ label }}</a>
+            <a class="nav-link{% if selected_filter == value %} active{% endif %}" href="{% url 'creator_comment_list' %}?status={{ value }}{% if selected_query %}&amp;query={{ selected_query|urlencode }}{% endif %}">{{ label }}</a>
         {% endfor %}
     </nav>
 
@@ -58,11 +74,11 @@
             <nav aria-label="Comment moderation pages">
                 <ul class="pagination">
                     {% if comments_page.has_previous %}
-                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}&amp;page={{ comments_page.previous_page_number }}">Previous</a></li>
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}{% if selected_query %}&amp;query={{ selected_query|urlencode }}{% endif %}&amp;page={{ comments_page.previous_page_number }}">Previous</a></li>
                     {% endif %}
                     <li class="page-item disabled"><span class="page-link">Page {{ comments_page.number }} of {{ comments_page.paginator.num_pages }}</span></li>
                     {% if comments_page.has_next %}
-                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}&amp;page={{ comments_page.next_page_number }}">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_comment_list' %}?status={{ selected_filter }}{% if selected_query %}&amp;query={{ selected_query|urlencode }}{% endif %}&amp;page={{ comments_page.next_page_number }}">Next</a></li>
                     {% endif %}
                 </ul>
             </nav>

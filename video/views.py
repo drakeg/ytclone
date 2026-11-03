@@ -118,8 +118,10 @@ def creator_video_bulk_publication(request):
 
 @login_required
 def creator_comment_list(request):
-    comments, selected_filter = get_creator_comments(
-        request.user, request.GET.get("status", "all")
+    comments, selected_filter, selected_query = get_creator_comments(
+        request.user,
+        request.GET.get("status", "all"),
+        request.GET.get("query", ""),
     )
     comments_page = Paginator(comments, 25).get_page(request.GET.get("page"))
     return render(
@@ -130,6 +132,7 @@ def creator_comment_list(request):
             "comments_page": comments_page,
             "comment_filters": COMMENT_FILTERS,
             "selected_filter": selected_filter,
+            "selected_query": selected_query,
         },
     )
 

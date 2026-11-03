@@ -1125,10 +1125,18 @@ Relevant CI passed before merge: Django checks for #250–#252 and Terraform val
 This closeout changes documentation only; no live-payment activation, infrastructure provisioning, schema change, or application behavior is introduced.
 
 
-## Sprint in progress: Creator comment moderation search
+## Completed sprint: Creator comment moderation search
 
 Goal: add owner/editor-scoped search across comment text, author username, and video title while preserving status filters, pagination, and safe bulk-action return context.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/creator-comment-moderation-search-sprint.md`.
+
+
+## Creator comment moderation search closeout — November 3, 2026
+
+Merged:
+- PR #254 — owner/editor-scoped moderation search across comment text, author username, and video title
+
+The final Django checks passed after narrowing an overly broad page-reset assertion. Search combines with moderation status filters before pagination, preserves search/status/page during safe bulk actions, and remains scoped to the existing authorized moderation queryset.

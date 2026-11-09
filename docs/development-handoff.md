@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #254 is merged in the current documented baseline. Synchronize
+Work through PR #256 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -233,6 +233,8 @@ Recent completed work now includes:
   filtering before pagination and safe filter/page preservation after bulk actions
 - Creator moderation search through PR #254: owner/editor-scoped matching on comment
   text, author username, and video title with filter/pagination state preservation
+- Q&A navigation through PR #256: same-host return-context preservation for asking
+  questions and highlighting/unhighlighting answers from detail or full-thread views
 
 Issues #79 and #73 are closed as completed. Monetization V1 now includes the
 sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
@@ -246,7 +248,7 @@ preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django
 and Pillow to the current documented runtime baseline. PR #248 added top-level
 comment sorting while preserving pagination/filter behavior. PR #250 paginated
 the creator moderation queue, PR #251 updated Terraform to 1.17.1, and PR #252
-updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state.
+updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

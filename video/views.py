@@ -89,11 +89,13 @@ def creator_video_list(request):
     videos, selected_status = get_creator_videos(
         request.user, request.GET.get("status", "all")
     )
+    videos_page = Paginator(videos, 25).get_page(request.GET.get("page"))
     return render(
         request,
         "videos/creator_video_list.html",
         {
-            "videos": videos,
+            "videos": videos_page,
+            "videos_page": videos_page,
             "status_filters": PUBLICATION_FILTERS,
             "selected_status": selected_status,
             "bulk_statuses": Video.PublicationStatus.choices,
@@ -113,7 +115,12 @@ def creator_video_bulk_publication(request):
         )
     except ValueError as error:
         return HttpResponseBadRequest(str(error))
-    return redirect("creator_video_list")
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("creator_video_list"),
+        )
+    )
 
 
 @login_required

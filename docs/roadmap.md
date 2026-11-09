@@ -1140,3 +1140,12 @@ Merged:
 - PR #254 — owner/editor-scoped moderation search across comment text, author username, and video title
 
 The final Django checks passed after narrowing an overly broad page-reset assertion. Search combines with moderation status filters before pagination, preserves search/status/page during safe bulk actions, and remains scoped to the existing authorized moderation queryset.
+
+
+## Sprint in progress: Q&A return context
+
+Goal: preserve the current video-comment page/filter/sort or full-thread route after asking a question and after highlighting/unhighlighting a creator-selected answer, using the existing same-host redirect validation.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/qa-return-context-sprint.md`.

@@ -156,7 +156,11 @@ class QAReturnContextTests(TestCase):
         detail = self.client.get(detail_target)
         self.assertContains(
             detail,
-            f'name="next" value="{detail_target}"',
+            (
+                f'name="next" value="'
+                f'{reverse("video_detail", args=[self.video.pk])}'
+                '?comments=questions&amp;comments_sort=newest"'
+            ),
             html=False,
         )
         self.assertContains(

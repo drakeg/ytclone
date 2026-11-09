@@ -53,7 +53,7 @@
                 <a class="btn btn-sm btn-outline-danger" href="{% url 'comment_delete' reply.pk %}?next={{ request.get_full_path|urlencode }}">Delete</a>
                 {% endif %}
                 {% if user == video.author and comment.question %}
-                <form method="post" action="{% url 'feature_question_answer' reply.pk %}">
+                <form method="post" action="{% url 'feature_question_answer' reply.pk %}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
                     {% csrf_token %}
                     <button class="btn btn-sm btn-outline-primary" type="submit">{% if comment.question.featured_reply_id == reply.pk %}Unhighlight answer{% else %}Highlight answer{% endif %}</button>
                 </form>

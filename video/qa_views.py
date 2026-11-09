@@ -1,11 +1,13 @@
 from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from .forms import CommentForm
 from .models import Comment, Video
 from .qa_models import VideoQuestion
+from .services.navigation import safe_return_url
 from .services.notifications import notify_comment
 
 
@@ -21,7 +23,12 @@ def ask_question(request, pk):
         comment.save()
         VideoQuestion.objects.create(comment=comment)
         notify_comment(comment)
-    return redirect("video_detail", pk=video.pk)
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("video_detail", kwargs={"pk": video.pk}),
+        )
+    )
 
 
 @login_required
@@ -38,4 +45,9 @@ def feature_question_answer(request, reply_pk):
     question = get_object_or_404(VideoQuestion, comment=reply.parent)
     question.featured_reply = None if question.featured_reply_id == reply.pk else reply
     question.save(update_fields=["featured_reply"])
-    return redirect("video_detail", pk=reply.video_id)
+    return redirect(
+        safe_return_url(
+            request,
+            reverse("video_detail", kwargs={"pk": reply.video_id}),
+        )
+    )

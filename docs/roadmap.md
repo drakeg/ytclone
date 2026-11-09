@@ -1142,10 +1142,18 @@ Merged:
 The final Django checks passed after narrowing an overly broad page-reset assertion. Search combines with moderation status filters before pagination, preserves search/status/page during safe bulk actions, and remains scoped to the existing authorized moderation queryset.
 
 
-## Sprint in progress: Q&A return context
+## Completed sprint: Q&A return context
 
 Goal: preserve the current video-comment page/filter/sort or full-thread route after asking a question and after highlighting/unhighlighting a creator-selected answer, using the existing same-host redirect validation.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/qa-return-context-sprint.md`.
+
+
+## Q&A return context closeout — November 9, 2026
+
+Merged:
+- PR #256 — preserve paginated/filter/sort comment context after asking a question and preserve detail/full-thread context after highlighting or unhighlighting a Q&A answer
+
+The final Django checks passed after correcting an HTML-escaping expectation in the focused regression test. Q&A mutations now reuse the same-host safe return helper and retain canonical video-detail fallbacks for missing or unsafe targets.

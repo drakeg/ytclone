@@ -10,6 +10,21 @@
         <a class="btn btn-outline-secondary" href="{% url 'creator_video_list' %}">Back to My Videos</a>
     </div>
 
+    <form class="row g-2 align-items-end mb-3" method="get" action="{% url 'creator_video_trash' %}">
+        <div class="col-sm-8 col-lg-6">
+            <label class="form-label" for="video-trash-search">Search trash</label>
+            <input class="form-control" id="video-trash-search" type="search" name="query" value="{{ selected_query }}" placeholder="Title, description, channel, or category">
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </div>
+        {% if selected_query %}
+            <div class="col-auto">
+                <a class="btn btn-outline-secondary" href="{% url 'creator_video_trash' %}">Clear</a>
+            </div>
+        {% endif %}
+    </form>
+
     {% if videos %}
         <div class="table-responsive">
             <table class="table align-middle">
@@ -43,11 +58,11 @@
             <nav aria-label="Video trash pages">
                 <ul class="pagination">
                     {% if videos_page.has_previous %}
-                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}?page={{ videos_page.previous_page_number }}">Previous</a></li>
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}{% if selected_query %}?query={{ selected_query|urlencode }}&amp;page={{ videos_page.{% else %}?page={{ videos_page.{% endif %}previous_page_number }}">Previous</a></li>
                     {% endif %}
                     <li class="page-item disabled"><span class="page-link">Page {{ videos_page.number }} of {{ videos_page.paginator.num_pages }}</span></li>
                     {% if videos_page.has_next %}
-                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}?page={{ videos_page.next_page_number }}">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}{% if selected_query %}?query={{ selected_query|urlencode }}&amp;page={{ videos_page.{% else %}?page={{ videos_page.{% endif %}next_page_number }}">Next</a></li>
                     {% endif %}
                 </ul>
             </nav>

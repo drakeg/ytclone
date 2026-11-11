@@ -1201,3 +1201,12 @@ Merged:
 - PR #262 — owner-scoped search across video title, description, channel name, and category name with publication filtering before pagination and preserved search/status/page state
 
 The final Django checks passed. Creator video search remains scoped to the existing active-video queryset, excludes foreign and trashed videos, and preserves safe return context after bulk publication changes.
+
+
+## Sprint in progress: Video Trash pagination
+
+Goal: paginate Video Trash at 25 items per page and preserve a safe originating Trash page after permanent deletion, while leaving restore and retention behavior unchanged.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/video-trash-pagination-sprint.md`.

@@ -812,10 +812,16 @@ def video_delete(request, pk):
 
 @login_required
 def creator_video_trash(request):
+    videos_page = Paginator(get_creator_trash(request.user), 25).get_page(
+        request.GET.get("page")
+    )
     return render(
         request,
         "videos/creator_video_trash.html",
-        {"videos": get_creator_trash(request.user)},
+        {
+            "videos": videos_page,
+            "videos_page": videos_page,
+        },
     )
 
 
@@ -839,7 +845,12 @@ def video_permanent_delete(request, pk):
         if not can_delete:
             return HttpResponseForbidden("This video is still within its retention period.")
         permanently_delete_video(video)
-        return redirect("creator_video_trash")
+        return redirect(
+            safe_return_url(
+                request,
+                reverse("creator_video_trash"),
+            )
+        )
     return render(
         request,
         "videos/video_confirm_permanent_delete.html",
@@ -847,6 +858,10 @@ def video_permanent_delete(request, pk):
             "video": video,
             "can_delete": can_delete,
             "available_at": permanent_deletion_available_at(video),
+            "return_to": safe_return_url(
+                request,
+                reverse("creator_video_trash"),
+            ),
         },
     )
 

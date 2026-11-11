@@ -31,7 +31,7 @@
                                         {% csrf_token %}
                                         <button class="btn btn-sm btn-outline-primary" type="submit">Restore as draft</button>
                                     </form>
-                                    <a class="btn btn-sm btn-outline-danger" href="{% url 'video_permanent_delete' video.pk %}">Permanent deletion</a>
+                                    <a class="btn btn-sm btn-outline-danger" href="{% url 'video_permanent_delete' video.pk %}?next={{ request.get_full_path|urlencode }}">Permanent deletion</a>
                                 </div>
                             </td>
                         </tr>
@@ -39,6 +39,19 @@
                 </tbody>
             </table>
         </div>
+        {% if videos_page.paginator.num_pages > 1 %}
+            <nav aria-label="Video trash pages">
+                <ul class="pagination">
+                    {% if videos_page.has_previous %}
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}?page={{ videos_page.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">Page {{ videos_page.number }} of {{ videos_page.paginator.num_pages }}</span></li>
+                    {% if videos_page.has_next %}
+                        <li class="page-item"><a class="page-link" href="{% url 'creator_video_trash' %}?page={{ videos_page.next_page_number }}">Next</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
     {% else %}
         <div class="alert alert-light border" role="status">Your video trash is empty.</div>
     {% endif %}

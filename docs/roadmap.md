@@ -1159,10 +1159,18 @@ Merged:
 The final Django checks passed after correcting an HTML-escaping expectation in the focused regression test. Q&A mutations now reuse the same-host safe return helper and retain canonical video-detail fallbacks for missing or unsafe targets.
 
 
-## Sprint in progress: Creator video pagination
+## Completed sprint: Creator video pagination
 
 Goal: paginate My Videos at 25 items per page, apply publication-status filters before pagination, and preserve the creator's current filter/page after valid bulk publication actions.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/creator-video-pagination-sprint.md`.
+
+
+## Creator video pagination closeout — November 10, 2026
+
+Merged:
+- PR #258 — paginate My Videos at 25 items per page with publication-status filtering before pagination and safe filter/page preservation after bulk publication actions
+
+The final Django checks passed. Creator video management now stays bounded as the library grows while preserving existing owner scoping, trashed-video exclusion, moderation restrictions, Shorts presentation, and edit/create-short actions.

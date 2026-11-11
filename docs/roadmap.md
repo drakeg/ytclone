@@ -1203,10 +1203,18 @@ Merged:
 The final Django checks passed. Creator video search remains scoped to the existing active-video queryset, excludes foreign and trashed videos, and preserves safe return context after bulk publication changes.
 
 
-## Sprint in progress: Video Trash pagination
+## Completed sprint: Video Trash pagination
 
 Goal: paginate Video Trash at 25 items per page and preserve a safe originating Trash page after permanent deletion, while leaving restore and retention behavior unchanged.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/video-trash-pagination-sprint.md`.
+
+
+## Video Trash pagination closeout — November 11, 2026
+
+Merged:
+- PR #264 — paginate Video Trash at 25 items per page with owner scoping, safe permanent-delete return context, and unchanged restore/retention behavior
+
+The final Django checks passed. Trash remains newest-deleted-first and owner-scoped, restore still returns videos to My Videos as drafts, and permanent deletion now preserves a validated originating Trash page.

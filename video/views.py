@@ -86,8 +86,10 @@ def creator_analytics(request):
 
 @login_required
 def creator_video_list(request):
-    videos, selected_status = get_creator_videos(
-        request.user, request.GET.get("status", "all")
+    videos, selected_status, selected_query = get_creator_videos(
+        request.user,
+        request.GET.get("status", "all"),
+        request.GET.get("query", ""),
     )
     videos_page = Paginator(videos, 25).get_page(request.GET.get("page"))
     return render(
@@ -98,6 +100,7 @@ def creator_video_list(request):
             "videos_page": videos_page,
             "status_filters": PUBLICATION_FILTERS,
             "selected_status": selected_status,
+            "selected_query": selected_query,
             "bulk_statuses": Video.PublicationStatus.choices,
             "allowed_bulk_statuses": BULK_PUBLICATION_STATUSES,
         },

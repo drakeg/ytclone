@@ -1,4 +1,4 @@
-from django.db.models import Exists, OuterRef
+from django.db.models import Exists, OuterRef, Q
 
 from video.models import Video
 from video.shorts_models import VideoShort
@@ -16,8 +16,9 @@ BULK_PUBLICATION_STATUSES = {
 }
 
 
-def get_creator_videos(user, requested_status):
+def get_creator_videos(user, requested_status, requested_query=""):
     selected_status = requested_status if requested_status in FILTER_VALUES else "all"
+    selected_query = (requested_query or "").strip()
     videos = (
         Video.objects.filter(author=user, deleted_at__isnull=True)
         .select_related("channel", "category")
@@ -25,7 +26,14 @@ def get_creator_videos(user, requested_status):
     )
     if selected_status != "all":
         videos = videos.filter(publication_status=selected_status)
-    return videos.order_by("-pub_date", "-pk"), selected_status
+    if selected_query:
+        videos = videos.filter(
+            Q(title__icontains=selected_query)
+            | Q(description__icontains=selected_query)
+            | Q(channel__name__icontains=selected_query)
+            | Q(category__name__icontains=selected_query)
+        )
+    return videos.order_by("-pub_date", "-pk"), selected_status, selected_query
 
 
 def bulk_update_publication(user, video_ids, publication_status):

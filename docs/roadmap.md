@@ -1174,3 +1174,13 @@ Merged:
 - PR #258 — paginate My Videos at 25 items per page with publication-status filtering before pagination and safe filter/page preservation after bulk publication actions
 
 The final Django checks passed. Creator video management now stays bounded as the library grows while preserving existing owner scoping, trashed-video exclusion, moderation restrictions, Shorts presentation, and edit/create-short actions.
+
+
+## Gunicorn 27 runtime reconciliation — November 11, 2026
+
+Merged:
+- PR #260 — Gunicorn 26.2 → 27.0
+
+The final Django checks passed. The supported application-server baseline now includes Gunicorn 27.0 alongside Django 6.1.2, Python 3.15, Pillow 13.0.0, python-dotenv 1.2.4, Stripe 16.1.0, and Terraform 1.17.1.
+
+This reconciliation changes documentation only; it does not introduce additional dependency, schema, infrastructure, or payment-mode changes beyond the already-merged maintenance update.

@@ -1184,3 +1184,12 @@ Merged:
 The final Django checks passed. The supported application-server baseline now includes Gunicorn 27.0 alongside Django 6.1.2, Python 3.15, Pillow 13.0.0, python-dotenv 1.2.4, Stripe 16.1.0, and Terraform 1.17.1.
 
 This reconciliation changes documentation only; it does not introduce additional dependency, schema, infrastructure, or payment-mode changes beyond the already-merged maintenance update.
+
+
+## Sprint in progress: Creator video search
+
+Goal: add owner-scoped search across title, description, channel name, and category name while preserving publication filtering, pagination, and safe bulk-action return context.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/creator-video-search-sprint.md`.

@@ -1186,10 +1186,18 @@ The final Django checks passed. The supported application-server baseline now in
 This reconciliation changes documentation only; it does not introduce additional dependency, schema, infrastructure, or payment-mode changes beyond the already-merged maintenance update.
 
 
-## Sprint in progress: Creator video search
+## Completed sprint: Creator video search
 
 Goal: add owner-scoped search across title, description, channel name, and category name while preserving publication filtering, pagination, and safe bulk-action return context.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/creator-video-search-sprint.md`.
+
+
+## Creator video search closeout — November 11, 2026
+
+Merged:
+- PR #262 — owner-scoped search across video title, description, channel name, and category name with publication filtering before pagination and preserved search/status/page state
+
+The final Django checks passed. Creator video search remains scoped to the existing active-video queryset, excludes foreign and trashed videos, and preserves safe return context after bulk publication changes.

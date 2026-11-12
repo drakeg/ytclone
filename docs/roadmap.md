@@ -1220,10 +1220,22 @@ Merged:
 The final Django checks passed. Trash remains newest-deleted-first and owner-scoped, restore still returns videos to My Videos as drafts, and permanent deletion now preserves a validated originating Trash page.
 
 
-## Sprint in progress: Video Trash search
+## Completed sprint: Video Trash search
 
 Goal: add owner-scoped Trash search across title, description, channel name, and category name while preserving pagination and safe permanent-delete return context.
 
 No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
 
 Plan and verification: `docs/video-trash-search-sprint.md`.
+
+
+## Video Trash search and runtime reconciliation — November 12, 2026
+
+Merged:
+- PR #266 — owner-scoped Video Trash search across title, description, channel name, and category name with pagination/query-state preservation
+- PR #267 — Terraform 1.17.2
+- PR #268 — Stripe 17.0.0
+
+Final verification passed: Django checks for #266 and #268, plus Terraform validation and Django checks for #267. The documented runtime baseline is now Stripe 17.0.0 and Terraform 1.17.2.
+
+Video Trash search remains owner-scoped, applies before pagination, preserves safe permanent-delete return context, and leaves restore and retention behavior unchanged.

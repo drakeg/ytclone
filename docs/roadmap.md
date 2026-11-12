@@ -1218,3 +1218,12 @@ Merged:
 - PR #264 — paginate Video Trash at 25 items per page with owner scoping, safe permanent-delete return context, and unchanged restore/retention behavior
 
 The final Django checks passed. Trash remains newest-deleted-first and owner-scoped, restore still returns videos to My Videos as drafts, and permanent deletion now preserves a validated originating Trash page.
+
+
+## Sprint in progress: Video Trash search
+
+Goal: add owner-scoped Trash search across title, description, channel name, and category name while preserving pagination and safe permanent-delete return context.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/video-trash-search-sprint.md`.

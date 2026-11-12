@@ -812,15 +812,18 @@ def video_delete(request, pk):
 
 @login_required
 def creator_video_trash(request):
-    videos_page = Paginator(get_creator_trash(request.user), 25).get_page(
-        request.GET.get("page")
+    videos, selected_query = get_creator_trash(
+        request.user,
+        request.GET.get("query", ""),
     )
+    videos_page = Paginator(videos, 25).get_page(request.GET.get("page"))
     return render(
         request,
         "videos/creator_video_trash.html",
         {
             "videos": videos_page,
             "videos_page": videos_page,
+            "selected_query": selected_query,
         },
     )
 

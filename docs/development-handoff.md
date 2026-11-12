@@ -23,8 +23,8 @@ already-completed work from this document.
 - Django 6.1.2
 - Pillow 13.0.0
 - python-dotenv 1.2.4
-- Stripe 16.1.0
-- Terraform 1.17.1 in Terraform CI
+- Stripe 17.0.0
+- Terraform 1.17.2 in Terraform CI
 
 Recent dependency maintenance:
 - PR #242 — python-dotenv 1.2.4
@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #264 is merged in the current documented baseline. Synchronize
+Work through PR #268 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -241,6 +241,8 @@ Recent completed work now includes:
   category matching with publication-filter/pagination state preservation
 - Video Trash through PR #264: 25-per-page owner-scoped pagination with safe
   permanent-delete return context and unchanged restore/retention semantics
+- Video Trash search through PR #266: owner-scoped title, description, channel,
+  and category matching with query/pagination state preservation
 
 Issues #79 and #73 are closed as completed. Monetization V1 now includes the
 sandbox/test-mode implementation, accounting lifecycle, and ledger-derived
@@ -254,7 +256,7 @@ preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django
 and Pillow to the current documented runtime baseline. PR #248 added top-level
 comment sorting while preserving pagination/filter behavior. PR #250 paginated
 the creator moderation queue, PR #251 updated Terraform to 1.17.1, and PR #252
-updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context.
+updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context. PR #266 added scoped Video Trash search. PR #267 updated Terraform to 1.17.2, and PR #268 updated Stripe to 17.0.0; all relevant CI passed.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

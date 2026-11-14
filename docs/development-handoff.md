@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #272 is merged in the current documented baseline. Synchronize
+Work through PR #274 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -256,7 +256,7 @@ preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django
 and Pillow to the current documented runtime baseline. PR #248 added top-level
 comment sorting while preserving pagination/filter behavior. PR #250 paginated
 the creator moderation queue, PR #251 updated Terraform to 1.17.1, and PR #252
-updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context. PR #266 added scoped Video Trash search. PR #267 updated Terraform to 1.17.2, and PR #268 updated Stripe to 17.0.0; all relevant CI passed. PR #270 updated Django to 6.1.3 with passing Django checks. PR #272 scaled the channel directory with 24-per-page pagination and bounded search while preserving moderation visibility, popularity ordering, and channel statistics.
+updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context. PR #266 added scoped Video Trash search. PR #267 updated Terraform to 1.17.2, and PR #268 updated Stripe to 17.0.0; all relevant CI passed. PR #270 updated Django to 6.1.3 with passing Django checks. PR #272 scaled the channel directory with 24-per-page pagination and bounded search while preserving moderation visibility, popularity ordering, and channel statistics. PR #274 hardened fresh local Docker startup, added explicit/configurable bind-address and LAN host/origin settings, and reconciled the README runtime baseline; Django CI run #606 passed.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain
@@ -285,3 +285,12 @@ recommend one low-cost next sprint for approval.
 Never paste `.env`, credentials, API keys, private media, database contents, or
 other secrets into a chat. Share repository paths, command output, and redacted
 configuration instead.
+
+
+### Local development runtime through PR #274
+
+- Clean Docker startup now prepares writable SQLite/media/static mountpoints before switching to the unprivileged `app` user.
+- `APP_BIND_ADDRESS` defaults to `127.0.0.1`; set it to `0.0.0.0` only for intentional trusted-LAN sharing.
+- `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` are overridable through `.env`.
+- Current verified local host setup uses port 8010 and is reachable at `http://192.168.0.155:8010/` while that LAN address remains assigned.
+- Local machine-specific `.env` values are intentionally not committed.

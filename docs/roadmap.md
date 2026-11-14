@@ -1268,7 +1268,7 @@ Merged:
 Final verification passed in Django checks run #602. The existing suspended-channel visibility boundary, popularity ordering, subscriber/public-video counts, and owner/staff behavior remain intact.
 
 
-## Sprint in progress: Local Docker LAN reliability
+## Completed sprint: Local Docker LAN reliability
 
 Goal: make a fresh Docker checkout start reliably with persistent SQLite/media volumes and allow explicit LAN access through `.env` without machine-specific repository edits.
 
@@ -1277,3 +1277,20 @@ Observed defects: the fresh SQLite named volume could be root-owned while the im
 No schema, migration, paid service, AWS resource, worker, queue, or live-payment change is introduced.
 
 Plan and verification: `docs/local-docker-lan-reliability-sprint.md`.
+
+
+## Local Docker LAN reliability closeout — November 14, 2026
+
+Merged:
+- PR #274 — fresh-volume Docker startup hardening, explicit/configurable host binding, environment-overridable allowed-host/CSRF settings, LAN documentation, and runtime baseline reconciliation
+
+Verification:
+- Django checks run #606 passed.
+- A clean local Docker rebuild from newly-created volumes started successfully without manual ownership repair.
+- The local container reported healthy.
+- Both http://127.0.0.1:8010/videos/ and http://192.168.0.155:8010/videos/ returned HTTP 200.
+- The host listener was confirmed on *:8010.
+- The focused local-Docker regression suite passed 5/5.
+- The one transient full-suite FFmpeg fixture timeout was not reproducible in isolation; the isolated FFmpeg smoke suite passed 5/5.
+
+The development server remains intended only for trusted local/LAN testing; public exposure and production TLS/reverse-proxy work remain out of scope.

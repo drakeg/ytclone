@@ -99,10 +99,11 @@ Dependency updates should keep Docker, CI, requirements, and contributor documen
 
 ### Access from another device on your local network
 
-Docker publishes `APP_PORT` on the host. To access the development site from another device on the same trusted LAN, add the host machine's LAN address to `.env`. For example, if the development machine is `192.168.0.155` and `APP_PORT=8010`:
+Docker binds `APP_PORT` to `APP_BIND_ADDRESS`; the default is loopback-only (`127.0.0.1`). To access the development site from another device on the same trusted LAN, add the host machine's LAN address to `.env`. For example, if the development machine is `192.168.0.155` and `APP_PORT=8010`:
 
 ```text
 APP_PORT=8010
+APP_BIND_ADDRESS=0.0.0.0
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,web,192.168.0.155
 DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:8010,http://127.0.0.1:8010,http://192.168.0.155:8010
 ```

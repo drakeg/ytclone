@@ -1,34 +1,32 @@
 from django.core.paginator import Paginator
-from django.db.models import Count, Q
 from django.shortcuts import render
 
-from .models import SubscriptionNotificationPreference, Video
-from .services.channel_access import available_channels, require_available_channel
+from .models import SubscriptionNotificationPreference
+from .services.channel_access import get_channel_directory, require_available_channel
 
 
 CHANNEL_VIDEO_PAGE_SIZE = 12
 CHANNEL_SHORT_PAGE_SIZE = 8
+CHANNEL_DIRECTORY_PAGE_SIZE = 24
 
 
 def channel_list(request):
-    channels = (
-        available_channels(request.user)
-        .select_related("owner")
-        .annotate(
-            subscriber_count=Count("subscribers", distinct=True),
-            public_video_count=Count(
-                "videos",
-                filter=Q(
-                    videos__deleted_at__isnull=True,
-                    videos__publication_status=Video.PublicationStatus.PUBLISHED,
-                    videos__audience=Video.Audience.EVERYONE,
-                ),
-                distinct=True,
-            ),
-        )
-        .order_by("-subscriber_count", "name", "pk")
+    channels, selected_query = get_channel_directory(
+        request.user,
+        request.GET.get("q", ""),
     )
-    return render(request, "videos/channel_list.html", {"channels": channels})
+    channels_page = Paginator(channels, CHANNEL_DIRECTORY_PAGE_SIZE).get_page(
+        request.GET.get("page")
+    )
+    return render(
+        request,
+        "videos/channel_list.html",
+        {
+            "channels": channels_page,
+            "channels_page": channels_page,
+            "channel_query": selected_query,
+        },
+    )
 
 
 def channel_detail(request, pk):

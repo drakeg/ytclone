@@ -61,11 +61,11 @@ A Django-based video-sharing application being modernized into a secure, low-cos
 The current supported repository baseline is:
 
 - Python 3.15 in Docker and Django CI
-- Django 6.1.2
+- Django 6.1.3
 - Pillow 13.0.0
 - python-dotenv 1.2.4
-- Stripe 16.1.0
-- Terraform 1.17.1 for infrastructure validation
+- Stripe 17.0.0
+- Terraform 1.17.2 for infrastructure validation
 
 Dependency updates should keep Docker, CI, requirements, and contributor documentation aligned.
 
@@ -96,6 +96,26 @@ Dependency updates should keep Docker, CI, requirements, and contributor documen
    ```
 
 5. Open `http://localhost:8000/`. The root route redirects to the application homepage at `/videos/`.
+
+### Access from another device on your local network
+
+Docker publishes `APP_PORT` on the host. To access the development site from another device on the same trusted LAN, add the host machine's LAN address to `.env`. For example, if the development machine is `192.168.0.155` and `APP_PORT=8010`:
+
+```text
+APP_PORT=8010
+DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,web,192.168.0.155
+DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:8010,http://127.0.0.1:8010,http://192.168.0.155:8010
+```
+
+Then restart the web service:
+
+```bash
+docker compose up --build --detach
+```
+
+Open `http://192.168.0.155:8010/` from another device on that LAN. Use the actual LAN IP or hostname of the development machine rather than copying the example address. On macOS, `ipconfig getifaddr en0` commonly reports the active Wi-Fi address; on Linux, `hostname -I` shows assigned addresses.
+
+Do not use `DJANGO_ALLOWED_HOSTS=*` for convenience. Keep the allowed-host and CSRF-origin lists limited to addresses you actually use, and do not expose this debug-mode development server directly to the public internet.
 
 Follow application logs with:
 
@@ -238,7 +258,7 @@ ffmpeg -hide_banner -encoders | grep -E 'libx264|aac'
 
 ### Terraform checks
 
-Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.17.1 matches CI.
+Run Terraform checks when a change touches `terraform/` or the Terraform workflow. Terraform 1.17.2 matches CI.
 
 ```bash
 cd terraform/environments/dev

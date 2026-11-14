@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN mkdir -p /app/media /app/staticfiles \
+RUN mkdir -p /app/data /app/media /app/staticfiles \
     && chown -R app:app /app
 
 USER app

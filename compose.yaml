@@ -14,7 +14,7 @@ services:
       DJANGO_SESSION_COOKIE_SECURE: "false"
       DJANGO_CSRF_COOKIE_SECURE: "false"
     ports:
-      - "${APP_PORT:-8000}:${APP_PORT:-8000}"
+      - "${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8000}:${APP_PORT:-8000}"
     volumes:
       - .:/app
       - sqlite_data:/app/data

@@ -209,7 +209,7 @@ its migration, and `video/test_migrations.py` must point to the current leaf.
 
 ## Choosing the next sprint
 
-Work through PR #270 is merged in the current documented baseline. Synchronize
+Work through PR #272 is merged in the current documented baseline. Synchronize
 the repository and re-read `docs/roadmap.md`, open issues, open pull requests,
 and the relevant feature sprint documents before selecting new work.
 
@@ -256,7 +256,7 @@ preservation. PRs #242–#246 refreshed python-dotenv, Python, Terraform, Django
 and Pillow to the current documented runtime baseline. PR #248 added top-level
 comment sorting while preserving pagination/filter behavior. PR #250 paginated
 the creator moderation queue, PR #251 updated Terraform to 1.17.1, and PR #252
-updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context. PR #266 added scoped Video Trash search. PR #267 updated Terraform to 1.17.2, and PR #268 updated Stripe to 17.0.0; all relevant CI passed. PR #270 updated Django to 6.1.3 with passing Django checks.
+updated Stripe to 16.1.0. PR #254 added scoped creator moderation search with preserved filter/pagination state. PR #256 completed Q&A return-context preservation. PR #258 paginated the creator video library and preserved publication filter/page state after bulk updates. PR #260 updated Gunicorn to 27.0 with passing Django checks. PR #262 added scoped creator video search with preserved filter/pagination/bulk-return state. PR #264 paginated Video Trash and preserved safe permanent-delete return context. PR #266 added scoped Video Trash search. PR #267 updated Terraform to 1.17.2, and PR #268 updated Stripe to 17.0.0; all relevant CI passed. PR #270 updated Django to 6.1.3 with passing Django checks. PR #272 scaled the channel directory with 24-per-page pagination and bounded search while preserving moderation visibility, popularity ordering, and channel statistics.
 
 Live-payment activation, real payouts, provider payout execution, bank-account
 management, tax/reporting workflow, and recurring paid infrastructure remain

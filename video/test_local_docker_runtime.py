@@ -27,10 +27,15 @@ class LocalDockerRuntimeTests(SimpleTestCase):
             compose,
         )
         self.assertIn('APP_PORT: "${APP_PORT:-8000}"', compose)
+        self.assertIn(
+            '"${APP_BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-8000}:${APP_PORT:-8000}"',
+            compose,
+        )
 
     def test_environment_example_keeps_bounded_local_defaults(self):
         environment = (REPOSITORY_ROOT / ".env.example").read_text()
 
+        self.assertIn("APP_BIND_ADDRESS=127.0.0.1", environment)
         self.assertIn(
             "DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,web",
             environment,
@@ -45,6 +50,7 @@ class LocalDockerRuntimeTests(SimpleTestCase):
         readme = (REPOSITORY_ROOT / "README.md").read_text()
 
         self.assertIn("Access from another device on your local network", readme)
+        self.assertIn("APP_BIND_ADDRESS=0.0.0.0", readme)
         self.assertIn("DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,web,192.168.0.155", readme)
         self.assertIn("DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost:8010", readme)
         self.assertIn("Do not use `DJANGO_ALLOWED_HOSTS=*`", readme)

@@ -1266,3 +1266,14 @@ Merged:
 - PR #272 — 24-per-page channel directory pagination with bounded search across channel name, description, and owner username
 
 Final verification passed in Django checks run #602. The existing suspended-channel visibility boundary, popularity ordering, subscriber/public-video counts, and owner/staff behavior remain intact.
+
+
+## Sprint in progress: Local Docker LAN reliability
+
+Goal: make a fresh Docker checkout start reliably with persistent SQLite/media volumes and allow explicit LAN access through `.env` without machine-specific repository edits.
+
+Observed defects: the fresh SQLite named volume could be root-owned while the image runs as the unprivileged `app` user, and Compose hard-coded allowed-host/CSRF values that prevented `.env` LAN configuration.
+
+No schema, migration, paid service, AWS resource, worker, queue, or live-payment change is introduced.
+
+Plan and verification: `docs/local-docker-lan-reliability-sprint.md`.

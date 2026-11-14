@@ -1249,3 +1249,12 @@ Merged:
 The final Django checks passed. The supported framework baseline is now Django 6.1.3.
 
 This reconciliation changes documentation only; it does not introduce additional dependency, schema, infrastructure, or payment-mode changes beyond the already-merged maintenance update.
+
+
+## Sprint in progress: Channel directory search and pagination
+
+Goal: add 24-per-page pagination and bounded search across channel name, description, and owner username while preserving moderation visibility, popularity ordering, and existing channel statistics.
+
+No schema, migration, dependency, worker, queue, AWS resource, paid service, or live-payment change is introduced.
+
+Plan and verification: `docs/channel-directory-search-pagination-sprint.md`.

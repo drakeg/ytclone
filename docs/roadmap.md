@@ -1239,3 +1239,13 @@ Merged:
 Final verification passed: Django checks for #266 and #268, plus Terraform validation and Django checks for #267. The documented runtime baseline is now Stripe 17.0.0 and Terraform 1.17.2.
 
 Video Trash search remains owner-scoped, applies before pagination, preserves safe permanent-delete return context, and leaves restore and retention behavior unchanged.
+
+
+## Django 6.1.3 runtime reconciliation — November 13, 2026
+
+Merged:
+- PR #270 — Django 6.1.2 → 6.1.3
+
+The final Django checks passed. The supported framework baseline is now Django 6.1.3.
+
+This reconciliation changes documentation only; it does not introduce additional dependency, schema, infrastructure, or payment-mode changes beyond the already-merged maintenance update.
